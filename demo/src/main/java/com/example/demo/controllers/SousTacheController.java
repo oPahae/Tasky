@@ -1,7 +1,5 @@
 package com.example.demo.controllers;
 import org.springframework.web.bind.annotation.DeleteMapping;
-import com.example.demo.Repository.TacheRepository;
-import com.example.demo.Repository.SousTaskRepository;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -11,6 +9,9 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 import com.example.demo.models.SousTache;
 import com.example.demo.models.Tache;
+import com.example.demo.repository.SousTaskRepository;
+import com.example.demo.repository.TacheRepository;
+
 import java.util.List;
 import java.time.LocalDateTime;
 
@@ -124,6 +125,8 @@ public class SousTacheController {
         return st.stream().filter(s -> !s.getEtat()).toList();}
         
         return null;}
+
+    
     
 
 
