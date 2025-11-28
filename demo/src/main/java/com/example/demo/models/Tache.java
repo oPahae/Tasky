@@ -108,9 +108,9 @@ public class Tache {
         this.documents = documents;
     }
     public LocalDateTime getDateLimite() {
-        return dateLimite;
+        return dateLimite ;
     }
-    public void setDateLimite(LocalDateTime dateLimite) {
+    public void setDateLimite(LocalDateTime  dateLimite) {
         this.dateLimite = dateLimite;
         if(this.etat.equals("en cours") && dateLimite.isBefore(LocalDateTime.now())) {
             etat="Pas fini";
