@@ -1,14 +1,18 @@
 package com.example.demo.interfaces;
+
 import com.example.demo.Params;
 import com.example.demo.components.Scrollbar;
 
 import javax.swing.*;
 import javax.swing.border.*;
 
+import org.apache.catalina.Container;
+
 import java.awt.*;
 import java.awt.geom.*;
 import java.util.*;
 import java.util.List;
+import java.util.function.Consumer;
 import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
 
@@ -20,14 +24,14 @@ public class Taches extends JPanel {
     private int colorCounter = 0;
     private DateTimeFormatter dateFormatter = DateTimeFormatter.ofPattern("dd MMM yyyy");
 
-    public Taches() {
+    public Taches(Consumer<String> onClick) {
         this.theme = Params.theme;
         initializeColors();
         initializeDemoData();
         setLayout(new BorderLayout());
         setBackground(bgColor);
 
-        JPanel mainPanel = createMainPanel();
+        JPanel mainPanel = createMainPanel(onClick);
         add(mainPanel, BorderLayout.CENTER);
     }
 
@@ -95,7 +99,7 @@ public class Taches extends JPanel {
                 Arrays.asList(members.get(1), members.get(2), members.get(0))));
     }
 
-    private JPanel createMainPanel() {
+    private JPanel createMainPanel(Consumer<String> onClick) {
         JPanel panel = new JPanel(new BorderLayout(20, 20));
         panel.setBackground(bgColor);
         panel.setBorder(BorderFactory.createEmptyBorder(25, 25, 25, 25));
@@ -114,7 +118,7 @@ public class Taches extends JPanel {
 
         // Tasks list
         for (Task task : tasks) {
-            JPanel taskCard = createTaskCard(task);
+            JPanel taskCard = createTaskCard(task, onClick);
             taskCard.setAlignmentX(Component.LEFT_ALIGNMENT);
             contentWrapper.add(taskCard);
             contentWrapper.add(Box.createRigidArea(new Dimension(0, 15)));
@@ -131,9 +135,8 @@ public class Taches extends JPanel {
         return panel;
     }
 
-    private JPanel createTaskCard(Task task) {
+    private JPanel createTaskCard(Task task, Consumer<String> onClick) {
         Color taskColor = getRandomColor();
-
         JPanel card = new JPanel() {
             @Override
             protected void paintComponent(Graphics g) {
@@ -147,16 +150,23 @@ public class Taches extends JPanel {
                 g2.dispose();
             }
         };
-
         card.setLayout(new BorderLayout(20, 15));
         card.setOpaque(false);
         card.setBorder(BorderFactory.createEmptyBorder(25, 25, 25, 25));
         card.setMaximumSize(new Dimension(Integer.MAX_VALUE, 160));
+        card.setCursor(new Cursor(Cursor.HAND_CURSOR));
+
+        // Ajout de l'écouteur de clic
+        card.addMouseListener(new java.awt.event.MouseAdapter() {
+            public void mouseClicked(java.awt.event.MouseEvent evt) {
+                Params.tacheID = task.id;
+                onClick.accept("Tache");
+            }
+        });
 
         // Left section: Checkbox + Task info
         JPanel leftSection = new JPanel(new BorderLayout(15, 0));
         leftSection.setOpaque(false);
-
         // Checkbox
         JCheckBox checkbox = new JCheckBox();
         checkbox.setSelected(task.progress == 100);
@@ -164,76 +174,59 @@ public class Taches extends JPanel {
         checkbox.setOpaque(false);
         checkbox.setPreferredSize(new Dimension(24, 24));
         leftSection.add(checkbox, BorderLayout.WEST);
-
         // Task info
         JPanel taskInfo = new JPanel();
         taskInfo.setLayout(new BoxLayout(taskInfo, BoxLayout.Y_AXIS));
         taskInfo.setOpaque(false);
-
         JLabel taskName = new JLabel(task.name);
         taskName.setFont(new Font("Segoe UI", Font.BOLD, 18));
         taskName.setForeground(textPrimary);
         taskName.setAlignmentX(Component.LEFT_ALIGNMENT);
-
         JLabel category = new JLabel(task.category);
         category.setFont(new Font("Segoe UI", Font.PLAIN, 13));
         category.setForeground(textSecondary);
         category.setAlignmentX(Component.LEFT_ALIGNMENT);
-
         taskInfo.add(taskName);
         taskInfo.add(Box.createRigidArea(new Dimension(0, 5)));
         taskInfo.add(category);
-
         leftSection.add(taskInfo, BorderLayout.CENTER);
         card.add(leftSection, BorderLayout.WEST);
-
         // Right section: Status, Progress, Deadline, Members
         JPanel rightSection = new JPanel();
         rightSection.setLayout(new BoxLayout(rightSection, BoxLayout.Y_AXIS));
         rightSection.setOpaque(false);
         rightSection.setAlignmentX(Component.RIGHT_ALIGNMENT);
-
         // Status and Progress row
         JPanel statusProgressRow = new JPanel(new FlowLayout(FlowLayout.RIGHT, 15, 0));
         statusProgressRow.setOpaque(false);
-
         // Status badge
         JLabel statusLabel = createStatusBadge(task.getStatus());
         statusProgressRow.add(statusLabel);
-
         // Progress percentage
         JLabel progressLabel = new JLabel(task.progress + "%");
         progressLabel.setFont(new Font("Segoe UI", Font.BOLD, 16));
         progressLabel.setForeground(textPrimary);
         statusProgressRow.add(progressLabel);
-
         rightSection.add(statusProgressRow);
         rightSection.add(Box.createRigidArea(new Dimension(0, 8)));
-
         // Progress bar
         JPanel progressBar = createProgressBar(task.progress, taskColor);
         progressBar.setAlignmentX(Component.RIGHT_ALIGNMENT);
         rightSection.add(progressBar);
         rightSection.add(Box.createRigidArea(new Dimension(0, 10)));
-
         // Deadline and Members row
         JPanel deadlineMembersRow = new JPanel(new FlowLayout(FlowLayout.RIGHT, 15, 0));
         deadlineMembersRow.setOpaque(false);
-
         // Deadline
         JLabel deadlineLabel = new JLabel("📅 " + task.deadline.format(dateFormatter));
         deadlineLabel.setFont(new Font("Segoe UI", Font.PLAIN, 13));
         deadlineLabel.setForeground(textSecondary);
         deadlineMembersRow.add(deadlineLabel);
-
         // Members avatars
         JPanel membersPanel = createMembersAvatars(task.assignedMembers);
         deadlineMembersRow.add(membersPanel);
-
         rightSection.add(deadlineMembersRow);
-
         card.add(rightSection, BorderLayout.EAST);
-
         return card;
     }
 
@@ -306,9 +299,8 @@ public class Taches extends JPanel {
 
     private JPanel createMembersAvatars(List<ProjectMember> members) {
         JPanel panel = new JPanel();
-        panel.setLayout(new FlowLayout(FlowLayout.RIGHT, -8, 0));
+        panel.setLayout(new FlowLayout(FlowLayout.RIGHT, 5, 0)); // Espacement positif
         panel.setOpaque(false);
-
         for (int i = 0; i < members.size(); i++) {
             ProjectMember member = members.get(i);
             Color avatarColor = getRandomColor();
@@ -316,7 +308,6 @@ public class Taches extends JPanel {
             avatar.setToolTipText(member.firstName + " " + member.lastName);
             panel.add(avatar);
         }
-
         return panel;
     }
 
@@ -381,14 +372,17 @@ public class Taches extends JPanel {
     }
 
     private static class Task {
+        int id;
         String name;
         int progress;
         String category;
         LocalDate deadline;
         List<ProjectMember> assignedMembers;
+        private static int nextId = 1;
 
         public Task(String name, int progress, String category, LocalDate deadline,
                 List<ProjectMember> assignedMembers) {
+            this.id = nextId++;
             this.name = name;
             this.progress = progress;
             this.category = category;
