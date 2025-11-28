@@ -9,14 +9,14 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.example.demo.models.SousTache;
-import comg0it.example.demo.models.Tache;
+import com.example.demo.models.Tache;
 import com.example.demo.models.Commentaire;
 import com.example.demo.models.Document;
 import com.example.demo.models.Blockage;
 import java.time.LocalDateTime;
 
 import java.util.List;
-import com.example.demo.Repository.TacheRepository;
+import com.example.demo.repository.TacheRepository;
 @RestController
 @RequestMapping("/api")
 public class TacheController {

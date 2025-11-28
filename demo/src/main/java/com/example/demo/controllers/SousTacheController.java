@@ -1,7 +1,7 @@
 package com.example.demo.controllers;
 import org.springframework.web.bind.annotation.DeleteMapping;
-import com.example.demo.Repository.TacheRepository;
-import com.example.demo.Repository.SousTaskRepository;
+import com.example.demo.repository.TacheRepository;
+import com.example.demo.repository.SousTaskRepository;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
