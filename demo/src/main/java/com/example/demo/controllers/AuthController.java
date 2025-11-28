@@ -4,6 +4,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
+import org.springframework.security.core.Authentication;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
@@ -15,6 +16,7 @@ import com.example.demo.dto.LoginRequest;
 import com.example.demo.dto.RegisterRequest;
 import com.example.demo.jwt.JwtUtil;
 import com.example.demo.repositories.UserRepository;
+import com.example.demo.models.User;
 
 @RestController
 @RequestMapping("/auth")
@@ -43,7 +45,6 @@ public class AuthController {
         User user = new User();
         user.setEmail(req.email());
         user.setPassword(encoder.encode(req.password()));
-        user.setRole("USER");
 
         repo.save(user);
 
@@ -52,19 +53,21 @@ public class AuthController {
 
     // LOGIN
     @PostMapping("/login")
-    public ResponseEntity<AuthResponse> login(@RequestBody LoginRequest req) {
+    public ResponseEntity<?> login(@RequestBody LoginRequest req) {
 
-        // Authentification via email
+        // Authentication object
         Authentication auth = new UsernamePasswordAuthenticationToken(
-                req.email(), 
+                req.email(),
                 req.password()
         );
 
+        // Vérifier email + password
         authenticationManager.authenticate(auth);
 
-        // Génération du token en utilisant l'email
+        // Générer un token avec email
         String token = jwtUtil.generateToken(req.email());
 
+        // Retourner le token dans AuthResponse
         return ResponseEntity.ok(new AuthResponse(token));
     }
 }
