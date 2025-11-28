@@ -4,6 +4,9 @@ import java.time.LocalDateTime;
 import java.util.Date;
 import java.util.List;
 
+import jakarta.persistence.ManyToOne;
+import jakarta.persistence.OneToMany;
+
 public class Tache {
     
     private  int id;
@@ -14,10 +17,16 @@ public class Tache {
     private LocalDateTime dateLimite;
     private List<SousTache> sousTaches;
     private String etat;
+    
+    @ManyToOne
     private Projet projet;
+    @ManyToOne
     private Membre membre;
+    @OneToMany
     private List <Commentaire> commentaires;
+    @OneToMany
     private List <Blockage> blockage;
+    @OneToMany
     private List<Document> documents;
 
  public Tache( String titre, String description, LocalDateTime dateLimite, List<SousTache> sousTaches, Projet projet, Membre membre) {
