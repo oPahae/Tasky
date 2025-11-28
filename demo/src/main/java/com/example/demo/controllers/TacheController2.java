@@ -11,6 +11,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
@@ -55,7 +56,7 @@ public class TacheController2 {
         SousTache sousTache = new SousTache();
         sousTache.setTitre(sousTacheDTO.getTitre());
         sousTache.setTermine(false);
-        sousTache.setDateCreation(LocalDate.now());
+        sousTache.setDateCreation(LocalDateTime.now());
         sousTache.setTache(tacheOpt.get());
         sousTacheRepository.save(sousTache);
         return ResponseEntity.ok().build();

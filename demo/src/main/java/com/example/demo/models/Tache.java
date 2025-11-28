@@ -3,6 +3,7 @@ package com.example.demo.models;
 import jakarta.persistence.*;
 
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.util.List;
 
 @Entity
@@ -14,10 +15,10 @@ public class Tache {
 
     private String titre;
     private String description;
-    private LocalDate dateLimite;
+    private LocalDateTime dateLimite;
     private String etat;
-    private LocalDate dateCreation;
-    private LocalDate dateFin;
+    private LocalDateTime dateCreation;
+    private LocalDateTime dateFin;
 
     @ManyToOne
     @JoinColumn(name = "projetID")
@@ -38,6 +39,17 @@ public class Tache {
     @ManyToMany(mappedBy = "taches")
     private List<Membre> membres;
 
+    public Tache() {
+    }
+    public Tache(String titre, String description, LocalDateTime dateLimite, String etat, Projet projet) {
+        this.titre = titre;
+        this.description = description;
+        this.dateLimite = dateLimite;
+        this.etat = "en cours";
+        this.dateCreation = LocalDateTime.now();
+        this.dateFin = null;
+        this.projet = projet;
+    }
     // Getters et Setters
     public int getId() { return id; }
     public void setId(int id) { this.id = id; }
@@ -45,14 +57,22 @@ public class Tache {
     public void setTitre(String titre) { this.titre = titre; }
     public String getDescription() { return description; }
     public void setDescription(String description) { this.description = description; }
-    public LocalDate getDateLimite() { return dateLimite; }
-    public void setDateLimite(LocalDate dateLimite) { this.dateLimite = dateLimite; }
+    public LocalDateTime getDateLimite() { return dateLimite; }
+     public void setDateLimite(LocalDateTime  dateLimite) {
+        this.dateLimite = dateLimite;
+        if(this.etat.equals("en cours") && dateLimite.isBefore(LocalDateTime.now())) {
+            etat="Pas fini";
+    }}
     public String getEtat() { return etat; }
-    public void setEtat(String etat) { this.etat = etat; }
-    public LocalDate getDateCreation() { return dateCreation; }
-    public void setDateCreation(LocalDate dateCreation) { this.dateCreation = dateCreation; }
-    public LocalDate getDateFin() { return dateFin; }
-    public void setDateFin(LocalDate dateFin) { this.dateFin = dateFin; }
+    public void setEtat(String etat) {
+        this.etat = etat;
+        if(etat.equals("terminée")) {
+               this.dateFin=LocalDateTime.now();
+            } }
+    public LocalDateTime getDateCreation() { return dateCreation; }
+    public void setDateCreation(LocalDateTime dateCreation) { this.dateCreation = dateCreation; }
+    public LocalDateTime getDateFin() { return dateFin; }
+    public void setDateFin(LocalDateTime dateFin) { this.dateFin = dateFin; }
     public Projet getProjet() { return projet; }
     public void setProjet(Projet projet) { this.projet = projet; }
     public List<SousTache> getSousTaches() { return sousTaches; }

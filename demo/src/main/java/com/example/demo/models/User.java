@@ -1,6 +1,8 @@
 package com.example.demo.models;
 
 import jakarta.persistence.*;
+
+import java.time.LocalDateTime;
 import java.util.Date;
 import java.util.List;
 
@@ -18,12 +20,24 @@ public class User {
     private String competance;
     private String telephone;
     private boolean disponibilite;
-    private Date dateCreation;
+    private LocalDateTime dateCreation;
     private String verifCode;
 
     @OneToMany(mappedBy = "user")
     private List<Membre> membres;
 
+    public User() {
+    }
+    public User(String nom, String prenom, String email, String password, String competance, String telephone) {
+        this.nom = nom;
+        this.prenom = prenom;
+        this.email = email;
+        this.password = password;
+        this.competance = competance;
+        this.telephone = telephone;
+        this.dateCreation = LocalDateTime.now();
+     
+    }
     // Getters et Setters
     public int getId() { return id; }
     public void setId(int id) { this.id = id; }
@@ -41,8 +55,8 @@ public class User {
     public void setTelephone(String telephone) { this.telephone = telephone; }
     public boolean isDisponibilite() { return disponibilite; }
     public void setDisponibilite(boolean disponibilite) { this.disponibilite = disponibilite; }
-    public Date getDateCreation() { return dateCreation; }
-    public void setDateCreation(Date dateCreation) { this.dateCreation = dateCreation; }
+    public LocalDateTime getDateCreation() { return dateCreation; }
+    public void setDateCreation(LocalDateTime dateCreation) { this.dateCreation = dateCreation; }
     public String getVerifCode() { return verifCode; }
     public void setVerifCode(String verifCode) { this.verifCode = verifCode; }
     public List<Membre> getMembres() { return membres; }

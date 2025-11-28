@@ -3,6 +3,7 @@ package com.example.demo.models;
 import jakarta.persistence.*;
 import java.util.Date;
 import java.util.List;
+import java.time.LocalDateTime;
 
 @Entity
 @Table(name = "Membre")
@@ -12,9 +13,10 @@ public class Membre {
     private int id;
 
     private String description;
-    private Date dateRejointe;
+    private LocalDateTime dateRejointe;
     private String role;
     private String type;
+    private String email;
 
     @ManyToOne
     @JoinColumn(name = "userID")
@@ -41,13 +43,22 @@ public class Membre {
     )
     private List<Tache> taches;
 
+    public Membre(String description, String role, String type, User user, Projet projet,String email) {
+        this.description = description;
+        this.dateRejointe = LocalDateTime.now();
+        this.role = role;
+        this.email=email;
+        this.type = type;
+        this.user = user;
+        this.projet = projet;
+    }
     // Getters et Setters
     public int getId() { return id; }
     public void setId(int id) { this.id = id; }
     public String getDescription() { return description; }
     public void setDescription(String description) { this.description = description; }
-    public Date getDateRejointe() { return dateRejointe; }
-    public void setDateRejointe(Date dateRejointe) { this.dateRejointe = dateRejointe; }
+    public LocalDateTime getDateRejointe() { return dateRejointe; }
+    public void setDateRejointe(LocalDateTime dateRejointe) { this.dateRejointe = dateRejointe; }
     public String getRole() { return role; }
     public void setRole(String role) { this.role = role; }
     public String getType() { return type; }
@@ -64,4 +75,6 @@ public class Membre {
     public void setNotifications(List<Notification> notifications) { this.notifications = notifications; }
     public List<Tache> getTaches() { return taches; }
     public void setTaches(List<Tache> taches) { this.taches = taches; }
+    public String getEmail() { return email; }
+    public void setEmail(String email) { this.email = email; }
 }

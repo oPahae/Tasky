@@ -2,6 +2,7 @@ package com.example.demo.models;
 
 import jakarta.persistence.*;
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 
 @Entity
 @Table(name = "Document")
@@ -12,13 +13,20 @@ public class Document {
 
     private String nom;
     private String description;
-    private LocalDate dateCreation;
+    private LocalDateTime dateCreation;
     private byte[] contenu;
 
     @ManyToOne
     @JoinColumn(name = "tacheID")
     private Tache tache;
 
+    public Document( String nom, String description, byte[] contenu, Tache tache) {
+        this.nom = nom;
+        this.description = description;
+        this.dateCreation = LocalDateTime.now();
+        this.contenu = contenu;
+        this.tache = tache;
+    }
     // Getters et Setters
     public int getId() { return id; }
     public void setId(int id) { this.id = id; }
@@ -26,8 +34,8 @@ public class Document {
     public void setNom(String nom) { this.nom = nom; }
     public String getDescription() { return description; }
     public void setDescription(String description) { this.description = description; }
-    public LocalDate getDateCreation() { return dateCreation; }
-    public void setDateCreation(LocalDate dateCreation) { this.dateCreation = dateCreation; }
+    public LocalDateTime getDateCreation() { return dateCreation; }
+    public void setDateCreation(LocalDateTime dateCreation) { this.dateCreation = dateCreation; }
     public byte[] getContenu() { return contenu; }
     public void setContenu(byte[] contenu) { this.contenu = contenu; }
     public Tache getTache() { return tache; }
