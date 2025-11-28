@@ -1,68 +1,36 @@
 package com.example.demo.models;
 
-import java.time.LocalDateTime;
+import jakarta.persistence.*;
 
+import java.time.LocalDate;
+
+@Entity
+@Table(name = "SousTache")
 public class SousTache {
-    private  int id;
-    private  String titre;
-    private  String description;
-    private LocalDateTime dateCreation;
-    private LocalDateTime dateFin;
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    private int id;
+
+    private String titre;
+    private LocalDate dateCreation;
+    private LocalDate dateFin;
     private boolean termine;
+
+    @ManyToOne
+    @JoinColumn(name = "tacheID")
     private Tache tache;
 
-    public SousTache( String titre, String description, LocalDateTime dateFinale, Tache tache) {
-        this.titre = titre;
-        this.description = description;
-        this.dateFin= dateFinale;
-        this.termine = false;
-        this.tache=tache;
-         dateCreation=LocalDateTime.now();
-    }
-    public int getId() {
-        return id;
-    }
-    public void setId(int id) {
-        this.id = id;
-    }
-    public String getTitre() {
-        return titre;
-    }
-    public void setTitre(String titre) {
-        this.titre = titre;
-    }
-    public String getDescription() {
-        return description;
-    }
-    public void setDescription(String description) {
-        this.description = description;
-    }
-    public LocalDateTime getDateCreation() {
-        return dateCreation;
-    }
-    public void setDateCreation(LocalDateTime dateCreation) {
-        this.dateCreation = dateCreation;
-    }
-    public LocalDateTime getDateFinale() {
-        return dateFin;
-    }
-    public void setDateFinale(LocalDateTime dateFinale) {
-        this.dateFin= dateFinale;
-    }
-    public boolean getEtat() {
-        return termine;
-    }
-    public void setEtat(boolean etat) {
-        this.termine = etat;
-        if(etat) {
-               this.dateFin=LocalDateTime.now();
-    }}
-    public Tache getTache() {
-        return tache;
-    }
-    public void setTache(Tache tache) {
-        this.tache = tache;
-    }
-
-
+    // Getters et Setters
+    public int getId() { return id; }
+    public void setId(int id) { this.id = id; }
+    public String getTitre() { return titre; }
+    public void setTitre(String titre) { this.titre = titre; }
+    public LocalDate getDateCreation() { return dateCreation; }
+    public void setDateCreation(LocalDate  dateCreation) { this.dateCreation = dateCreation; }
+    public LocalDate getDateFin() { return dateFin; }
+    public void setDateFin(LocalDate  dateFin) { this.dateFin = dateFin; }
+    public boolean isTermine() { return termine; }
+    public void setTermine(boolean termine) { this.termine = termine; }
+    public Tache getTache() { return tache; }
+    public void setTache(Tache tache) { this.tache = tache; }
 }

@@ -1,59 +1,38 @@
 package com.example.demo.models;
 
-import java.time.LocalDateTime;
+import jakarta.persistence.*;
+import java.util.Date;
 
+@Entity
+@Table(name = "Message")
 public class Message {
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
     private int id;
+
     private String contenu;
-    private Membre expediteur;
-    private LocalDateTime dateEnvoi;
-    private boolean estLue;
+    private Date dateEnvoi;
+    private boolean estLu;
+
+    @ManyToOne
+    @JoinColumn(name = "membreID")
+    private Membre membre;
+
+    @ManyToOne
+    @JoinColumn(name = "projetID")
     private Projet projet;
-    public Message(String contenu, Membre expediteur, Projet projet) {
-        this.contenu = contenu;
-        this.expediteur = expediteur;
-        this.projet = projet;
-        this.dateEnvoi = LocalDateTime.now();
-        this.estLue = false;
-    }
-    public int getId() {
-        return id;
-    }
-    public void setId(int id) {
-        this.id = id;
-    }
-    public String getContenu() {
-        return contenu;
-    }
-    public void setContenu(String contenu) {
-        this.contenu = contenu;
-    }
-    public Membre getExpediteur() {
-        return expediteur;
-    }
-    public void setExpediteur(Membre expediteur) {
-        this.expediteur = expediteur;
-    }
-    public LocalDateTime getDateEnvoi() {
-        return dateEnvoi;
-    }
-    public void setDateEnvoi(LocalDateTime dateEnvoi) {
-        this.dateEnvoi = dateEnvoi;
-    }
-    public boolean isEstLue() {
-        return estLue;
-    }
-    public void setEstLue(boolean estLue) {
-        this.estLue = estLue;
-    }
-    public Projet getProjet() {
-        return projet;
-    }
-    public void setProjet(Projet projet) {
-        this.projet = projet;
-    }
 
-
-
-
+    // Getters et Setters
+    public int getId() { return id; }
+    public void setId(int id) { this.id = id; }
+    public String getContenu() { return contenu; }
+    public void setContenu(String contenu) { this.contenu = contenu; }
+    public Date getDateEnvoi() { return dateEnvoi; }
+    public void setDateEnvoi(Date dateEnvoi) { this.dateEnvoi = dateEnvoi; }
+    public boolean isEstLu() { return estLu; }
+    public void setEstLu(boolean estLu) { this.estLu = estLu; }
+    public Membre getMembre() { return membre; }
+    public void setMembre(Membre membre) { this.membre = membre; }
+    public Projet getProjet() { return projet; }
+    public void setProjet(Projet projet) { this.projet = projet; }
 }
