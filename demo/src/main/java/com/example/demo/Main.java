@@ -22,12 +22,12 @@ public class Main extends JFrame {
         // Pages disponibles
         Map<String, JPanel> pages = new LinkedHashMap<>();
         pages.put("Dashboard", new Dashboard(page -> cardLayout.show(container, page)));
+        pages.put("Membre", new Membre(page -> cardLayout.show(container, page)));
         pages.put("Tâches", new Taches(page -> cardLayout.show(container, page)));
         pages.put("Tache", new Tache());
         pages.put("Chat", new Chat());
         pages.put("Créer un projet", new CreerProjet());
         pages.put("Rejoindre un projet", new RejoindreProjet());
-        pages.put("Membre", new Membre(page -> cardLayout.show(container, page)));
 
         // Éléments du header et sidebar
         ArrayList<String> headerElements = new ArrayList<>(Arrays.asList("Dashboard", "Tâches", "Chat", "Gestion"));
