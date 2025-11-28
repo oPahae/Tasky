@@ -10,7 +10,8 @@ public class Tache {
     private  String titre;
     private  String description;
     private LocalDateTime dateCreation;
-    private LocalDateTime dateFinale;
+    private LocalDateTime dateFin;
+    private LocalDateTime dateLimite;
     private List<SousTache> sousTaches;
     private String etat;
     private Projet projet;
@@ -19,11 +20,11 @@ public class Tache {
     private List <Blockage> blockage;
     private List<Document> documents;
 
- public Tache( String titre, String description, LocalDateTime dateFinale, List<SousTache> sousTaches, Projet projet, Membre membre) {
+ public Tache( String titre, String description, LocalDateTime dateLimite, List<SousTache> sousTaches, Projet projet, Membre membre) {
        
         this.titre = titre;
         this.description = description;
-        this.dateFinale = dateFinale;
+        this.dateLimite = dateLimite;
         this.sousTaches = sousTaches;
         this.etat = "en cours";
         this.projet = projet;
@@ -56,10 +57,10 @@ public class Tache {
         this.dateCreation = dateCreation; }
 
     public LocalDateTime getDateFinale() {
-        return dateFinale; }
+        return dateFin; }
 
     public void setDateFinale(LocalDateTime dateFinale) {
-        this.dateFinale = dateFinale;}
+        this.dateFin = dateFinale;}
 
     public List<SousTache> getSousTaches() {
         return sousTaches; }
@@ -73,7 +74,7 @@ public class Tache {
     public void setEtat(String etat) {
         this.etat = etat;
         if(etat.equals("terminée")) {
-               this.dateFinale=LocalDateTime.now();
+               this.dateFin=LocalDateTime.now();
             } }
     
     public Projet getProjet() {
@@ -106,7 +107,16 @@ public class Tache {
     public void setDocuments(List<Document> documents) {
         this.documents = documents;
     }
+    public LocalDateTime getDateLimite() {
+        return dateLimite;
+    }
+    public void setDateLimite(LocalDateTime dateLimite) {
+        this.dateLimite = dateLimite;
+        if(this.etat.equals("en cours") && dateLimite.isBefore(LocalDateTime.now())) {
+            etat="Pas fini";
+    }
 
 
 
+}
 }

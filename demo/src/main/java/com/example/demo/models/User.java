@@ -12,6 +12,7 @@ public class User {
     private boolean disponibilite;
     private String email;
     private LocalDateTime dateCreation;
+    private String verifCode;
     
     public User( String nom, String prenom, String password, String competance, int telephone, boolean disponibilite, String email) {
         this.nom = nom;
@@ -76,6 +77,12 @@ public class User {
     }
     public void setDateCreation(LocalDateTime dateCreation) {
         this.dateCreation = dateCreation;
+    }
+    public String getVerifCode() {
+        return verifCode;
+    }
+    public void setVerifCode(String verifCode) {
+        this.verifCode = verifCode;
     }
 
 

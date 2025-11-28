@@ -5,15 +5,15 @@ import java.util.List;
 
 public class Projet {
     private int id;
-    private String name;
+    private String nom;
     private String description;
-    private LocalDateTime dateCreation;
+    private LocalDateTime dateDebut ;
     private LocalDateTime dateFin;
     private LocalDateTime Deadline;
     private float budget;
     private float budgetConsomme ;
     private String statut;
-    private int code;
+    private String code;
     private List<Membre> membres;
     private List<Tache> taches;
     private List<Document> documents;
@@ -22,10 +22,10 @@ public class Projet {
     private List<Appel> appels;
 
 
-    public Projet(String name, String description, LocalDateTime dateFinale, float budget, List<Membre> membres, List<Tache> taches,LocalDateTime Deadline,int code) {
-        this.name = name;
+    public Projet(String name, String description, LocalDateTime dateFinale, float budget, List<Membre> membres, List<Tache> taches,LocalDateTime Deadline,String code) {
+        this.nom = name;
         this.description = description;
-        this.dateCreation = LocalDateTime.now();
+        this.dateDebut  = LocalDateTime.now();
         this.dateFin = dateFinale;
         this.budget = budget;
         this.budgetConsomme  = 0;
@@ -42,10 +42,10 @@ public class Projet {
         this.id = id;
     }
     public String getName() {
-        return name;
+        return nom;
     }
     public void setName(String name) {
-        this.name = name;
+        this.nom = name;
     }
     public String getDescription() {
         return description;
@@ -54,10 +54,10 @@ public class Projet {
         this.description = description;
     }
     public LocalDateTime getDateCreation() {
-        return dateCreation;
+        return dateDebut ;
     }
     public void setDateCreation(LocalDateTime dateCreation) {
-        this.dateCreation = dateCreation;
+        this.dateDebut  = dateCreation;
     }
     public LocalDateTime getDateFinale() {
         return dateFin;
@@ -128,10 +128,10 @@ public class Projet {
     public void setDeadline(LocalDateTime deadline) {
         Deadline = deadline;
     }
-    public int getCode() {
+    public String getCode() {
         return code;
     }
-    public void setCode(int code) {
+    public void setCode(String code) {
         this.code = code;
     }
     

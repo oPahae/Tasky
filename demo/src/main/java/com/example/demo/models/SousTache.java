@@ -7,15 +7,15 @@ public class SousTache {
     private  String titre;
     private  String description;
     private LocalDateTime dateCreation;
-    private LocalDateTime dateFinale;
-    private boolean etat;
+    private LocalDateTime dateFin;
+    private boolean termine;
     private Tache tache;
 
     public SousTache( String titre, String description, LocalDateTime dateFinale, Tache tache) {
         this.titre = titre;
         this.description = description;
-        this.dateFinale = dateFinale;
-        this.etat = false;
+        this.dateFin= dateFinale;
+        this.termine = false;
         this.tache=tache;
          dateCreation=LocalDateTime.now();
     }
@@ -44,18 +44,18 @@ public class SousTache {
         this.dateCreation = dateCreation;
     }
     public LocalDateTime getDateFinale() {
-        return dateFinale;
+        return dateFin;
     }
     public void setDateFinale(LocalDateTime dateFinale) {
-        this.dateFinale = dateFinale;
+        this.dateFin= dateFinale;
     }
     public boolean getEtat() {
-        return etat;
+        return termine;
     }
     public void setEtat(boolean etat) {
-        this.etat = etat;
+        this.termine = etat;
         if(etat) {
-               this.dateFinale=LocalDateTime.now();
+               this.dateFin=LocalDateTime.now();
     }}
     public Tache getTache() {
         return tache;
