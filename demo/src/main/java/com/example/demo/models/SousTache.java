@@ -25,9 +25,9 @@ public class SousTache {
     public void setId(int id) { this.id = id; }
     public String getTitre() { return titre; }
     public void setTitre(String titre) { this.titre = titre; }
-    public LocalDate  getDateCreation() { return dateCreation; }
+    public LocalDate getDateCreation() { return dateCreation; }
     public void setDateCreation(LocalDate  dateCreation) { this.dateCreation = dateCreation; }
-    public LocalDate  getDateFin() { return dateFin; }
+    public LocalDate getDateFin() { return dateFin; }
     public void setDateFin(LocalDate  dateFin) { this.dateFin = dateFin; }
     public boolean isTermine() { return termine; }
     public void setTermine(boolean termine) { this.termine = termine; }

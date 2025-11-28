@@ -3,6 +3,8 @@ package com.example.demo.models;
 import jakarta.persistence.*;
 import java.util.Date;
 import java.sql.Time;
+import java.time.LocalDate;
+import java.time.LocalTime;
 
 @Entity
 @Table(name = "Appel")
@@ -11,7 +13,7 @@ public class Appel {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private int id;
 
-    private Date dateAppel;
+    private LocalDate dateAppel;
     private Time heureDebut;
     private Time heureFin;
     private int duree;
@@ -27,8 +29,8 @@ public class Appel {
     // Getters et Setters
     public int getId() { return id; }
     public void setId(int id) { this.id = id; }
-    public Date getDateAppel() { return dateAppel; }
-    public void setDateAppel(Date dateAppel) { this.dateAppel = dateAppel; }
+    public LocalDate getDateAppel() { return dateAppel; }
+    public void setDateAppel(LocalDate dateAppel) { this.dateAppel = dateAppel; }
     public Time getHeureDebut() { return heureDebut; }
     public void setHeureDebut(Time heureDebut) { this.heureDebut = heureDebut; }
     public Time getHeureFin() { return heureFin; }
