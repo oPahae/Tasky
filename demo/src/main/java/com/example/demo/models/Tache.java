@@ -29,6 +29,7 @@ public class Tache {
         this.etat = "en cours";
         this.projet = projet;
         this.membre = membre;
+        this.dateFin=null;
         this.dateCreation=LocalDateTime.now();
     }
 
