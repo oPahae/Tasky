@@ -13,6 +13,8 @@ public class User {
     private String email;
     private LocalDateTime dateCreation;
     private String verifCode;
+
+    
     
     public User( String nom, String prenom, String password, String competance, int telephone, boolean disponibilite, String email) {
         this.nom = nom;
