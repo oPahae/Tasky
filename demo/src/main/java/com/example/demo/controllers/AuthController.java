@@ -14,7 +14,7 @@ import com.example.demo.dto.AuthResponse;
 import com.example.demo.dto.LoginRequest;
 import com.example.demo.dto.RegisterRequest;
 import com.example.demo.jwt.JwtUtil;
-import com.example.demo.repository.UserRepository;
+import com.example.demo.repositories.UserRepository;
 
 @RestController
 @RequestMapping("/auth")
