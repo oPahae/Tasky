@@ -1,52 +1,32 @@
 package com.example.demo.models;
 
-import java.time.LocalDateTime;
+import jakarta.persistence.*;
+import java.util.Date;
 
+@Entity
+@Table(name = "Notification")
 public class Notification {
-    
- private int id;
- private String contenu;
- private LocalDateTime dateEnvoie;
- private Membre destinataire;
- private boolean estLue;
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    private int id;
 
-    public Notification(String contenu, Membre destinataire) {
-        
-        this.contenu = contenu;
-        this.destinataire = destinataire;
-        this.dateEnvoie = LocalDateTime.now();
-        this.estLue = false;
-    }
-    public int getId() {
-        return id;
-    }
-    public void setId(int id) {
-        this.id = id;
-    }
-    public String getContenu() {
-        return contenu;
-    }
-    public void setContenu(String contenu) {
-        this.contenu = contenu;
-    }
-    public LocalDateTime getDateEnvoie() {
-        return dateEnvoie;
-    }
-    public void setDateEnvoie(LocalDateTime dateEnvoie) {
-        this.dateEnvoie = dateEnvoie;
-    }
-    public Membre getDestinataire() {
-        return destinataire;
-    }
-    public void setDestinataire(Membre destinataire) {
-        this.destinataire = destinataire;
-    }
-    public boolean isEstLue() {
-        return estLue;
-    }
-    public void setEstLue(boolean estLue) {
-        this.estLue = estLue;
-    }
+    private String contenu;
+    private Date dateEnvoie;
+    private boolean estLue;
 
+    @ManyToOne
+    @JoinColumn(name = "membreID")
+    private Membre membre;
 
+    // Getters et Setters
+    public int getId() { return id; }
+    public void setId(int id) { this.id = id; }
+    public String getContenu() { return contenu; }
+    public void setContenu(String contenu) { this.contenu = contenu; }
+    public Date getDateEnvoie() { return dateEnvoie; }
+    public void setDateEnvoie(Date dateEnvoie) { this.dateEnvoie = dateEnvoie; }
+    public boolean isEstLue() { return estLue; }
+    public void setEstLue(boolean estLue) { this.estLue = estLue; }
+    public Membre getMembre() { return membre; }
+    public void setMembre(Membre membre) { this.membre = membre; }
 }

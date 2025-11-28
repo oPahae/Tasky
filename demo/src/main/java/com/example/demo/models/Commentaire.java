@@ -1,51 +1,36 @@
 package com.example.demo.models;
 
-import java.time.LocalDateTime;
+import jakarta.persistence.*;
 
+import java.time.LocalDate;
+
+@Entity
+@Table(name = "Commentaire")
 public class Commentaire {
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
     private int id;
+
     private String contenu;
-    private Membre auteur;
+    private LocalDate dateCreation;
+
+    @ManyToOne
+    @JoinColumn(name = "tacheID")
     private Tache tache;
-    private LocalDateTime dateCreation;
 
-    public Commentaire(String contenu, Membre auteur, Tache tache) {
-        this.contenu = contenu;
-        this.auteur = auteur;
-        this.tache = tache;
-        this.dateCreation = LocalDateTime.now();
-    }
-    public int getId() {
-        return id;
-    }
-    public void setId(int id) {
-        this.id = id;
-    }
-    public String getContenu() {
-        return contenu;
-    }
-    public void setContenu(String contenu) {
-        this.contenu = contenu;
-    }
-    public Membre getAuteur() {
-        return auteur;
-    }
-    public void setAuteur(Membre auteur) {
-        this.auteur = auteur;
-    }
-    public Tache getTache() {
-        return tache;
-    }
+    @ManyToOne
+    @JoinColumn(name = "membreID")
+    private Membre membre;
 
-    public void setTache(Tache tache) {
-        this.tache = tache;
-    }
-    public LocalDateTime getDateCreation() {
-        return dateCreation;
-    }
-    public void setDateCreation(LocalDateTime dateCreation) {
-        this.dateCreation = dateCreation;
-    }
-    
-
+    // Getters et Setters
+    public int getId() { return id; }
+    public void setId(int id) { this.id = id; }
+    public String getContenu() { return contenu; }
+    public void setContenu(String contenu) { this.contenu = contenu; }
+    public LocalDate getDateCreation() { return dateCreation; }
+    public void setDateCreation(LocalDate dateCreation) { this.dateCreation = dateCreation; }
+    public Tache getTache() { return tache; }
+    public void setTache(Tache tache) { this.tache = tache; }
+    public Membre getMembre() { return membre; }
+    public void setMembre(Membre membre) { this.membre = membre; }
 }
