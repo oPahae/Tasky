@@ -27,7 +27,7 @@ CREATE TABLE Projet (
     budget FLOAT,
     budgetConsomme FLOAT,
     statut VARCHAR(50),
-    code String
+    code VARCHAR(50)
 );
 
 -- TABLE MEMBRE
@@ -105,9 +105,7 @@ CREATE TABLE Blocage (
     dateSignalement DATE,
     statut VARCHAR(50),
     dateResolution DATE,
-    documentID INT,
     tacheID INT,
-    FOREIGN KEY (documentID) REFERENCES Document(id),
     FOREIGN KEY (tacheID) REFERENCES Tache(id)
 );
 
@@ -142,8 +140,8 @@ CREATE TABLE Notification (
     contenu VARCHAR(255),
     dateEnvoie DATE,
     estLue BOOLEAN,
-    userID INT,
-    FOREIGN KEY (userID) REFERENCES User(id)
+    membreID INT,
+    FOREIGN KEY (membreID) REFERENCES Membre(id)
 );
 
 -- TABLE DE LIAISON TACHE-MEMBRE
