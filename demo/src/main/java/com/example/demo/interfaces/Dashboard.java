@@ -5,10 +5,14 @@ import com.example.demo.components.Scrollbar;
 
 import javax.swing.*;
 import javax.swing.border.*;
+
+import org.apache.catalina.Container;
+
 import java.awt.*;
 import java.awt.geom.*;
 import java.util.*;
 import java.util.List;
+import java.util.function.Consumer;
 
 public class Dashboard extends JPanel {
     private int theme;
@@ -18,9 +22,11 @@ public class Dashboard extends JPanel {
     private JPanel mainContentPanel;
     private CardLayout contentLayout;
     private int colorCounter = 0;
+    private Consumer<String> onClick;
 
-    public Dashboard() {
+    public Dashboard(Consumer<String> onClick) {
         this.theme = Params.theme;
+        this.onClick = onClick;
         initializeColors();
         initializeDemoData();
         setLayout(new BorderLayout());
@@ -72,13 +78,13 @@ public class Dashboard extends JPanel {
         tasks.add(new Task("Documentation", 30, "Docs"));
 
         // Demo members
-        members.add(new ProjectMember("Alice", "Martin", "Chef de projet",
+        members.add(new ProjectMember(1, "Alice", "Martin", "Chef de projet",
                 Arrays.asList("Conception UI/UX", "Documentation")));
-        members.add(new ProjectMember("Bob", "Durant", "Développeur Backend",
+        members.add(new ProjectMember(2, "Bob", "Durant", "Développeur Backend",
                 Arrays.asList("API Backend", "Tests unitaires")));
-        members.add(new ProjectMember("Charlie", "Dubois", "Développeur Frontend",
+        members.add(new ProjectMember(3, "Charlie", "Dubois", "Développeur Frontend",
                 Arrays.asList("Intégration Frontend")));
-        members.add(new ProjectMember("Diana", "Rousseau", "QA Engineer",
+        members.add(new ProjectMember(4, "Diana", "Rousseau", "QA Engineer",
                 Arrays.asList("Tests unitaires")));
     }
 
@@ -177,6 +183,7 @@ public class Dashboard extends JPanel {
         // Emoji icon
         JLabel iconLabel = new JLabel(emoji);
         iconLabel.setFont(new Font("Segoe UI Emoji", Font.PLAIN, 32));
+        iconLabel.setForeground(accentColor);
         card.add(iconLabel, BorderLayout.WEST);
 
         // Text content
@@ -429,22 +436,12 @@ public class Dashboard extends JPanel {
         card.add(tasksPanel, BorderLayout.CENTER);
 
         // Click listener
+
+
         card.addMouseListener(new java.awt.event.MouseAdapter() {
-            @Override
-            public void mouseClicked(java.awt.event.MouseEvent e) {
-                showMemberDetail(member, color);
-            }
-
-            @Override
-            public void mouseEntered(java.awt.event.MouseEvent e) {
-                card.setBorder(BorderFactory.createCompoundBorder(
-                        BorderFactory.createLineBorder(accentColor, 2, true),
-                        BorderFactory.createEmptyBorder(18, 18, 18, 18)));
-            }
-
-            @Override
-            public void mouseExited(java.awt.event.MouseEvent e) {
-                card.setBorder(BorderFactory.createEmptyBorder(20, 20, 20, 20));
+            public void mouseClicked(java.awt.event.MouseEvent evt) {
+                Params.membreID = member.id;
+                onClick.accept("Membre");
             }
         });
 
@@ -679,12 +676,14 @@ public class Dashboard extends JPanel {
 
     // Classes internes pour les données
     private static class ProjectMember {
+        int id;
         String firstName;
         String lastName;
         String role;
         List<String> assignedTasks;
 
-        public ProjectMember(String firstName, String lastName, String role, List<String> assignedTasks) {
+        public ProjectMember(int id, String firstName, String lastName, String role, List<String> assignedTasks) {
+            this.id = id;
             this.firstName = firstName;
             this.lastName = lastName;
             this.role = role;
