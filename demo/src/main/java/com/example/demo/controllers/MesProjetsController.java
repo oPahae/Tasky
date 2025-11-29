@@ -84,7 +84,7 @@ public class MesProjetsController {
         Projet pr=projetRepository.findById(id);
         return pr.getTaches();
     }
-    @GetMapping("Projet/{id}/taches")
+    @GetMapping("Projet/{id}/membre")
     public List<Membre> membresdeProjet(int id){
         Projet pr=projetRepository.findById(id);
         return pr.getMembres();
