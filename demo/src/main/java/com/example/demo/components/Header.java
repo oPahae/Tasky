@@ -24,8 +24,6 @@ public class Header extends JPanel {
         setLayout(new BorderLayout());
         setBackground(bgColor);
         setBorder(new EmptyBorder(16, 24, 16, 24));
-
-        // Left section with navigation buttons
         JPanel leftSection = new JPanel(new FlowLayout(FlowLayout.LEFT, 6, 0));
         leftSection.setBackground(bgColor);
 
@@ -35,16 +33,10 @@ public class Header extends JPanel {
         }
 
         add(leftSection, BorderLayout.WEST);
-
-        // Right section with theme toggle and actions
         JPanel rightSection = new JPanel(new FlowLayout(FlowLayout.RIGHT, 8, 0));
         rightSection.setBackground(bgColor);
-
-        // Notifications button with badge
         JButton notifBtn = createNotificationButton();
         rightSection.add(notifBtn);
-
-        // Theme toggle button
         themeToggleBtn = createThemeToggleButton();
         rightSection.add(themeToggleBtn);
 
@@ -249,22 +241,7 @@ public class Header extends JPanel {
     }
 
     private void toggleTheme() {
-        // Toggle theme
-        theme = (theme == 0) ? 1 : 0;
-        Params.theme = theme;
-
-        // Update colors
-        initializeColors();
-
-        // Update theme button icon
-        JLabel iconLabel = (JLabel) themeToggleBtn.getComponent(0);
-        iconLabel.setText(theme == 0 ? "☀" : "🌙");
-        iconLabel.setForeground(textPrimary);
-        themeToggleBtn.setToolTipText(theme == 0 ? "Mode sombre" : "Mode clair");
-
-        // Refresh this panel
-        updateUI();
-        repaint();
+        Params.theme = Params.theme == 0 ? 1 : 0;
     }
 
     // Method to update colors when theme changes externally

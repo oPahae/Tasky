@@ -31,7 +31,6 @@ public class Dashboard extends JPanel {
         initializeDemoData();
         setLayout(new BorderLayout());
         setBackground(bgColor);
-
         contentLayout = new CardLayout();
         mainContentPanel = new JPanel(contentLayout);
         mainContentPanel.setBackground(bgColor);
@@ -436,7 +435,6 @@ public class Dashboard extends JPanel {
         card.add(tasksPanel, BorderLayout.CENTER);
 
         // Click listener
-
 
         card.addMouseListener(new java.awt.event.MouseAdapter() {
             public void mouseClicked(java.awt.event.MouseEvent evt) {

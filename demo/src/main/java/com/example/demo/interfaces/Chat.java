@@ -29,7 +29,6 @@ public class Chat extends JPanel {
         initializeDemoData();
         setLayout(new BorderLayout());
         setBackground(bgColor);
-
         add(createTopBar(), BorderLayout.NORTH);
         add(createMessagesArea(), BorderLayout.CENTER);
         add(createInputArea(), BorderLayout.SOUTH);
@@ -196,7 +195,8 @@ public class Chat extends JPanel {
                         : new Color(245, 158, 11));
                 roleLabel.setBorder(BorderFactory.createCompoundBorder(
                         BorderFactory.createLineBorder(msg.type.equals("RESPONSABLE")
-                                ? new Color(139, 92, 246, 150) : new Color(245, 158, 11, 150), 1, true),
+                                ? new Color(139, 92, 246, 150)
+                                : new Color(245, 158, 11, 150), 1, true),
                         BorderFactory.createEmptyBorder(3, 8, 3, 8)));
                 roleLabel.setOpaque(false);
                 infoPanel.add(roleLabel);
