@@ -1,4 +1,5 @@
 package com.example.demo.hooks;
+
 import java.time.LocalDate;
 
 public class TacheDTO {
@@ -9,6 +10,8 @@ public class TacheDTO {
     public String etat;
     public LocalDate dateCreation;
     public LocalDate dateFin;
+
+    public TacheDTO() {}
 
     public TacheDTO(int id, String titre, String description, LocalDate dateLimite, String etat,
             LocalDate dateCreation, LocalDate dateFin) {

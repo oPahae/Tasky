@@ -7,5 +7,5 @@ public interface ProjetRepository extends  JpaRepository<Projet, Integer> {
     Projet findByNom(String name);
     Projet findById(int id);
     Projet findByCode(String code);
-    List<Projet> findByMembresId(int id);
+    List<Projet> findByMembres_Id(int id);
 }
