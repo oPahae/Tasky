@@ -39,18 +39,19 @@ public class TachesController {
         return dto;
     }
 
-    @GetMapping("/taches/add/membre/{id}")
-    public boolean addtachetoMember(int idTache, int id1) {
+    @GetMapping("/taches/{idTache}/add/membre/{idMembre}")
+    public boolean addtachetoMember(@PathVariable("idTache") int idTache, @PathVariable("idMembre") int id1) {
         Tache t = tacheRepository.findById(idTache).orElse(null);
         Membre m = membreRepository.findById(id1).orElse(null);
         if (t != null && m != null) {
             t.getMembres().add(m);
+            tacheRepository.save(t);
             return true;
         }
         return false;
     }
 
-    @GetMapping("/taches")
+    @GetMapping("/taches/all")
     public List<TacheDTO> getTaches() {
         return tacheRepository.findAll()
                 .stream()
@@ -148,8 +149,8 @@ public class TachesController {
         return false;
     }
 
-    @GetMapping("/taches/{id}/membre/{id}/progress")
-    public double getProgress(@PathVariable int id) {
+    @GetMapping("/taches/{idTache}/progress")
+    public double getProgress(@PathVariable("idTache") int id) {
         Tache t = tacheRepository.findById(id).orElse(null);
         if (t != null) {
             List<SousTache> staches = t.getSousTaches();
