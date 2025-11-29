@@ -990,8 +990,53 @@ public class Tache extends JPanel {
     }
 
     private void downloadDocument(Document doc) {
-        JOptionPane.showMessageDialog(this, "Téléchargement de: " + doc.name, "Téléchargement",
-                JOptionPane.INFORMATION_MESSAGE);
+        Queries.get("/api/tache/" + tacheId)
+                .thenAccept(response -> {
+                    SwingUtilities.invokeLater(() -> {
+                        if (response.containsKey("error")) {
+                            JOptionPane.showMessageDialog(this, "Erreur: " + response.get("error"), "Erreur",
+                                    JOptionPane.ERROR_MESSAGE);
+                        } else {
+                            try {
+                                Map<String, Object> tacheData = (Map<String, Object>) response.get("tache");
+                                List<Map<String, Object>> documentsData = (List<Map<String, Object>>) tacheData
+                                        .get("documents");
+
+                                // Trouver le document correspondant par nom
+                                for (Map<String, Object> docData : documentsData) {
+                                    if (docData.get("nom").equals(doc.name)) {
+                                        String contenuBase64 = (String) docData.get("contenuBase64");
+                                        byte[] fileContent = Base64.getDecoder().decode(contenuBase64);
+
+                                        // Ouvrir une boîte de dialogue pour choisir l'emplacement d'enregistrement
+                                        JFileChooser fileChooser = new JFileChooser();
+                                        fileChooser.setSelectedFile(new File(doc.name));
+                                        int userSelection = fileChooser.showSaveDialog(this);
+
+                                        if (userSelection == JFileChooser.APPROVE_OPTION) {
+                                            File fileToSave = fileChooser.getSelectedFile();
+                                            try (FileOutputStream fos = new FileOutputStream(fileToSave)) {
+                                                fos.write(fileContent);
+                                                JOptionPane.showMessageDialog(this, "Document téléchargé avec succès !",
+                                                        "Succès", JOptionPane.INFORMATION_MESSAGE);
+                                            } catch (IOException ex) {
+                                                JOptionPane
+                                                        .showMessageDialog(this,
+                                                                "Erreur lors de l'enregistrement du fichier: "
+                                                                        + ex.getMessage(),
+                                                                "Erreur", JOptionPane.ERROR_MESSAGE);
+                                            }
+                                        }
+                                        break;
+                                    }
+                                }
+                            } catch (Exception e) {
+                                JOptionPane.showMessageDialog(this, "Erreur lors du téléchargement: " + e.getMessage(),
+                                        "Erreur", JOptionPane.ERROR_MESSAGE);
+                            }
+                        }
+                    });
+                });
     }
 
     private Color getRandomColor() {
