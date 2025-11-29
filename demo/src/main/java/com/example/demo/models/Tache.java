@@ -39,6 +39,7 @@ public class Tache {
     @ManyToMany(mappedBy = "taches")
     private List<Membre> membres;
 
+    public Tache() {}
     public Tache(String titre,String description,LocalDate dateLimite,Projet projet,List<Membre> membres) {
         this.titre=titre;
         this.description=description;

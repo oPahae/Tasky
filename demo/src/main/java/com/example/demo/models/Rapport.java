@@ -19,6 +19,7 @@ public class Rapport {
     @JoinColumn(name = "projetID")
     private Projet projet;
 
+    public Rapport() {}
     public Rapport(String nom, Projet projet) {
         this.dateGeneration = LocalDate.now();
         this.nom = nom;

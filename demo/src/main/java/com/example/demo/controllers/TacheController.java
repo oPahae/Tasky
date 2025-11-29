@@ -1,26 +1,36 @@
 package com.example.demo.controllers;
 
 import com.example.demo.models.*;
+import com.example.demo.hooks.*;
 import com.example.demo.repositories.*;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
+
+import java.lang.annotation.Documented;
 import java.time.LocalDate;
 import java.util.List;
 import java.util.Map;
 import java.util.HashMap;
+import java.util.Base64;
 
 @RestController
 @RequestMapping("/api/tache")
 public class TacheController {
+
     @Autowired
     private TacheRepository tacheRepository;
+
     @Autowired
     private SousTacheRepository sousTacheRepository;
+
     @Autowired
     private DocumentRepository documentRepository;
+
     @Autowired
     private CommentaireRepository commentaireRepository;
+
     @Autowired
     private BlocageRepository blocageRepository;
 
@@ -29,7 +39,6 @@ public class TacheController {
     public ResponseEntity<Map<String, Object>> getTacheData(@PathVariable int id) {
         Tache tache = tacheRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Tâche non trouvée"));
-
         List<SousTache> sousTaches = sousTacheRepository.findByTacheId(id);
         List<Document> documents = documentRepository.findByTacheId(id);
         List<Commentaire> commentaires = commentaireRepository.findByTacheId(id);
@@ -49,9 +58,21 @@ public class TacheController {
                 .map(st -> new SousTacheDTO(st.getId(), st.getTitre(), st.isTermine()))
                 .toList();
 
-        // DTO Document
+        // DTO Document (avec contenu en base64)
         List<DocumentDTO> documentsDTO = documents.stream()
-                .map(d -> new DocumentDTO(d.getId(), d.getNom(), d.getDescription()))
+                .map(d -> {
+                    String contenuBase64 = Base64.getEncoder().encodeToString(d.getContenu());
+                    String type = DocumentDTO.getFileType(d.getNom());
+                    int size = d.getContenu().length / 1024;
+                    return new DocumentDTO(
+                            d.getId(),
+                            d.getNom(),
+                            d.getDescription(),
+                            contenuBase64,
+                            d.getDateCreation(),
+                            size,
+                            type);
+                })
                 .toList();
 
         // DTO Commentaire
@@ -72,7 +93,6 @@ public class TacheController {
 
         Map<String, Object> response = new HashMap<>();
         response.put("tache", tacheWrapper);
-
         return ResponseEntity.ok(response);
     }
 
@@ -99,17 +119,44 @@ public class TacheController {
         return ResponseEntity.ok(updated);
     }
 
-    // Ajouter un document
+    // ajouter doc
     @PostMapping("/{id}/document")
-    public ResponseEntity<Document> addDocument(@PathVariable int id, @RequestBody Map<String, String> payload) {
-        Tache tache = tacheRepository.findById(id).orElseThrow(() -> new RuntimeException("Tâche non trouvée"));
+    public ResponseEntity<Map<String, Object>> addDocument(
+            @PathVariable int id,
+            @RequestBody Map<String, String> payload) throws Exception {
+
+        Tache tache = tacheRepository.findById(id)
+                .orElseThrow(() -> new RuntimeException("Tâche non trouvée"));
+
+        // Récupérer le contenu en base64 depuis le payload
+        String base64Content = payload.get("contenu");
+        byte[] fileBytes = Base64.getDecoder().decode(base64Content);
+
+        // Créer et sauvegarder le document
         Document document = new Document();
         document.setNom(payload.get("nom"));
         document.setDescription(payload.get("description"));
+        document.setContenu(fileBytes); // Stocke les bytes bruts en BLOB
         document.setDateCreation(LocalDate.now());
         document.setTache(tache);
+
         Document saved = documentRepository.save(document);
-        return ResponseEntity.ok(saved);
+
+        // Retourner une réponse avec le DTO
+        DocumentDTO documentDTO = new DocumentDTO(
+                saved.getId(),
+                saved.getNom(),
+                saved.getDescription(),
+                base64Content, // On renvoie le même contenu en base64
+                saved.getDateCreation(),
+                base64Content.length() / 1024,
+                DocumentDTO.getFileType(saved.getNom()));
+
+        Map<String, Object> response = new HashMap<>();
+        response.put("document", documentDTO);
+        response.put("message", "Document ajouté avec succès !");
+
+        return ResponseEntity.ok(response);
     }
 
     // Ajouter un commentaire
@@ -139,71 +186,16 @@ public class TacheController {
 
     // Ajouter une dépense
     @PostMapping("/{id}/depense")
-    public ResponseEntity<Tache> addDepense(@PathVariable int id, @RequestBody Map<String, Integer> payload) {
+    public ResponseEntity<Map<String, Object>> addDepense(@PathVariable int id,
+            @RequestBody Map<String, Integer> payload) {
         Tache tache = tacheRepository.findById(id).orElseThrow(() -> new RuntimeException("Tâche non trouvée"));
         int montant = payload.get("montant");
         tache.setDepense(tache.getDepense() + montant);
         Tache updated = tacheRepository.save(tache);
-        return ResponseEntity.ok(updated);
-    }
 
-    // ---------------- DTO internes ----------------
-    private static class TacheDTO {
-        public int id;
-        public String titre;
-        public String description;
-        public LocalDate dateLimite;
-        public String etat;
-        public LocalDate dateCreation;
-        public LocalDate dateFin;
-
-        public TacheDTO(int id, String titre, String description, LocalDate dateLimite, String etat,
-                LocalDate dateCreation, LocalDate dateFin) {
-            this.id = id;
-            this.titre = titre;
-            this.description = description;
-            this.dateLimite = dateLimite;
-            this.etat = etat;
-            this.dateCreation = dateCreation;
-            this.dateFin = dateFin;
-        }
-    }
-
-    private static class SousTacheDTO {
-        public int id;
-        public String titre;
-        public boolean termine;
-
-        public SousTacheDTO(int id, String titre, boolean termine) {
-            this.id = id;
-            this.titre = titre;
-            this.termine = termine;
-        }
-    }
-
-    private static class DocumentDTO {
-        public int id;
-        public String nom;
-        public String description;
-
-        public DocumentDTO(int id, String nom, String description) {
-            this.id = id;
-            this.nom = nom;
-            this.description = description;
-        }
-    }
-
-    private static class CommentaireDTO {
-        public int id;
-        public String author;
-        public String contenu;
-        public LocalDate dateCreation;
-
-        public CommentaireDTO(int id, String author, String contenu, LocalDate dateCreation) {
-            this.id = id;
-            this.author = author;
-            this.contenu = contenu;
-            this.dateCreation = dateCreation;
-        }
+        Map<String, Object> response = new HashMap<>();
+        response.put("tache", updated);
+        response.put("message", "Dépense ajoutée avec succès !");
+        return ResponseEntity.ok(response);
     }
 }

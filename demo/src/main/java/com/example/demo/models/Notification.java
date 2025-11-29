@@ -18,6 +18,7 @@ public class Notification {
     @JoinColumn(name = "membreID")
     private Membre membre;
 
+    public Notification() {}
     public Notification(String contenu ,boolean estLue) {
         this.contenu = contenu;
         this.dateEnvoie = new Date();
