@@ -46,7 +46,7 @@ public class MesProjetsController {
         projetRepository.deleteById(id);
      }
      @PostMapping("projet/add")
-     public void addProjet(Projet p){
+     public void addProjet(@RequestBody Projet p){
         projetRepository.save(p);
      }
      @GetMapping("/projet/membre/{id}")
@@ -57,7 +57,7 @@ public class MesProjetsController {
         }
     
     @PutMapping("projet/modifier/{id}")
-    public boolean updateProjetById(@PathVariable int id, Projet pr){
+    public boolean updateProjetById(@PathVariable int id,@RequestBody Projet pr){
                     Projet pr1 = projetRepository.findById(id);
                     if(pr1 != null){
                         pr1.setNom(pr.getNom());
@@ -77,7 +77,7 @@ public class MesProjetsController {
 
 
       @GetMapping("projet/{id}/Membre")
-    public List<MembreDTO> getMembreProjet(int id){
+    public List<MembreDTO> getMembreProjet(@PathVariable int id){
         Projet pr=projetRepository.findById(id);
         List<Membre>m= pr.getMembres();
         if(pr!=null && m!=null){
@@ -86,7 +86,7 @@ public class MesProjetsController {
         return null;
      
     }
- private ProjetDTO convertToProjetDTO(Projet t) {
+ private ProjetDTO convertToProjetDTO( Projet t) {
         if (t == null) return null;
         ProjetDTO dto = new ProjetDTO();
         dto.id=t.getId();
@@ -103,7 +103,7 @@ public class MesProjetsController {
         return dto;}
 
 
-    private MembreDTO convertToMembreDTO(Membre t) {
+    private MembreDTO convertToMembreDTO( Membre t) {
         if (t == null) return null;
         MembreDTO dto = new MembreDTO();
         dto.id=t.getId();
@@ -116,7 +116,7 @@ public class MesProjetsController {
 
 
         return dto;}
-    @GetMapping("/Projet/{id}/progress")
+    @GetMapping("/projet/{id}/progress")
     public double getProgressProjet(@PathVariable int id){
         Projet p=projetRepository.findById(id);
         if(p!=null){
