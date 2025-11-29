@@ -86,7 +86,9 @@ CREATE TABLE Document (
     nom VARCHAR(150),
     description VARCHAR(255),
     dateCreation DATE,
-    contenu BLOB,
+    contenu LONGBLOB,
+    size INT,
+    type VARCHAR(50),
     tacheID INT,
     FOREIGN KEY (tacheID) REFERENCES Tache(id)
 );
