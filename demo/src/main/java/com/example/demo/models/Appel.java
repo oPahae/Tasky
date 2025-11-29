@@ -26,6 +26,13 @@ public class Appel {
     @JoinColumn(name = "initiateurID")
     private Membre initiateur;
 
+    public Appel(){}
+    public Appel(Membre mbr,Projet pr){
+        this.initiateur=mbr;
+        this.projet=pr;
+        this.dateAppel=LocalDate.now();
+        this.duree=0;
+    }
     // Getters et Setters
     public int getId() { return id; }
     public void setId(int id) { this.id = id; }

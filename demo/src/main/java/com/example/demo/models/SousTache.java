@@ -20,6 +20,13 @@ public class SousTache {
     @JoinColumn(name = "tacheID")
     private Tache tache;
 
+    public SousTache() {}
+    public SousTache(String titre ,LocalDate datefin){
+        this.titre=titre;
+        this.dateCreation=LocalDate.now();
+        this.dateFin=datefin;;
+        this.termine=false;
+    }
     // Getters et Setters
     public int getId() { return id; }
     public void setId(int id) { this.id = id; }
@@ -30,7 +37,11 @@ public class SousTache {
     public LocalDate getDateFin() { return dateFin; }
     public void setDateFin(LocalDate  dateFin) { this.dateFin = dateFin; }
     public boolean isTermine() { return termine; }
-    public void setTermine(boolean termine) { this.termine = termine; }
+    public void setTermine(boolean termine) { this.termine = termine; 
+        if(termine){
+            this.dateFin=LocalDate.now();
+        }
+    }
     public Tache getTache() { return tache; }
     public void setTache(Tache tache) { this.tache = tache; }
 }

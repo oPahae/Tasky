@@ -18,6 +18,11 @@ public class Notification {
     @JoinColumn(name = "membreID")
     private Membre membre;
 
+    public Notification(String contenu ,boolean estLue) {
+        this.contenu = contenu;
+        this.dateEnvoie = new Date();
+        this.estLue = estLue;
+    }
     // Getters et Setters
     public int getId() { return id; }
     public void setId(int id) { this.id = id; }

@@ -39,6 +39,15 @@ public class Tache {
     @ManyToMany(mappedBy = "taches")
     private List<Membre> membres;
 
+    public Tache(String titre,String description,LocalDate dateLimite,Projet projet,List<Membre> membres) {
+        this.titre=titre;
+        this.description=description;
+        this.dateLimite=dateLimite;
+        this.projet=projet;
+        this.membres=membres;
+        this.dateCreation=LocalDate.now();
+
+    }
     // Getters et Setters
     public int getId() { return id; }
     public void setId(int id) { this.id = id; }
@@ -49,7 +58,10 @@ public class Tache {
     public LocalDate getDateLimite() { return dateLimite; }
     public void setDateLimite(LocalDate dateLimite) { this.dateLimite = dateLimite; }
     public String getEtat() { return etat; }
-    public void setEtat(String etat) { this.etat = etat; }
+    public void setEtat(String etat) { this.etat = etat; 
+    if(etat.equals("terminée")){
+        this.dateFin=LocalDate.now();
+    }}
     public LocalDate getDateCreation() { return dateCreation; }
     public void setDateCreation(LocalDate dateCreation) { this.dateCreation = dateCreation; }
     public LocalDate getDateFin() { return dateFin; }

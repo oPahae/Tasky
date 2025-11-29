@@ -10,11 +10,13 @@ public class Membre {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private int id;
-
+    private String nom;
+    private String email;
     private String description;
     private Date dateRejointe;
     private String role;
     private String type;
+    private String password;
 
     @ManyToOne
     @JoinColumn(name = "userID")
@@ -41,6 +43,19 @@ public class Membre {
     )
     private List<Tache> taches;
 
+    public Membre(){}
+    public Membre(String nom,String email,String description,String role,String type,String password) {
+        this.nom=nom;
+        this.email=email;
+        this.description=description;
+        this.role=role;
+        this.type=type;
+        this.password=password;
+        this.dateRejointe=new Date();
+    }
+
+
+    
     // Getters et Setters
     public int getId() { return id; }
     public void setId(int id) { this.id = id; }
@@ -64,4 +79,15 @@ public class Membre {
     public void setNotifications(List<Notification> notifications) { this.notifications = notifications; }
     public List<Tache> getTaches() { return taches; }
     public void setTaches(List<Tache> taches) { this.taches = taches; }
+    public String getNom() { return nom; }
+    public void setNom(String nom) { this.nom = nom; }
+    public String getEmail() { return email; }
+    public void setEmail(String email) { this.email = email; }
+    public void setPassword(String pass){
+        this.password=pass;
+    }
+    public String getPassword(){
+        return password;
+    }
+
 }

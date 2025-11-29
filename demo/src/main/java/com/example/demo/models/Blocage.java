@@ -20,6 +20,17 @@ public class Blocage {
     @JoinColumn(name = "tacheID")
     private Tache tache;
 
+    public Blocage(){}
+    public Blocage(String desc,String statut){
+        this.description=desc;
+        this.statut=statut;
+        this.dateSignalement=LocalDate.now();
+        this.dateResolution=null;
+    }
+
+
+
+
     // Getters et Setters
     public int getId() { return id; }
     public void setId(int id) { this.id = id; }
@@ -28,7 +39,11 @@ public class Blocage {
     public LocalDate getDateSignalement() { return dateSignalement; }
     public void setDateSignalement(LocalDate dateSignalement) { this.dateSignalement = dateSignalement; }
     public String getStatut() { return statut; }
-    public void setStatut(String statut) { this.statut = statut; }
+    public void setStatut(String statut) { this.statut = statut; 
+        if(statut.equals("Résolu")){
+            this.dateResolution=LocalDate.now();
+        }
+    }
     public LocalDate getDateResolution() { return dateResolution; }
     public void setDateResolution(LocalDate dateResolution) { this.dateResolution = dateResolution; }
     public Tache getTache() { return tache; }

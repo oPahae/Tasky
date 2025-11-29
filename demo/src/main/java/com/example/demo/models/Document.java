@@ -19,6 +19,14 @@ public class Document {
     @JoinColumn(name = "tacheID")
     private Tache tache;
 
+
+    public Document(){}
+    public Document(String nom,String description,byte[] contenu){
+        this.contenu=contenu;
+        this.nom=nom;
+        this.description=description;
+        this.dateCreation=LocalDate.now();
+    }
     // Getters et Setters
     public int getId() { return id; }
     public void setId(int id) { this.id = id; }

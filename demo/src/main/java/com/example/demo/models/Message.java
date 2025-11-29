@@ -22,6 +22,12 @@ public class Message {
     @JoinColumn(name = "projetID")
     private Projet projet;
 
+    public Message(String contenu ,boolean estLu,Projet projet) {
+        this.contenu = contenu;
+        this.dateEnvoi = new Date();
+        this.projet = projet;
+        this.estLu = estLu;
+    }
     // Getters et Setters
     public int getId() { return id; }
     public void setId(int id) { this.id = id; }

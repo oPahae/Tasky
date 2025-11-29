@@ -29,6 +29,11 @@ public class Commentaire {
     @JoinColumn(name = "membreID")
     private Membre membre;
 
+    public Commentaire(){}
+    public Commentaire(String contenu){
+     this.contenu=contenu;
+     this.dateCreation=LocalDate.now();
+    }
     // Getters et Setters
     public int getId() { return id; }
     public void setId(int id) { this.id = id; }

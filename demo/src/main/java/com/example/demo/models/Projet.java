@@ -36,6 +36,16 @@ public class Projet {
     @OneToMany(mappedBy = "projet")
     private List<Appel> appels;
 
+    public Projet(String nom, String description, Date deadline, float budget, String code) {
+        this.nom = nom;
+        this.description = description;
+        this.dateDebut = new Date();
+        this.deadline = deadline;
+        this.budget = budget;
+        this.budgetConsomme = 0;
+        this.statut = "en cours";
+        this.code = code;
+    }
     // Getters et Setters
     public int getId() { return id; }
     public void setId(int id) { this.id = id; }
@@ -54,7 +64,12 @@ public class Projet {
     public float getBudgetConsomme() { return budgetConsomme; }
     public void setBudgetConsomme(float budgetConsomme) { this.budgetConsomme = budgetConsomme; }
     public String getStatut() { return statut; }
-    public void setStatut(String statut) { this.statut = statut; }
+    public void setStatut(String statut) {
+         this.statut = statut; 
+         if(statut.equals("terminé")){
+             this.dateFin=new Date();
+         }
+        }
     public String getCode() { return code; }
     public void setCode(String code) { this.code = code; }
     public List<Membre> getMembres() { return membres; }
