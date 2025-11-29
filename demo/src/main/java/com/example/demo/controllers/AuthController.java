@@ -1,92 +1,96 @@
-// package com.example.demo.controllers;
+package com.example.demo.controllers;
 
-// import org.springframework.beans.factory.annotation.Autowired;
-// import org.springframework.http.ResponseEntity;
-// import org.springframework.security.authentication.AuthenticationManager;
-// import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
-// import org.springframework.security.core.Authentication;
-// import org.springframework.security.crypto.password.PasswordEncoder;
-// import org.springframework.web.bind.annotation.PostMapping;
-// import org.springframework.web.bind.annotation.RequestBody;
-// import org.springframework.web.bind.annotation.RequestMapping;
-// import org.springframework.web.bind.annotation.RestController;
+import com.example.demo.models.User;
+import com.example.demo.repositories.UserRepository;
+import jakarta.servlet.http.HttpSession;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.web.bind.annotation.*;
 
-// import com.example.demo.dto.AuthResponse;
-// import com.example.demo.dto.LoginRequest;
-// import com.example.demo.dto.RegisterRequest;
-// import com.example.demo.jwt.JwtUtil;
-// import com.example.demo.repositories.UserRepository;
-// import com.example.demo.models.User;
+import java.time.LocalDate;
+import java.util.Map;
 
-// @RestController
-// @RequestMapping("/auth")
-// public class AuthController {
+@RestController
+@RequestMapping("/auth")
+@CrossOrigin(origins = "*") 
+public class UserAuthController {
 
-//     @Autowired 
-//     private UserRepository repo;
+    @Autowired
+    private UserRepository userRepository;
 
-//     @Autowired 
-//     private PasswordEncoder encoder;
+    // ---------------------- REGISTER -------------------------
+    @PostMapping("/register")
+public String register(@RequestBody User user) {
+    try {
+        // Validation
+        if (user.getEmail() == null || user.getEmail().isEmpty()) {
+            return "{\"error\": \"Email requis\"}";
+        }
+        if (user.getPassword() == null || user.getPassword().isEmpty()) {
+            return "{\"error\": \"Mot de passe requis\"}";
+        }
 
-//     @Autowired 
-//     private JwtUtil jwtUtil;
+        // Vérifier si email existe déjà
+        if (userRepository.findByEmail(user.getEmail()) != null) {
+            return "{\"error\": \"Email déjà utilisé\"}";
+        }
 
-//     @Autowired 
-//     private AuthenticationManager authenticationManager;
+        // DÉFINIR LA DATE ICI
+        user.setDateCreation(LocalDate.now());
+        
+        // S'assurer que disponibilite est true
+        user.setDisponibilite(true);
 
-//     // REGISTER 
-//     @PostMapping("/register")
-// public ResponseEntity<?> register(@RequestBody RegisterRequest req) {
+        // Sauvegarder
+        userRepository.save(user);
 
-//     // Vérifier email déjà utilisé
-//     if (repo.existsByEmail(req.email())) {
-//         return ResponseEntity.badRequest().body("Cet email est déjà utilisé.");
-//     }
+        return "{\"success\": true, \"message\": \"Utilisateur enregistré avec succès\"}";
+        
+    } catch (Exception e) {
+        e.printStackTrace();
+        return "{\"error\": \"" + e.getMessage() + "\"}";
+    }
+}
 
-//     // Vérification mot de passe = confirmation
-//     if (!req.password().equals(req.confirmPassword())) {
-//         return ResponseEntity.badRequest().body("Les mots de passe ne correspondent pas.");
-//     }
+    // ---------------------- LOGIN -------------------------
+    @PostMapping("/login")
+    public String login(@RequestBody Map<String, String> body, HttpSession session) {
+        try {
+            String email = body.get("email");
+            String password = body.get("password");
 
-//     // Création de l'utilisateur
-//     User user = new User();
-//     user.setNom(req.nom());
-//     user.setPrenom(req.prenom());
-//     user.setEmail(req.email());
-//     user.setPassword(encoder.encode(req.password()));
-//     user.setCompetance(req.competance());
-//     user.setTelephone(req.telephone());
-//     user.setDisponibilite(true); // Par défaut, disponible   
+            User user = userRepository.findByEmail(email);
 
-//     // Ajout date de création automatique
-//     user.setDateCreation(java.time.LocalDate.now());
+            if (user == null) {
+                return "{\"error\": \"Email incorrect\"}";
+            }
 
-//     // Génération d'un code unique (par exemple pour vérif email)
-//     user.setVerifCode(java.util.UUID.randomUUID().toString());
+            if (!password.equals(user.getPassword())) {
+                return "{\"error\": \"Mot de passe incorrect\"}";
+            }
 
-//     // Sauvegarde
-//     repo.save(user);
+            session.setAttribute("userId", user.getId());
+            return "{\"success\": true, \"token\": \"session-active\", \"message\": \"Connexion réussie\"}";
+            
+        } catch (Exception e) {
+            e.printStackTrace();
+            return "{\"error\": \"" + e.getMessage() + "\"}";
+        }
+    }
 
-//     return ResponseEntity.ok("Inscription réussie !");
-// }
+    // ---------------------- LOGOUT -------------------------
+    @GetMapping("/logout")
+    public String logout(HttpSession session) {
+        session.invalidate();
+        return "{\"success\": true, \"message\": \"Déconnexion réussie\"}";
+    }
 
-//     // LOGIN
-//     @PostMapping("/login")
-//     public ResponseEntity<?> login(@RequestBody LoginRequest req) {
-
-//         // Authentication object
-//         Authentication auth = new UsernamePasswordAuthenticationToken(
-//                 req.email(),
-//                 req.password()
-//         );
-
-//         // Vérifier email + password
-//         authenticationManager.authenticate(auth);
-
-//         // Générer un token avec email
-//         String token = jwtUtil.generateToken(req.email());
-
-//         // Retourner le token dans AuthResponse
-//         return ResponseEntity.ok(new AuthResponse(token));
-//     }
-// }
+    // ---------------------- CHECK SESSION -------------------------
+    @GetMapping("/session")
+    public Object checkSession(HttpSession session) {
+        Object userId = session.getAttribute("userId");
+        if (userId == null) {
+            return "{\"error\": \"Aucun utilisateur connecté\"}";
+        }
+        return userRepository.findById((int) userId);
+    }
+}
