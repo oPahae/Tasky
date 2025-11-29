@@ -1,5 +1,4 @@
 package com.example.demo.controllers;
-
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -17,128 +16,128 @@ import com.example.demo.models.Membre;
 import com.example.demo.repositories.ProjetRepository;
 import com.example.demo.repositories.MembreRepository;
 
+
+
+
 import java.util.List;
 import java.util.stream.Collectors;
+
 
 @RestController
 @RequestMapping("/api")
 public class MesProjetsController {
     @Autowired
     private ProjetRepository projetRepository;
-    @Autowired
+     @Autowired
     private MembreRepository membreRepository;
 
     @GetMapping("projet/all")
-    public List<ProjetDTO> getAllProjet() {
-        return projetRepository.findAll().stream()
+    public List<ProjetDTO> getAllProjet(){
+           return projetRepository.findAll().stream()
                 .map(this::convertToProjetDTO)
                 .collect(Collectors.toList());
     }
-
     @DeleteMapping("projet/deleteAll")
-    public void deleteAllProject() {
+    public void deleteAllProject(){
         projetRepository.deleteAll();
     }
-
     @DeleteMapping("projet/delete/{id}")
-    public void deleteProjet(@PathVariable int id) {
+     public void deleteProjet(@PathVariable int id){
         projetRepository.deleteById(id);
-    }
-
-    @PostMapping("projet/add")
-    public void addProjet(Projet p) {
+     }
+     @PostMapping("projet/add")
+     public void addProjet(Projet p){
         projetRepository.save(p);
-    }
-
-    @GetMapping("/projet/membre/{id}")
-    public List<ProjetDTO> projetByIdMembre(@PathVariable int id) {
-        return projetRepository.findByMembres_Id(id).stream()
+     }
+     @GetMapping("/projet/membre/{id}")
+     public List<ProjetDTO> projetByIdMembre(@PathVariable int id) {
+    return projetRepository.findByMembres_Id(id).stream()
                 .map(this::convertToProjetDTO)
                 .collect(Collectors.toList());
-    }
-
-    @PutMapping("projet/modifier/{id}")
-    public boolean updateProjetById(@PathVariable int id, Projet pr) {
-        Projet pr1 = projetRepository.findById(id);
-        if (pr1 != null) {
-            pr1.setNom(pr.getNom());
-            pr1.setDescription(pr.getDescription());
-            pr1.setBudget(pr.getBudget());
-            pr1.setBudgetConsomme(pr.getBudgetConsomme());
-            pr1.setCode(pr.getCode());
-            pr1.setDeadline(pr.getDeadline());
-            pr1.setDateFin(pr.getDateFin());
-            projetRepository.save(pr1);
-            return true;
         }
-        return false;
+    
+    @PutMapping("projet/modifier/{id}")
+    public boolean updateProjetById(@PathVariable int id, Projet pr){
+                    Projet pr1 = projetRepository.findById(id);
+                    if(pr1 != null){
+                        pr1.setNom(pr.getNom());
+                        pr1.setDescription(pr.getDescription());
+                        pr1.setBudget(pr.getBudget());
+                        pr1.setBudgetConsomme(pr.getBudgetConsomme());
+                        pr1.setCode(pr.getCode());
+                        pr1.setDeadline(pr.getDeadline());
+                        pr1.setDateFin(pr.getDateFin());
+                        projetRepository.save(pr1);
+                        return true;
+                    }
+                    return false;
     }
 
-    @GetMapping("projet/{id}/Membre")
-    public List<MembreDTO> getMembreProjet(int id) {
-        Projet pr = projetRepository.findById(id);
-        List<Membre> m = pr.getMembres();
-        if (pr != null && m != null) {
-            return m.stream().map(this::convertToMembreDTO).collect(Collectors.toList());
+
+
+
+      @GetMapping("projet/{id}/Membre")
+    public List<MembreDTO> getMembreProjet(int id){
+        Projet pr=projetRepository.findById(id);
+        List<Membre>m= pr.getMembres();
+        if(pr!=null && m!=null){
+               return m.stream().map(this::convertToMembreDTO).collect(Collectors.toList());
         }
         return null;
-
+     
     }
-
-    private ProjetDTO convertToProjetDTO(Projet t) {
-        if (t == null)
-            return null;
+ private ProjetDTO convertToProjetDTO(Projet t) {
+        if (t == null) return null;
         ProjetDTO dto = new ProjetDTO();
-        dto.id = t.getId();
-        dto.nom = (t.getNom());
-        dto.code = (t.getCode());
-        dto.description = (t.getDescription());
-        dto.dateDebut = (t.getDateDebut());
-        dto.dateFin = (t.getDateFin());
-        dto.deadline = (t.getDeadline());
-        dto.budget = (t.getBudget());
-        dto.budgetConsomme = (t.getBudgetConsomme());
+        dto.id=t.getId();
+        dto.nom=(t.getNom());
+        dto.code=(t.getCode());
+        dto.description=(t.getDescription());
+        dto.dateDebut=(t.getDateDebut());
+        dto.dateFin=(t.getDateFin());
+        dto.deadline=(t.getDeadline());
+        dto.budget=(t.getBudget());
+        dto.budgetConsomme=(t.getBudgetConsomme());
 
-        return dto;
-    }
+
+        return dto;}
+
 
     private MembreDTO convertToMembreDTO(Membre t) {
-        if (t == null)
-            return null;
+        if (t == null) return null;
         MembreDTO dto = new MembreDTO();
-        dto.id = t.getId();
-        dto.nom = (t.getNom());
-        dto.email = (t.getEmail());
-        dto.description = (t.getDescription());
-        dto.password = (t.getPassword());
-        dto.role = (t.getRole());
-        dto.type = (t.getType());
+        dto.id=t.getId();
+        dto.nom=(t.getNom());
+        dto.email=(t.getEmail());
+        dto.description=(t.getDescription());
+        dto.password=(t.getPassword());
+        dto.role=(t.getRole());
+        dto.type=(t.getType());
 
-        return dto;
-    }
 
+        return dto;}
     @GetMapping("/Projet/{id}/progress")
-    public double getProgressProjet(@PathVariable int id) {
-        Projet p = projetRepository.findById(id);
-        if (p != null) {
-            List<Tache> taches = p.getTaches();
-            if (taches.size() == 0) {
-                return 0;
-            }
-            double total = 0;
-            total = taches.stream()
-                    .filter(t -> "terminé".equalsIgnoreCase(t.getEtat()))
-                    .count();
-            return (total / taches.size()) * 100;
+    public double getProgressProjet(@PathVariable int id){
+        Projet p=projetRepository.findById(id);
+        if(p!=null){
+           List <Tache> taches=p.getTaches();
+           if(taches.size()==0){
+            return 0;
+           }
+              double total=0;
+              total=taches.stream()
+                .filter(t -> "terminé".equalsIgnoreCase(t.getEtat()))
+                .count();
+              return (total/taches.size())*100;
         }
         return 0;
     }
 
     @GetMapping("projet/{idProjet}/addmembre/{idMembre}")
-    public boolean rejoindreAuProjet(@PathVariable("idProjet") int id, @PathVariable("idMembre") int idm) {
-        Projet p = projetRepository.findById(id);
-        Membre m = membreRepository.findById(idm).orElse(null);
-        if (p != null) {
+    public boolean rejoindreAuProjet(@PathVariable("idProjet")int id,@PathVariable("idMembre")int idm){
+        Projet p=projetRepository.findById(id);
+        Membre m=membreRepository.findById(idm).orElse(null);
+        if(p!=null){
             p.getMembres().add(m);
             projetRepository.save(p);
             return true;
@@ -148,18 +147,26 @@ public class MesProjetsController {
 
     @PostMapping("projet/creer")
     public ProjetDTO createProjet(@RequestBody ProjetDTO dto) {
-        Projet p = new Projet();
-        p.setNom(dto.nom);
-        p.setCode(dto.code);
-        p.setDescription(dto.description);
-        p.setBudget(dto.budget);
-        p.setBudgetConsomme(dto.budgetConsomme);
-        p.setDeadline(dto.deadline);
-        p.setDateDebut(dto.dateDebut);
-        p.setDateFin(dto.dateFin);
-        projetRepository.save(p);
+    Projet p = new Projet();
+    p.setNom(dto.nom);
+    p.setCode(dto.code);
+    p.setDescription(dto.description);
+    p.setBudget(dto.budget);
+    p.setBudgetConsomme(dto.budgetConsomme);
+    p.setDeadline(dto.deadline);
+    p.setDateDebut(dto.dateDebut);
+    p.setDateFin(dto.dateFin);
+    projetRepository.save(p);
 
-        return convertToProjetDTO(p);
-    }
+    return convertToProjetDTO(p); 
+}
 
+
+
+ 
+
+
+    
+
+    
 }
