@@ -2,7 +2,6 @@ package com.example.demo.interfaces;
 
 import com.example.demo.Params;
 import com.example.demo.components.Scrollbar;
-
 import javax.swing.*;
 import javax.swing.border.*;
 import java.awt.*;
@@ -13,11 +12,11 @@ import java.util.List;
 import java.io.*;
 import java.nio.file.Files;
 import java.nio.file.Paths;
-import java.util.Base64;
 
 public class Gestion extends JPanel {
     private int theme;
-    private Color bgColor, cardBgColor, textPrimary, textSecondary, accentColor, successColor, warningColor, dangerColor;
+    private Color bgColor, cardBgColor, textPrimary, textSecondary, accentColor, successColor, warningColor,
+            dangerColor;
     private List<HistoryEvent> historyEvents;
     private List<Expense> expenses;
     private List<Document> documents;
@@ -31,14 +30,11 @@ public class Gestion extends JPanel {
         initializeDemoData();
         setLayout(new BorderLayout());
         setBackground(bgColor);
-
         contentLayout = new CardLayout();
         mainContentPanel = new JPanel(contentLayout);
         mainContentPanel.setBackground(bgColor);
-
         JPanel mainPanel = createMainPanel();
         mainContentPanel.add(mainPanel, "main");
-
         add(mainContentPanel, BorderLayout.CENTER);
         contentLayout.show(mainContentPanel, "main");
     }
@@ -69,52 +65,37 @@ public class Gestion extends JPanel {
         historyEvents = new ArrayList<>();
         expenses = new ArrayList<>();
         documents = new ArrayList<>();
-
         Calendar cal = Calendar.getInstance();
-        
         cal.set(2024, Calendar.JANUARY, 15);
         historyEvents.add(new HistoryEvent(cal.getTime(), "Création du projet", "Alice", "Martin"));
-        
         cal.set(2024, Calendar.JANUARY, 20);
         historyEvents.add(new HistoryEvent(cal.getTime(), "Finalisation des maquettes UI/UX", "Alice", "Martin"));
-        
         cal.set(2024, Calendar.FEBRUARY, 5);
         historyEvents.add(new HistoryEvent(cal.getTime(), "Démarrage du développement Backend", "Bob", "Durant"));
-        
         cal.set(2024, Calendar.FEBRUARY, 18);
         historyEvents.add(new HistoryEvent(cal.getTime(), "Mise en place de l'API REST", "Bob", "Durant"));
-        
         cal.set(2024, Calendar.MARCH, 2);
         historyEvents.add(new HistoryEvent(cal.getTime(), "Intégration Frontend démarrée", "Charlie", "Dubois"));
-        
         cal.set(2024, Calendar.MARCH, 15);
         historyEvents.add(new HistoryEvent(cal.getTime(), "Tests unitaires en cours", "Diana", "Rousseau"));
-        
         cal.set(2024, Calendar.MARCH, 25);
         historyEvents.add(new HistoryEvent(cal.getTime(), "Revue de code effectuée", "Alice", "Martin"));
-        
         cal.set(2024, Calendar.APRIL, 1);
         historyEvents.add(new HistoryEvent(cal.getTime(), "Documentation technique complétée", "Alice", "Martin"));
-
         expenses.add(new Expense("Conception UI/UX", 12000));
         expenses.add(new Expense("Développement Backend", 18500));
         expenses.add(new Expense("Développement Frontend", 15000));
         expenses.add(new Expense("Tests et QA", 8000));
         expenses.add(new Expense("Infrastructure Cloud", 4500));
         expenses.add(new Expense("Licences logicielles", 3200));
-
         cal.set(2024, Calendar.JANUARY, 10);
         documents.add(new Document("Cahier des charges.pdf", cal.getTime(), 2450000, "dGVzdCBjb250ZW50"));
-        
         cal.set(2024, Calendar.JANUARY, 25);
         documents.add(new Document("Maquettes UI.fig", cal.getTime(), 15600000, "ZmlnbWEgZmlsZQ=="));
-        
         cal.set(2024, Calendar.FEBRUARY, 12);
         documents.add(new Document("Architecture technique.docx", cal.getTime(), 1850000, "ZG9jdW1lbnQgY29udGVudA=="));
-        
         cal.set(2024, Calendar.MARCH, 5);
         documents.add(new Document("Guide utilisateur.pdf", cal.getTime(), 3200000, "dXNlciBndWlkZQ=="));
-        
         cal.set(2024, Calendar.MARCH, 20);
         documents.add(new Document("Rapport de tests.xlsx", cal.getTime(), 980000, "dGVzdCByZXBvcnQ="));
     }
@@ -137,7 +118,7 @@ public class Gestion extends JPanel {
 
         JPanel sectionsPanel = new JPanel(new GridLayout(1, 3, 20, 0));
         sectionsPanel.setBackground(bgColor);
-        sectionsPanel.setMaximumSize(new Dimension(Integer.MAX_VALUE, 600));
+        sectionsPanel.setMaximumSize(new Dimension(Integer.MAX_VALUE, Integer.MAX_VALUE));
         sectionsPanel.setAlignmentX(Component.LEFT_ALIGNMENT);
 
         sectionsPanel.add(createHistorySection());
@@ -152,6 +133,7 @@ public class Gestion extends JPanel {
         scrollPane.getVerticalScrollBar().setUnitIncrement(16);
         scrollPane.setBackground(bgColor);
         scrollPane.getViewport().setBackground(bgColor);
+        scrollPane.setHorizontalScrollBarPolicy(JScrollPane.HORIZONTAL_SCROLLBAR_NEVER);
 
         panel.add(scrollPane, BorderLayout.CENTER);
         return panel;
@@ -190,15 +172,12 @@ public class Gestion extends JPanel {
         timelineWrapper.setOpaque(false);
 
         SimpleDateFormat dateFormat = new SimpleDateFormat("dd MMM yyyy", Locale.FRENCH);
-
         for (int i = 0; i < historyEvents.size(); i++) {
             HistoryEvent event = historyEvents.get(i);
             boolean isLast = (i == historyEvents.size() - 1);
-            
             JPanel eventPanel = createTimelineEvent(event, dateFormat, isLast);
             eventPanel.setAlignmentX(Component.LEFT_ALIGNMENT);
             timelineWrapper.add(eventPanel);
-            
             if (!isLast) {
                 timelineWrapper.add(Box.createRigidArea(new Dimension(0, 5)));
             }
@@ -207,10 +186,13 @@ public class Gestion extends JPanel {
         Scrollbar scroll = new Scrollbar(theme);
         JScrollPane scrollPane = scroll.create(timelineWrapper);
         scrollPane.setBorder(null);
+        scrollPane.setVerticalScrollBarPolicy(JScrollPane.VERTICAL_SCROLLBAR_AS_NEEDED);
+        scrollPane.setHorizontalScrollBarPolicy(JScrollPane.HORIZONTAL_SCROLLBAR_NEVER);
         scrollPane.getVerticalScrollBar().setUnitIncrement(12);
         scrollPane.setBackground(cardBgColor);
         scrollPane.getViewport().setBackground(cardBgColor);
-        scrollPane.setPreferredSize(new Dimension(0, 500));
+        scrollPane.setPreferredSize(new Dimension(0, 0));
+        scrollPane.setMaximumSize(new Dimension(Integer.MAX_VALUE, Integer.MAX_VALUE));
 
         card.add(scrollPane);
         section.add(card);
@@ -229,18 +211,14 @@ public class Gestion extends JPanel {
                 super.paintComponent(g);
                 Graphics2D g2 = (Graphics2D) g.create();
                 g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
-
                 int centerX = getWidth() / 2;
                 g2.setColor(accentColor);
                 g2.fillOval(centerX - 6, 5, 12, 12);
-
                 if (!isLast) {
                     g2.setStroke(new BasicStroke(2));
-                    g2.setColor(new Color(accentColor.getRed(), accentColor.getGreen(), 
-                                         accentColor.getBlue(), 80));
+                    g2.setColor(new Color(accentColor.getRed(), accentColor.getGreen(), accentColor.getBlue(), 80));
                     g2.drawLine(centerX, 17, centerX, getHeight());
                 }
-
                 g2.dispose();
             }
         };
@@ -275,7 +253,6 @@ public class Gestion extends JPanel {
         contentPanel.add(memberLabel);
 
         eventPanel.add(contentPanel, BorderLayout.CENTER);
-
         return eventPanel;
     }
 
@@ -323,17 +300,20 @@ public class Gestion extends JPanel {
         Scrollbar scroll = new Scrollbar(theme);
         JScrollPane scrollPane = scroll.create(expensesWrapper);
         scrollPane.setBorder(null);
+        scrollPane.setVerticalScrollBarPolicy(JScrollPane.VERTICAL_SCROLLBAR_AS_NEEDED);
+        scrollPane.setHorizontalScrollBarPolicy(JScrollPane.HORIZONTAL_SCROLLBAR_NEVER);
         scrollPane.getVerticalScrollBar().setUnitIncrement(12);
         scrollPane.setBackground(cardBgColor);
         scrollPane.getViewport().setBackground(cardBgColor);
-        scrollPane.setPreferredSize(new Dimension(0, 350));
+        scrollPane.setPreferredSize(new Dimension(0, 0));
+        scrollPane.setMaximumSize(new Dimension(Integer.MAX_VALUE, Integer.MAX_VALUE));
 
         card.add(scrollPane);
         card.add(Box.createRigidArea(new Dimension(0, 15)));
 
         JSeparator separator = new JSeparator();
-        separator.setForeground(new Color(textSecondary.getRed(), textSecondary.getGreen(), 
-                                         textSecondary.getBlue(), 30));
+        separator.setForeground(
+                new Color(textSecondary.getRed(), textSecondary.getGreen(), textSecondary.getBlue(), 30));
         separator.setMaximumSize(new Dimension(Integer.MAX_VALUE, 1));
         card.add(separator);
         card.add(Box.createRigidArea(new Dimension(0, 15)));
@@ -404,15 +384,14 @@ public class Gestion extends JPanel {
 
         if (total > budget) {
             summary.add(Box.createRigidArea(new Dimension(0, 12)));
-            
+
             JPanel alertPanel = new JPanel() {
                 @Override
                 protected void paintComponent(Graphics g) {
                     super.paintComponent(g);
                     Graphics2D g2 = (Graphics2D) g.create();
                     g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
-                    g2.setColor(new Color(dangerColor.getRed(), dangerColor.getGreen(), 
-                                         dangerColor.getBlue(), 20));
+                    g2.setColor(new Color(dangerColor.getRed(), dangerColor.getGreen(), dangerColor.getBlue(), 20));
                     g2.fillRoundRect(0, 0, getWidth(), getHeight(), 10, 10);
                     g2.setColor(dangerColor);
                     g2.setStroke(new BasicStroke(2));
@@ -488,7 +467,6 @@ public class Gestion extends JPanel {
         documentsWrapper.setOpaque(false);
 
         SimpleDateFormat dateFormat = new SimpleDateFormat("dd/MM/yyyy", Locale.FRENCH);
-
         for (Document doc : documents) {
             JPanel docCard = createDocumentCard(doc, dateFormat);
             docCard.setAlignmentX(Component.LEFT_ALIGNMENT);
@@ -499,10 +477,13 @@ public class Gestion extends JPanel {
         Scrollbar scroll = new Scrollbar(theme);
         JScrollPane scrollPane = scroll.create(documentsWrapper);
         scrollPane.setBorder(null);
+        scrollPane.setVerticalScrollBarPolicy(JScrollPane.VERTICAL_SCROLLBAR_AS_NEEDED);
+        scrollPane.setHorizontalScrollBarPolicy(JScrollPane.HORIZONTAL_SCROLLBAR_NEVER);
         scrollPane.getVerticalScrollBar().setUnitIncrement(12);
         scrollPane.setBackground(cardBgColor);
         scrollPane.getViewport().setBackground(cardBgColor);
-        scrollPane.setPreferredSize(new Dimension(0, 500));
+        scrollPane.setPreferredSize(new Dimension(0, 0));
+        scrollPane.setMaximumSize(new Dimension(Integer.MAX_VALUE, Integer.MAX_VALUE));
 
         card.add(scrollPane);
         section.add(card);
@@ -517,21 +498,17 @@ public class Gestion extends JPanel {
                 super.paintComponent(g);
                 Graphics2D g2 = (Graphics2D) g.create();
                 g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
-                
                 if (getModel().isPressed()) {
-                    g2.setColor(new Color(accentColor.getRed(), accentColor.getGreen(), 
-                                         accentColor.getBlue(), 20));
+                    g2.setColor(new Color(accentColor.getRed(), accentColor.getGreen(), accentColor.getBlue(), 20));
                 } else if (getModel().isRollover()) {
-                    g2.setColor(new Color(accentColor.getRed(), accentColor.getGreen(), 
-                                         accentColor.getBlue(), 10));
+                    g2.setColor(new Color(accentColor.getRed(), accentColor.getGreen(), accentColor.getBlue(), 10));
                 } else {
                     g2.setColor(theme == 0 ? new Color(249, 250, 251) : new Color(30, 30, 30));
                 }
-                
                 g2.fillRoundRect(0, 0, getWidth(), getHeight(), 12, 12);
                 g2.dispose();
             }
-            
+
             private ButtonModel getModel() {
                 Component[] comps = getComponents();
                 for (Component c : comps) {
@@ -542,7 +519,6 @@ public class Gestion extends JPanel {
                 return new DefaultButtonModel();
             }
         };
-        
         card.setLayout(new BorderLayout(12, 0));
         card.setOpaque(false);
         card.setBorder(BorderFactory.createEmptyBorder(15, 15, 15, 15));
@@ -558,8 +534,7 @@ public class Gestion extends JPanel {
                 super.paintComponent(g);
                 Graphics2D g2 = (Graphics2D) g.create();
                 g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
-                g2.setColor(new Color(docColor.getRed(), docColor.getGreen(), 
-                                     docColor.getBlue(), 20));
+                g2.setColor(new Color(docColor.getRed(), docColor.getGreen(), docColor.getBlue(), 20));
                 g2.fillRoundRect(0, 0, getWidth(), getHeight(), 8, 8);
                 g2.dispose();
             }
@@ -614,11 +589,11 @@ public class Gestion extends JPanel {
             public void mouseClicked(java.awt.event.MouseEvent evt) {
                 downloadDocument(doc);
             }
-            
+
             public void mouseEntered(java.awt.event.MouseEvent evt) {
                 card.repaint();
             }
-            
+
             public void mouseExited(java.awt.event.MouseEvent evt) {
                 card.repaint();
             }
@@ -679,25 +654,17 @@ public class Gestion extends JPanel {
             JFileChooser fileChooser = new JFileChooser();
             fileChooser.setSelectedFile(new File(doc.name));
             fileChooser.setDialogTitle("Enregistrer le document");
-            
             int result = fileChooser.showSaveDialog(this);
-            
             if (result == JFileChooser.APPROVE_OPTION) {
                 File fileToSave = fileChooser.getSelectedFile();
-                
                 byte[] decodedContent = Base64.getDecoder().decode(doc.content);
                 Files.write(Paths.get(fileToSave.getAbsolutePath()), decodedContent);
-                
-                JOptionPane.showMessageDialog(this,
-                    "Document téléchargé avec succès!",
-                    "Téléchargement réussi",
-                    JOptionPane.INFORMATION_MESSAGE);
+                JOptionPane.showMessageDialog(this, "Document téléchargé avec succès!", "Téléchargement réussi",
+                        JOptionPane.INFORMATION_MESSAGE);
             }
         } catch (Exception e) {
-            JOptionPane.showMessageDialog(this,
-                "Erreur lors du téléchargement: " + e.getMessage(),
-                "Erreur",
-                JOptionPane.ERROR_MESSAGE);
+            JOptionPane.showMessageDialog(this, "Erreur lors du téléchargement: " + e.getMessage(), "Erreur",
+                    JOptionPane.ERROR_MESSAGE);
         }
     }
 
