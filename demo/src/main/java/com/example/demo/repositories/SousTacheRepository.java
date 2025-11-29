@@ -1,6 +1,9 @@
 package com.example.demo.repositories;
-
-import org.springframework.data.jpa.repository.JpaRepository;
 import com.example.demo.models.SousTache;
-
-public interface SousTacheRepository extends JpaRepository<SousTache, Integer> {}
+import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.stereotype.Repository;
+import java.util.List;
+@Repository
+public interface SousTacheRepository extends JpaRepository<SousTache, Integer> {
+    List<SousTache> findByTacheId(int tacheId);
+}
