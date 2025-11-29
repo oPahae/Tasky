@@ -28,6 +28,7 @@ public class Main extends JFrame {
         pages.put("Chat", new Chat());
         pages.put("Créer un projet", new CreerProjet());
         pages.put("Rejoindre un projet", new RejoindreProjet());
+        pages.put("Gestion", new Gestion());
 
         // Éléments du header et sidebar
         ArrayList<String> headerElements = new ArrayList<>(Arrays.asList("Dashboard", "Tâches", "Chat", "Gestion"));
