@@ -1,167 +1,231 @@
-// package com.example.demo.controllers;
-// import org.springframework.web.bind.annotation.DeleteMapping;
-// import org.springframework.web.bind.annotation.GetMapping;
-// import org.springframework.web.bind.annotation.PathVariable;
-// import org.springframework.web.bind.annotation.PostMapping;
-// import org.springframework.web.bind.annotation.PutMapping;
-// import org.springframework.web.bind.annotation.RequestBody;
-// import org.springframework.web.bind.annotation.RequestMapping;
-// import org.springframework.web.bind.annotation.RestController;
+package com.example.demo.controllers;
 
-// import com.example.demo.models.SousTache;
-// import com.example.demo.repositories.TacheRepository;
+import com.example.demo.models.*;
+import com.example.demo.repositories.TacheRepository;
+import com.example.demo.repositories.SousTacheRepository;
+import com.example.demo.repositories.DocumentRepository;
+import com.example.demo.repositories.CommentaireRepository;
+import com.example.demo.repositories.BlocageRepository;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.*;
 
-// import comg0it.example.demo.models.Tache;
-// import com.example.demo.models.Commentaire;
-// import com.example.demo.models.Document;
-// import com.example.demo.models.Blockage;
-// import java.time.LocalDateTime;
+import java.time.LocalDate;
+import java.util.List;
+import java.util.Optional;
+import java.util.stream.Collectors;
 
-// import java.util.List;
-// @RestController
-// @RequestMapping("/api")
-// public class TacheController {
-//     private TacheRepository tacheRepository;
-//     public TacheController(TacheRepository tacheRepository) {
-//         this.tacheRepository = tacheRepository;
-//     }
-//     @GetMapping("/taches")
-//     public List<Tache> getTaches() {
-//         return tacheRepository.findAll();
-//     }
-//     @DeleteMapping("/taches/{id}")
-//     public void deleteTache(@PathVariable int id) {
-//         tacheRepository.deleteById(id);
-//     }
-//     @PostMapping("/taches/add")
-//     public void addTache(@RequestBody Tache tache){
-//         tache.setEtat("en cours");
-//         tacheRepository.save(tache);
-//     }
-//     @GetMapping("/taches/{id}")
-//     public Tache getTacheById(@PathVariable int id){
-//     return tacheRepository.findById(id).orElse(null);
-//     }
-//     @GetMapping("/taches/{id}/staches")
-//     public List<SousTache> getSousTaches(@PathVariable int id){
-//         Tache t=tacheRepository.findById(id).orElse(null);
-//         if(t!=null){
-//             return t.getSousTaches();
-//         }
-//         return null;
-//     }
-//     @GetMapping("/taches/{id}/progress")
-//     public double getProgress(@PathVariable int id){
-//         Tache t=tacheRepository.findById(id).orElse(null);
-//         if(t!=null){
-//            List <SousTache> staches=t.getSousTaches();
-//            if(staches.size()==0){
-//             return 0;
-//            }
-//               double total=0;
-//               total=staches.stream().filter(SousTache::getEtat).count();
-//               return (total/staches.size())*100;
-//         }
-//         return 0;
-//     }
+@RestController
+@RequestMapping("/api/tache")
+public class TacheController {
 
-//     @GetMapping("/taches/membre/{id}")
-//     public List<Tache> getTachesByMembreId(@PathVariable int id){
-//         return tacheRepository.findByMembreId(id);
-//     }
-//     @GetMapping("/taches/projet/{id}")
-//     public List<Tache> getTachesByProjetId(@PathVariable int id){
-//         return tacheRepository.findByProjetId(id);
-//     }
-//     @GetMapping("/taches/{id}/commentaire")
-//     public List<Commentaire> getCommentairesByTacheId(@PathVariable int id){
-//         Tache t=tacheRepository.findById(id).orElse(null);
-//         if(t!=null){
-//             return t.getCommentaires();
-//         }
-//         return null;
-//     }
-//     @GetMapping("/taches/{id}/documents")
-//     public List<Document> getDocumentsByTacheId(@PathVariable int id){
-//         Tache t=tacheRepository.findById(id).orElse(null);
-//         if(t!=null){
-//             return t.getDocuments();
-//         }
-//         return null;
-//     }
-//     @GetMapping("/taches/{id}/blockage")
-//     public List<Blockage> getBlockagesByTacheId(@PathVariable int id){
-//         Tache t=tacheRepository.findById(id).orElse(null);
-//         if(t!=null){
-//             return t.getBlockage();
-//         }
-//         return null;
-//     }
-//     @PutMapping("/taches/{id}/etat")
-//     public void updateEtat(@PathVariable int id, String etat){
-//         Tache t=tacheRepository.findById(id).orElse(null);
-//         if(t!=null){
-//             t.setEtat(etat);
-//             tacheRepository.save(t);
-//         }
-//     }
-//     @PutMapping("/taches/{id}/finir")
-//     public boolean finirTache(@PathVariable int id){
-//         Tache t=tacheRepository.findById(id).orElse(null);
-//         List <SousTache> staches=t.getSousTaches();
+    @Autowired
+    private TacheRepository tacheRepository;
 
-//         if(t!=null && staches.size()>0){
-//            if(staches.size()==staches.stream().filter(SousTache::getEtat).count()){
-//            t.setEtat("Terminé");
-//            t.setDateFinale(LocalDateTime.now());
-//            tacheRepository.save(t);
-//            return true;
-//         }}
-//         return false;
-//     }
-//     @PutMapping("/taches/{id}")
-//      public void updateTache(@PathVariable int id,@RequestBody  Tache nouv){
-//         Tache t=tacheRepository.findById(id).orElse(null);
-//         if(t!=null){
-//             t.setTitre(nouv.getTitre());
-//             t.setDescription(nouv.getDescription());
-//             t.setDateCreation(nouv.getDateCreation());
-//             t.setDateFinale(nouv.getDateFinale());
-//             t.setDateLimite(nouv.getDateLimite());
-//             t.setSousTaches(nouv.getSousTaches());
-//             t.setEtat(nouv.getEtat());
-//             tacheRepository.save(t);
-//         }}
+    @Autowired
+    private SousTacheRepository sousTacheRepository;
 
-//     @PutMapping("/taches/{id}/bloquer")
-//     public void bloquerTache(@PathVariable int id,@RequestBody  Blockage blockage){
-//         Tache t=tacheRepository.findById(id).orElse(null);
-//         if(t!=null){
-//             List<Blockage> blockages=t.getBlockage();
-//             blockages.add(blockage);
-//             t.setBlockage(blockages);
-//             t.setEtat("Bloquée");
-//             tacheRepository.save(t);
-//         }
-//     }
-//     @GetMapping("/taches/{id}/cloturer")
-//     public boolean tacheCloturer(@PathVariable int id){
-//         Tache st=tacheRepository.findById(id).orElse(null);
-//         if(st!=null && st.getDateFinale()!=null){
-//             if(LocalDateTime.now().isAfter(st.getDateLimite()) && !st.getEtat().equals("terminée")){
-//                 st.setEtat("Pas fini la tache est dépassée");
-//                 tacheRepository.save(st);
-//                 return true;
-//             };
-//         }
-//         return false;
-//     }
+    @Autowired
+    private DocumentRepository documentRepository;
 
-    
+    @Autowired
+    private CommentaireRepository commentaireRepository;
 
+    @Autowired
+    private BlocageRepository blocageRepository;
 
+    // Récupérer toutes les données de la tâche actuelle
+    @GetMapping("/{id}")
+    public ResponseEntity<?> getTacheData(@PathVariable int id) {
+        Optional<Tache> tacheOpt = tacheRepository.findById(id);
+        if (!tacheOpt.isPresent()) {
+            return ResponseEntity.notFound().build();
+        }
+        Tache tache = tacheOpt.get();
+        return ResponseEntity.ok(new TacheDTO(tache));
+    }
 
+    // Ajouter une sous-tâche
+    @PostMapping("/{id}/sous-tache")
+    public ResponseEntity<?> addSousTache(@PathVariable int id, @RequestBody SousTacheDTO sousTacheDTO) {
+        Optional<Tache> tacheOpt = tacheRepository.findById(id);
+        if (!tacheOpt.isPresent()) {
+            return ResponseEntity.notFound().build();
+        }
+        SousTache sousTache = new SousTache();
+        sousTache.setTitre(sousTacheDTO.getTitre());
+        sousTache.setTermine(false);
+        sousTache.setDateCreation(LocalDate.now());
+        sousTache.setTache(tacheOpt.get());
+        sousTacheRepository.save(sousTache);
+        return ResponseEntity.ok().build();
+    }
 
+    // Cocher/décocher une sous-tâche
+    @PutMapping("/sous-tache/{sousTacheId}")
+    public ResponseEntity<?> toggleSousTache(@PathVariable int sousTacheId) {
+        Optional<SousTache> sousTacheOpt = sousTacheRepository.findById(sousTacheId);
+        if (!sousTacheOpt.isPresent()) {
+            return ResponseEntity.notFound().build();
+        }
+        SousTache sousTache = sousTacheOpt.get();
+        sousTache.setTermine(!sousTache.isTermine());
+        sousTacheRepository.save(sousTache);
+        return ResponseEntity.ok().build();
+    }
 
+    // Ajouter un document
+    @PostMapping("/{id}/document")
+    public ResponseEntity<?> addDocument(@PathVariable int id, @RequestBody DocumentDTO documentDTO) {
+        Optional<Tache> tacheOpt = tacheRepository.findById(id);
+        if (!tacheOpt.isPresent()) {
+            return ResponseEntity.notFound().build();
+        }
+        Document document = new Document();
+        document.setNom(documentDTO.getNom());
+        document.setDescription(documentDTO.getDescription());
+        document.setDateCreation(LocalDate.now());
+        document.setTache(tacheOpt.get());
+        documentRepository.save(document);
+        return ResponseEntity.ok().build();
+    }
 
-// }
+    // Ajouter un commentaire
+    @PostMapping("/{id}/commentaire")
+    public ResponseEntity<?> addCommentaire(@PathVariable int id, @RequestBody CommentaireDTO commentaireDTO) {
+        Optional<Tache> tacheOpt = tacheRepository.findById(id);
+        if (!tacheOpt.isPresent()) {
+            return ResponseEntity.notFound().build();
+        }
+        Commentaire commentaire = new Commentaire();
+        commentaire.setContenu(commentaireDTO.getContenu());
+        commentaire.setDateCreation(LocalDate.now());
+        commentaire.setTache(tacheOpt.get());
+        commentaireRepository.save(commentaire);
+        return ResponseEntity.ok().build();
+    }
+
+    // Ajouter un bloquage
+    @PostMapping("/{id}/blocage")
+    public ResponseEntity<?> addBlocage(@PathVariable int id, @RequestBody BlocageDTO blocageDTO) {
+        Optional<Tache> tacheOpt = tacheRepository.findById(id);
+        if (!tacheOpt.isPresent()) {
+            return ResponseEntity.notFound().build();
+        }
+        Blocage blocage = new Blocage();
+        blocage.setDescription(blocageDTO.getDescription());
+        blocage.setDateSignalement(LocalDate.now());
+        blocage.setStatut("Signalé");
+        blocage.setTache(tacheOpt.get());
+        blocageRepository.save(blocage);
+        return ResponseEntity.ok().build();
+    }
+
+    // Ajouter une dépense (exemple simplifié)
+    @PostMapping("/{id}/depense")
+    public ResponseEntity<?> addDepense(@PathVariable int id, @RequestBody DepenseDTO depenseDTO) {
+        // Logique pour ajouter une dépense (à adapter selon votre modèle)
+        return ResponseEntity.ok().build();
+    }
+
+    // DTOs
+    public static class TacheDTO {
+        private int id;
+        private String titre;
+        private String description;
+        private LocalDate dateCreation;
+        private LocalDate dateLimite;
+        private List<SousTacheDTO> sousTaches;
+        private List<DocumentDTO> documents;
+        private List<CommentaireDTO> commentaires;
+
+        public TacheDTO(Tache tache) {
+            this.id = tache.getId();
+            this.titre = tache.getTitre();
+            this.description = tache.getDescription();
+            this.dateCreation = tache.getDateCreation();
+            this.dateLimite = tache.getDateLimite();
+            this.sousTaches = tache.getSousTaches().stream().map(SousTacheDTO::new).collect(Collectors.toList());
+            this.documents = tache.getDocuments().stream().map(DocumentDTO::new).collect(Collectors.toList());
+            this.commentaires = tache.getCommentaires().stream().map(CommentaireDTO::new).collect(Collectors.toList());
+        }
+
+        // Getters
+        public int getId() { return id; }
+        public String getTitre() { return titre; }
+        public String getDescription() { return description; }
+        public LocalDate getDateCreation() { return dateCreation; }
+        public LocalDate getDateLimite() { return dateLimite; }
+        public List<SousTacheDTO> getSousTaches() { return sousTaches; }
+        public List<DocumentDTO> getDocuments() { return documents; }
+        public List<CommentaireDTO> getCommentaires() { return commentaires; }
+    }
+
+    public static class SousTacheDTO {
+        private int id;
+        private String titre;
+        private boolean termine;
+
+        public SousTacheDTO(SousTache sousTache) {
+            this.id = sousTache.getId();
+            this.titre = sousTache.getTitre();
+            this.termine = sousTache.isTermine();
+        }
+
+        // Getters
+        public int getId() { return id; }
+        public String getTitre() { return titre; }
+        public boolean isTermine() { return termine; }
+    }
+
+    public static class DocumentDTO {
+        private int id;
+        private String nom;
+        private String description;
+
+        public DocumentDTO(Document document) {
+            this.id = document.getId();
+            this.nom = document.getNom();
+            this.description = document.getDescription();
+        }
+
+        // Getters
+        public int getId() { return id; }
+        public String getNom() { return nom; }
+        public String getDescription() { return description; }
+    }
+
+    public static class CommentaireDTO {
+        private int id;
+        private String contenu;
+        private LocalDate dateCreation;
+
+        public CommentaireDTO(Commentaire commentaire) {
+            this.id = commentaire.getId();
+            this.contenu = commentaire.getContenu();
+            this.dateCreation = commentaire.getDateCreation();
+        }
+
+        // Getters
+        public int getId() { return id; }
+        public String getContenu() { return contenu; }
+        public LocalDate getDateCreation() { return dateCreation; }
+    }
+
+    public static class BlocageDTO {
+        private String description;
+
+        public String getDescription() { return description; }
+        public void setDescription(String description) { this.description = description; }
+    }
+
+    public static class DepenseDTO {
+        private double montant;
+        private String description;
+
+        public double getMontant() { return montant; }
+        public void setMontant(double montant) { this.montant = montant; }
+        public String getDescription() { return description; }
+        public void setDescription(String description) { this.description = description; }
+    }
+}
