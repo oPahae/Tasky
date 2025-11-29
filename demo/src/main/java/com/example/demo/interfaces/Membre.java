@@ -1,5 +1,6 @@
 package com.example.demo.interfaces;
 
+import com.example.demo.Main;
 import com.example.demo.Params;
 import com.example.demo.components.Scrollbar;
 
@@ -30,7 +31,6 @@ public class Membre extends JPanel {
         initializeDemoData();
         setLayout(new BorderLayout());
         setBackground(bgColor);
-
         JPanel mainPanel = createMainPanel();
         add(mainPanel, BorderLayout.CENTER);
     }

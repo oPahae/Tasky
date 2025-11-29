@@ -1,5 +1,7 @@
 package com.example.demo.interfaces;
 
+import com.example.demo.Auth;
+import com.example.demo.Main;
 import com.example.demo.Params;
 import com.example.demo.components.Scrollbar;
 import javax.swing.*;
