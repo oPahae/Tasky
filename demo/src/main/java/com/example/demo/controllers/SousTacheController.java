@@ -120,6 +120,11 @@ public class SousTacheController {
         return st.stream().filter(s -> !s.isTermine()).toList();}
         
         return null;}
+
+
+
+
+       
     
 
 

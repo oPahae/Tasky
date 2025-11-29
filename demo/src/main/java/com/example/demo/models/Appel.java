@@ -1,10 +1,8 @@
 package com.example.demo.models;
 
 import jakarta.persistence.*;
-import java.util.Date;
 import java.sql.Time;
 import java.time.LocalDate;
-import java.time.LocalTime;
 
 @Entity
 @Table(name = "Appel")

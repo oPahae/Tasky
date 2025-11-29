@@ -4,6 +4,7 @@ import jakarta.persistence.*;
 import java.util.Date;
 import java.util.List;
 
+
 @Entity
 @Table(name = "Projet")
 public class Projet {
@@ -82,4 +83,5 @@ public class Projet {
     public void setMessages(List<Message> messages) { this.messages = messages; }
     public List<Appel> getAppels() { return appels; }
     public void setAppels(List<Appel> appels) { this.appels = appels; }
+    
 }
