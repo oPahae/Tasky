@@ -1,9 +1,7 @@
 package com.example.demo.models;
 
 import jakarta.persistence.*;
-
 import java.time.LocalDate;
-import java.util.Date;
 import java.util.List;
 
 @Entity
@@ -19,7 +17,10 @@ public class User {
     private String password;
     private String competance;
     private String telephone;
-    private boolean disponibilite;
+    
+    @Column(columnDefinition = "boolean default true")
+    private boolean disponibilite = true; // Par défaut true
+    
     private LocalDate dateCreation;
     private String verifCode;
 
@@ -27,17 +28,30 @@ public class User {
     private List<Membre> membres;
 
     public User(){}
-    public User(String nom, String prenom, String email, String password, String competance, String telephone, boolean disponibilite) {
+    
+    public User(String nom, String prenom, String email, String password, String competance, String telephone) {
         this.nom = nom;
         this.prenom = prenom;
         this.email = email;
         this.password = password;
         this.competance = competance;
         this.telephone = telephone;
-        this.disponibilite = disponibilite;
-        this.dateCreation = LocalDate.now();
-       
+        this.disponibilite = true; // Par défaut true
+        this.dateCreation = LocalDate.now(); // Date système
     }
+    
+    // Méthode appelée avant l'insertion en base de données
+    @PrePersist
+    protected void onCreate() {
+        if (this.dateCreation == null) {
+            this.dateCreation = LocalDate.now();
+        }
+        // S'assurer que disponibilite est true par défaut
+        if (!this.disponibilite) {
+            this.disponibilite = true;
+        }
+    }
+
     // Getters et Setters
     public int getId() { return id; }
     public void setId(int id) { this.id = id; }
