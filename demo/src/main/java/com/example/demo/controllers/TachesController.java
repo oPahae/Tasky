@@ -149,7 +149,7 @@ public class TachesController {
         return false;
     }
 
-    @GetMapping("/taches/{idTache}/membre/{idMembre}/progress")
+    @GetMapping("/taches/{idTache}/progress")
     public double getProgress(@PathVariable("idTache") int id) {
         Tache t = tacheRepository.findById(id).orElse(null);
         if (t != null) {
