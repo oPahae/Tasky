@@ -87,6 +87,7 @@ public class Tache extends JPanel {
                             subTasks = new ArrayList<>();
                             for (Map<String, Object> subTaskData : subTasksData) {
                                 subTasks.add(new SubTask(
+                                        ((Number) subTaskData.get("id")).intValue(),
                                         (String) subTaskData.get("titre"),
                                         (Boolean) subTaskData.get("termine")));
                             }
@@ -112,6 +113,7 @@ public class Tache extends JPanel {
                                         getRandomColor()));
                             }
 
+                            System.out.println("Sous-tâches reçues : " + subTasksData);
                             refreshUI();
                         }
                     });
@@ -326,6 +328,7 @@ public class Tache extends JPanel {
                     card.add(Box.createRigidArea(new Dimension(0, 8)));
                 }
             }
+            System.out.println("Nombre de sous-tâches ajoutées : " + subTasks.size());
         }
         section.add(card);
         return section;
@@ -817,6 +820,7 @@ public class Tache extends JPanel {
                             } else {
                                 Map<String, Object> subTaskData = (Map<String, Object>) response;
                                 subTasks.add(new SubTask(
+                                        ((Number) subTaskData.get("id")).intValue(),
                                         (String) subTaskData.get("titre"),
                                         (Boolean) subTaskData.get("termine")));
                                 JOptionPane.showMessageDialog(this, "Sous-tâche ajoutée avec succès!", "Succès",
@@ -915,8 +919,14 @@ public class Tache extends JPanel {
     }
 
     private void refreshUI() {
-        revalidate();
-        repaint();
+        SwingUtilities.invokeLater(() -> {
+            removeAll(); // Supprime tout le contenu actuel
+            setLayout(new BorderLayout());
+            JPanel mainPanel = createMainPanel(); // Recrée le panel principal
+            add(mainPanel, BorderLayout.CENTER);
+            revalidate();
+            repaint();
+        });
     }
 
     private int calculateProgress() {
@@ -1061,7 +1071,8 @@ public class Tache extends JPanel {
         String name;
         boolean completed;
 
-        public SubTask(String name, boolean completed) {
+        public SubTask(int id, String name, boolean completed) {
+            this.id = id;
             this.name = name;
             this.completed = completed;
         }
