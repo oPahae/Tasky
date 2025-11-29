@@ -1,414 +1,488 @@
 package com.example.demo;
-
+import com.example.demo.Main;
 import javax.swing.*;
 import javax.swing.border.EmptyBorder;
 import java.awt.*;
-import java.io.IOException;
-import java.net.URI;
-import java.net.http.HttpClient;
-import java.net.http.HttpRequest;
-import java.net.http.HttpResponse;
-import java.time.LocalDate;
-import java.util.concurrent.CompletableFuture;
+import java.io.BufferedReader;
+import java.io.InputStreamReader;
+import java.io.OutputStream;
+import java.net.HttpURLConnection;
+import java.net.URL;
 
-public class Auth extends JPanel {
-    // Login fields
-    private JTextField loginEmail;
-    private JPasswordField loginPassword;
+public class Auth extends JFrame {
 
-    // Register fields
-    private JTextField regNom;
-    private JTextField regPrenom;
-    private JTextField regEmail;
-    private JPasswordField regPassword;
-    private JPasswordField regConfirmPassword;
-    private JTextField regCompetance;
-    private JTextField regTelephone;
-   //private JCheckBox regDisponibilite;
-
-    // HTTP client & base url (adapte si nécessaire)
-    private final HttpClient httpClient = HttpClient.newHttpClient();
-    private final String baseUrl = "http://localhost:8080"; // <- adapte si besoin
+    private static final String BASE_URL = "http://localhost:8080/auth";
+    private JTabbedPane tabs;
+    
+    // Couleurs modernes
+    private static final Color PRIMARY_COLOR = new Color(59, 130, 246); // Bleu moderne
+    private static final Color SECONDARY_COLOR = new Color(30, 64, 175); // Bleu foncé
+    private static final Color SUCCESS_COLOR = new Color(34, 197, 94); // Vert
+    private static final Color ERROR_COLOR = new Color(239, 68, 68); // Rouge
+    private static final Color BG_COLOR = new Color(249, 250, 251); // Gris très clair
+    private static final Color CARD_COLOR = Color.WHITE;
 
     public Auth() {
-        setLayout(new BorderLayout());
-        setBackground(new Color(245, 247, 250));
-        setBorder(new EmptyBorder(30, 30, 30, 30));
+        setTitle("Authentification - Gestion des Utilisateurs");
+        setSize(500, 650);
+        setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+        setLocationRelativeTo(null);
+        getContentPane().setBackground(BG_COLOR);
 
-        // Header
-        JLabel title = new JLabel("Authentification");
-        title.setFont(new Font("Segoe UI", Font.BOLD, 20));
-        title.setHorizontalAlignment(SwingConstants.CENTER);
-        add(title, BorderLayout.NORTH);
+        tabs = new JTabbedPane();
+        tabs.setFont(new Font("Segoe UI", Font.BOLD, 14));
+        tabs.setBackground(CARD_COLOR);
+        
+        tabs.addTab("  Connexion  ", loginPanel());
+        tabs.addTab("  Inscription  ", registerPanel());
 
-        // Tabs : Login / Register
-        JTabbedPane tabs = new JTabbedPane();
-        tabs.addTab("Login", createLoginPanel());
-        tabs.addTab("Register", createRegisterPanel());
-
-        add(tabs, BorderLayout.CENTER);
+        add(tabs);
     }
 
-    private JPanel createLoginPanel() {
-        JPanel panel = new JPanel(new GridBagLayout());
-        panel.setOpaque(false);
+    // ================= LOGIN PANEL ===================
+    private JPanel loginPanel() {
+        JPanel mainPanel = new JPanel(new BorderLayout());
+        mainPanel.setBackground(BG_COLOR);
+        mainPanel.setBorder(new EmptyBorder(30, 40, 30, 40));
 
-        GridBagConstraints gbc = commonConstraints();
+        JPanel panel = new JPanel();
+        panel.setLayout(new BoxLayout(panel, BoxLayout.Y_AXIS));
+        panel.setBackground(CARD_COLOR);
+        panel.setBorder(BorderFactory.createCompoundBorder(
+            BorderFactory.createLineBorder(new Color(229, 231, 235), 1),
+            new EmptyBorder(30, 30, 30, 30)
+        ));
 
-        Font labelFont = new Font("Segoe UI", Font.BOLD, 14);
-        Font fieldFont = new Font("Segoe UI", Font.PLAIN, 14);
-        Color fieldBackground = new Color(255, 255, 255);
-        int fieldHeight = 40;
+        // Titre
+        JLabel title = new JLabel("Bienvenue");
+        title.setFont(new Font("Segoe UI", Font.BOLD, 28));
+        title.setForeground(SECONDARY_COLOR);
+        title.setAlignmentX(Component.CENTER_ALIGNMENT);
+        panel.add(title);
+        panel.add(Box.createVerticalStrut(10));
+
+        JLabel subtitle = new JLabel("Connectez-vous à votre compte");
+        subtitle.setFont(new Font("Segoe UI", Font.PLAIN, 14));
+        subtitle.setForeground(Color.GRAY);
+        subtitle.setAlignmentX(Component.CENTER_ALIGNMENT);
+        panel.add(subtitle);
+        panel.add(Box.createVerticalStrut(30));
 
         // Email
-        JLabel lblEmail = new JLabel("Email :");
-        lblEmail.setFont(labelFont);
-        gbc.gridx = 0;
-        gbc.gridy = 0;
-        panel.add(lblEmail, gbc);
-
-        loginEmail = new JTextField(20);
-        loginEmail.setFont(fieldFont);
-        loginEmail.setBackground(fieldBackground);
-        loginEmail.setPreferredSize(new Dimension(0, fieldHeight));
-        gbc.gridx = 1;
-        panel.add(loginEmail, gbc);
+        JLabel emailLabel = createStyledLabel("Adresse Email");
+        panel.add(emailLabel);
+        panel.add(Box.createVerticalStrut(8));
+        
+        JTextField emailField = createStyledTextField();
+        panel.add(emailField);
+        panel.add(Box.createVerticalStrut(20));
 
         // Password
-        JLabel lblPass = new JLabel("Mot de passe :");
-        lblPass.setFont(labelFont);
-        gbc.gridx = 0;
-        gbc.gridy = 1;
-        panel.add(lblPass, gbc);
+        JLabel passwordLabel = createStyledLabel("Mot de passe");
+        panel.add(passwordLabel);
+        panel.add(Box.createVerticalStrut(8));
+        
+        JPasswordField passwordField = createStyledPasswordField();
+        panel.add(passwordField);
+        panel.add(Box.createVerticalStrut(25));
 
-        loginPassword = new JPasswordField(20);
-        loginPassword.setFont(fieldFont);
-        loginPassword.setBackground(fieldBackground);
-        loginPassword.setPreferredSize(new Dimension(0, fieldHeight));
-        gbc.gridx = 1;
-        panel.add(loginPassword, gbc);
+        // Button
+        JButton btnLogin = createStyledButton("Se connecter", PRIMARY_COLOR);
+        panel.add(btnLogin);
+        panel.add(Box.createVerticalStrut(15));
 
-        // Login button
-        JButton btnLogin = new JButton("Connexion");
-        styleButton(btnLogin);
-        gbc.gridx = 1;
-        gbc.gridy = 2;
-        gbc.anchor = GridBagConstraints.EAST;
-        panel.add(btnLogin, gbc);
+        // Message
+        JLabel message = new JLabel("", SwingConstants.CENTER);
+        message.setFont(new Font("Segoe UI", Font.PLAIN, 13));
+        message.setAlignmentX(Component.CENTER_ALIGNMENT);
+        panel.add(message);
 
-        btnLogin.addActionListener(e -> doLogin());
-
-        return panel;
-    }
-
-    private JPanel createRegisterPanel() {
-        JPanel panel = new JPanel(new GridBagLayout());
-        panel.setOpaque(false);
-
-        GridBagConstraints gbc = commonConstraints();
-
-        Font labelFont = new Font("Segoe UI", Font.BOLD, 14);
-        Font fieldFont = new Font("Segoe UI", Font.PLAIN, 14);
-        Color fieldBackground = new Color(255, 255, 255);
-        int fieldHeight = 36;
-
-        // Nom
-        JLabel lblNom = new JLabel("Nom :");
-        lblNom.setFont(labelFont);
-        gbc.gridx = 0;
-        gbc.gridy = 0;
-        panel.add(lblNom, gbc);
-
-        regNom = new JTextField(15);
-        regNom.setFont(fieldFont);
-        regNom.setBackground(fieldBackground);
-        regNom.setPreferredSize(new Dimension(0, fieldHeight));
-        gbc.gridx = 1;
-        panel.add(regNom, gbc);
-
-        // Prenom
-        JLabel lblPrenom = new JLabel("Prénom :");
-        lblPrenom.setFont(labelFont);
-        gbc.gridx = 0;
-        gbc.gridy = 1;
-        panel.add(lblPrenom, gbc);
-
-        regPrenom = new JTextField(15);
-        regPrenom.setFont(fieldFont);
-        regPrenom.setBackground(fieldBackground);
-        regPrenom.setPreferredSize(new Dimension(0, fieldHeight));
-        gbc.gridx = 1;
-        panel.add(regPrenom, gbc);
-
-        // Email
-        JLabel lblEmail = new JLabel("Email :");
-        lblEmail.setFont(labelFont);
-        gbc.gridx = 0;
-        gbc.gridy = 2;
-        panel.add(lblEmail, gbc);
-
-        regEmail = new JTextField(15);
-        regEmail.setFont(fieldFont);
-        regEmail.setBackground(fieldBackground);
-        regEmail.setPreferredSize(new Dimension(0, fieldHeight));
-        gbc.gridx = 1;
-        panel.add(regEmail, gbc);
-
-        // Password
-        JLabel lblPass = new JLabel("Mot de passe :");
-        lblPass.setFont(labelFont);
-        gbc.gridx = 0;
-        gbc.gridy = 3;
-        panel.add(lblPass, gbc);
-
-        regPassword = new JPasswordField(15);
-        regPassword.setFont(fieldFont);
-        regPassword.setBackground(fieldBackground);
-        regPassword.setPreferredSize(new Dimension(0, fieldHeight));
-        gbc.gridx = 1;
-        panel.add(regPassword, gbc);
-
-        // Confirm password
-        JLabel lblConfirm = new JLabel("Confirmer mot de passe :");
-        lblConfirm.setFont(labelFont);
-        gbc.gridx = 0;
-        gbc.gridy = 4;
-        panel.add(lblConfirm, gbc);
-
-        regConfirmPassword = new JPasswordField(15);
-        regConfirmPassword.setFont(fieldFont);
-        regConfirmPassword.setBackground(fieldBackground);
-        regConfirmPassword.setPreferredSize(new Dimension(0, fieldHeight));
-        gbc.gridx = 1;
-        panel.add(regConfirmPassword, gbc);
-
-        // Competance
-        JLabel lblCompet = new JLabel("Compétance :");
-        lblCompet.setFont(labelFont);
-        gbc.gridx = 0;
-        gbc.gridy = 5;
-        panel.add(lblCompet, gbc);
-
-        regCompetance = new JTextField(15);
-        regCompetance.setFont(fieldFont);
-        regCompetance.setBackground(fieldBackground);
-        regCompetance.setPreferredSize(new Dimension(0, fieldHeight));
-        gbc.gridx = 1;
-        panel.add(regCompetance, gbc);
-
-        // Telephone
-        JLabel lblTelephone = new JLabel("Téléphone :");
-        lblTelephone.setFont(labelFont);
-        gbc.gridx = 0;
-        gbc.gridy = 6;
-        panel.add(lblTelephone, gbc);
-
-        regTelephone = new JTextField(15);
-        regTelephone.setFont(fieldFont);
-        regTelephone.setBackground(fieldBackground);
-        regTelephone.setPreferredSize(new Dimension(0, fieldHeight));
-        gbc.gridx = 1;
-        panel.add(regTelephone, gbc);
-
-        // Disponibilité
-        // JLabel lblDisp = new JLabel("Disponible :");
-        // lblDisp.setFont(labelFont);
-        // gbc.gridx = 0;
-        // gbc.gridy = 7;
-        // panel.add(lblDisp, gbc);
-
-        // regDisponibilite = new JCheckBox();
-        // regDisponibilite.setOpaque(false);
-        // gbc.gridx = 1;
-        // panel.add(regDisponibilite, gbc);
-
-        // Register button
-        JButton btnRegister = new JButton("S'inscrire");
-        styleButton(btnRegister);
-        gbc.gridx = 1;
-        gbc.gridy = 8;
-        gbc.anchor = GridBagConstraints.EAST;
-        panel.add(btnRegister, gbc);
-
-        btnRegister.addActionListener(e -> doRegister());
-
-        return panel;
-    }
-
-    private GridBagConstraints commonConstraints() {
-        GridBagConstraints gbc = new GridBagConstraints();
-        gbc.insets = new Insets(8, 8, 8, 8);
-        gbc.fill = GridBagConstraints.HORIZONTAL;
-        gbc.anchor = GridBagConstraints.WEST;
-        return gbc;
-    }
-
-    private void styleButton(JButton btn) {
-        btn.setFont(new Font("Segoe UI", Font.BOLD, 14));
-        btn.setForeground(new Color(255, 255, 255));
-        btn.setBackground(new Color(0, 120, 212));
-        btn.setBorder(BorderFactory.createEmptyBorder(8, 16, 8, 16));
-        btn.setFocusPainted(false);
-        btn.setCursor(new Cursor(Cursor.HAND_CURSOR));
-    }
-
-    // ---- HTTP helpers ----
-    private CompletableFuture<HttpResponse<String>> sendPostAsync(String url, String json) {
-        HttpRequest req = HttpRequest.newBuilder()
-                .uri(URI.create(url))
-                .header("Content-Type", "application/json")
-                .POST(HttpRequest.BodyPublishers.ofString(json))
-                .build();
-        return httpClient.sendAsync(req, HttpResponse.BodyHandlers.ofString());
-    }
-
-    private HttpResponse<String> sendPost(String url, String json) throws IOException, InterruptedException {
-        HttpRequest req = HttpRequest.newBuilder()
-                .uri(URI.create(url))
-                .header("Content-Type", "application/json")
-                .POST(HttpRequest.BodyPublishers.ofString(json))
-                .build();
-        return httpClient.send(req, HttpResponse.BodyHandlers.ofString());
-    }
-
-    // ---- Actions ----
-    private void doRegister() {
-        String nom = regNom.getText().trim();
-        String prenom = regPrenom.getText().trim();
-        String email = regEmail.getText().trim();
-        String password = new String(regPassword.getPassword());
-        String confirm = new String(regConfirmPassword.getPassword());
-        String competance = regCompetance.getText().trim();
-        String telStr = regTelephone.getText().trim();
-        //boolean dispon = regDisponibilite.isSelected();
-
-        if (nom.isEmpty() || prenom.isEmpty() || email.isEmpty() || password.isEmpty() || confirm.isEmpty()) {
-            JOptionPane.showMessageDialog(this, "Veuillez remplir tous les champs obligatoires.", "Erreur", JOptionPane.ERROR_MESSAGE);
-            return;
-        }
-
-        if (!password.equals(confirm)) {
-            JOptionPane.showMessageDialog(this, "Les mots de passe ne correspondent pas.", "Erreur", JOptionPane.ERROR_MESSAGE);
-            return;
-        }
-
-        int telephone = 0;
-        try {
-            if (!telStr.isEmpty()) telephone = Integer.parseInt(telStr);
-        } catch (NumberFormatException ex) {
-            JOptionPane.showMessageDialog(this, "Le numéro de téléphone doit être un nombre.", "Erreur", JOptionPane.ERROR_MESSAGE);
-            return;
-        }
-
-        // Construire JSON (adapte les noms si ton DTO est différent)
-        String json = "{"
-                + "\"nom\":\"" + escapeJson(nom) + "\","
-                + "\"prenom\":\"" + escapeJson(prenom) + "\","
-                + "\"email\":\"" + escapeJson(email) + "\","
-                + "\"password\":\"" + escapeJson(password) + "\","
-                + "\"confirmPassword\":\"" + escapeJson(confirm) + "\","
-                + "\"competance\":\"" + escapeJson(competance) + "\","
-                + "\"telephone\":" + telephone //+ ","
-               // + "\"disponibilite\":" + dispon
-                + "}";
-
-        String url = baseUrl + "/auth/register";
-
-        // Envoi synchrone (facile à déboguer). Tu peux utiliser sendPostAsync si tu veux.
-        try {
-            HttpResponse<String> resp = sendPost(url, json);
-            int code = resp.statusCode();
-            String body = resp.body();
-
-            if (code >= 200 && code < 300) {
-                JOptionPane.showMessageDialog(this, "Inscription réussie !", "Succès", JOptionPane.INFORMATION_MESSAGE);
-            } else {
-                // Affiche le message renvoyé par le backend si présent
-                JOptionPane.showMessageDialog(this, "Erreur inscription : " + body, "Erreur", JOptionPane.ERROR_MESSAGE);
+        // Action
+        btnLogin.addActionListener(e -> {
+            if (emailField.getText().trim().isEmpty() || passwordField.getPassword().length == 0) {
+                showMessage(message, "Veuillez remplir tous les champs", ERROR_COLOR);
+                return;
             }
-        } catch (IOException | InterruptedException ex) {
-            ex.printStackTrace();
-            JOptionPane.showMessageDialog(this, "Erreur réseau : " + ex.getMessage(), "Erreur", JOptionPane.ERROR_MESSAGE);
-        }
-    }
 
-    private void doLogin() {
-        String email = loginEmail.getText().trim();
-        String password = new String(loginPassword.getPassword());
+            btnLogin.setEnabled(false);
+            btnLogin.setText("Connexion...");
 
-        if (email.isEmpty() || password.isEmpty()) {
-            JOptionPane.showMessageDialog(this, "Veuillez remplir l'email et le mot de passe.", "Erreur", JOptionPane.ERROR_MESSAGE);
-            return;
-        }
+            SwingWorker<String, Void> worker = new SwingWorker<>() {
+                @Override
+                protected String doInBackground() throws Exception {
+                    String json = "{ \"email\": \"" + emailField.getText() + "\", " +
+                            "\"password\": \"" + new String(passwordField.getPassword()) + "\" }";
+                    return sendPOST(BASE_URL + "/login", json);
+                }
 
-        String json = "{"
-                + "\"email\":\"" + escapeJson(email) + "\","
-                + "\"password\":\"" + escapeJson(password) + "\""
-                + "}";
-
-        String url = baseUrl + "/auth/login";
-
-        // Envoi synchrone
-        try {
-            HttpResponse<String> resp = sendPost(url, json);
-            int code = resp.statusCode();
-            String body = resp.body();
-
-            if (code >= 200 && code < 300) {
-                // On attend un JSON du type {"token":"..."}
-                String token = extractTokenFromBody(body);
-                JOptionPane.showMessageDialog(this, "Connexion réussie ! Token: " + (token != null ? token.substring(0, Math.min(30, token.length())) + "..." : ""), "Succès", JOptionPane.INFORMATION_MESSAGE);
-
-                // fermer la fenetre actuelle et ouvrir Main (tu peux modifier Main pour accepter token)
-                JFrame currentFrame = (JFrame) SwingUtilities.getWindowAncestor(Auth.this);
-                currentFrame.dispose();
-
-                SwingUtilities.invokeLater(() -> {
-                    // si ta classe Main accepte un token, utilise: new Main(token);
-                    Main mainGUI = new Main();
-                    mainGUI.setVisible(true);
-                });
-            } else {
-                JOptionPane.showMessageDialog(this, "Erreur login : " + body, "Erreur", JOptionPane.ERROR_MESSAGE);
-            }
-        } catch (IOException | InterruptedException ex) {
-            ex.printStackTrace();
-            JOptionPane.showMessageDialog(this, "Erreur réseau : " + ex.getMessage(), "Erreur", JOptionPane.ERROR_MESSAGE);
-        }
-    }
-
-    // simple extraction du token depuis {"token":"..."} sans dépendance externe
-    private String extractTokenFromBody(String body) {
-        if (body == null) return null;
-        body = body.trim();
-        // recherche naive "token":"value"
-        String key = "\"token\"";
-        int idx = body.indexOf(key);
-        if (idx == -1) return null;
-        int colon = body.indexOf(":", idx);
-        if (colon == -1) return null;
-        int firstQuote = body.indexOf("\"", colon);
-        if (firstQuote == -1) return null;
-        int secondQuote = body.indexOf("\"", firstQuote + 1);
-        if (secondQuote == -1) return null;
-        return body.substring(firstQuote + 1, secondQuote);
-    }
-
-    // échappe quelques caractères pour éviter de casser le JSON (très simple)
-    private String escapeJson(String s) {
-        if (s == null) return "";
-        return s.replace("\\", "\\\\").replace("\"", "\\\"").replace("\n", "\\n").replace("\r", "\\r");
-    }
-
-    // main pour lancer l'UI
-    public static void main(String[] args) {
-        SwingUtilities.invokeLater(() -> {
-            JFrame frame = new JFrame("Login / Register");
-            frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
-            frame.add(new Auth());
-            frame.setSize(800, 520);
-            frame.setLocationRelativeTo(null);
-            frame.setVisible(true);
+                @Override
+                protected void done() {
+                    try {
+                        String response = get();
+                        if (response.contains("success") || response.contains("token")) {
+                            showMessage(message, "✓ Connexion réussie !", SUCCESS_COLOR);
+                            
+                            // Attendre 1 seconde pour voir le message de succès
+                            Timer timer = new Timer(1000, evt -> {
+                                // Ferme la fenêtre actuelle
+                                dispose();
+                                
+                                // Ouvre la fenêtre Main
+                                SwingUtilities.invokeLater(() -> {
+                                    Main mainGUI = new Main();
+                                    mainGUI.setVisible(true);
+                                });
+                            });
+                            timer.setRepeats(false);
+                            timer.start();
+                        } else {
+                            showMessage(message, "✗ " + extractErrorMessage(response), ERROR_COLOR);
+                            btnLogin.setEnabled(true);
+                            btnLogin.setText("Se connecter");
+                        }
+                    } catch (Exception ex) {
+                        showMessage(message, "✗ Erreur de connexion", ERROR_COLOR);
+                        btnLogin.setEnabled(true);
+                        btnLogin.setText("Se connecter");
+                    }
+                }
+            };
+            worker.execute();
         });
+
+        mainPanel.add(panel, BorderLayout.CENTER);
+        return mainPanel;
+    }
+
+    // ================= REGISTER PANEL ===================
+    private JPanel registerPanel() {
+        JPanel mainPanel = new JPanel(new BorderLayout());
+        mainPanel.setBackground(BG_COLOR);
+        
+        JScrollPane scrollPane = new JScrollPane();
+        scrollPane.setBorder(null);
+        scrollPane.getVerticalScrollBar().setUnitIncrement(16);
+        
+        JPanel panel = new JPanel();
+        panel.setLayout(new BoxLayout(panel, BoxLayout.Y_AXIS));
+        panel.setBackground(CARD_COLOR);
+        panel.setBorder(new EmptyBorder(30, 40, 30, 40));
+
+        // Titre
+        JLabel title = new JLabel("Créer un compte");
+        title.setFont(new Font("Segoe UI", Font.BOLD, 28));
+        title.setForeground(SECONDARY_COLOR);
+        title.setAlignmentX(Component.CENTER_ALIGNMENT);
+        panel.add(title);
+        panel.add(Box.createVerticalStrut(10));
+
+        JLabel subtitle = new JLabel("Remplissez les informations ci-dessous");
+        subtitle.setFont(new Font("Segoe UI", Font.PLAIN, 14));
+        subtitle.setForeground(Color.GRAY);
+        subtitle.setAlignmentX(Component.CENTER_ALIGNMENT);
+        panel.add(subtitle);
+        panel.add(Box.createVerticalStrut(30));
+
+        // Nom et Prénom (côte à côte)
+        JPanel namePanel = new JPanel(new GridLayout(1, 2, 15, 0));
+        namePanel.setBackground(CARD_COLOR);
+        namePanel.setMaximumSize(new Dimension(Integer.MAX_VALUE, 70));
+        
+        JPanel nomContainer = new JPanel();
+        nomContainer.setLayout(new BoxLayout(nomContainer, BoxLayout.Y_AXIS));
+        nomContainer.setBackground(CARD_COLOR);
+        JLabel nomLabel = createStyledLabel("Nom");
+        JTextField nomField = createStyledTextField();
+        nomContainer.add(nomLabel);
+        nomContainer.add(Box.createVerticalStrut(8));
+        nomContainer.add(nomField);
+        
+        JPanel prenomContainer = new JPanel();
+        prenomContainer.setLayout(new BoxLayout(prenomContainer, BoxLayout.Y_AXIS));
+        prenomContainer.setBackground(CARD_COLOR);
+        JLabel prenomLabel = createStyledLabel("Prénom");
+        JTextField prenomField = createStyledTextField();
+        prenomContainer.add(prenomLabel);
+        prenomContainer.add(Box.createVerticalStrut(8));
+        prenomContainer.add(prenomField);
+        
+        namePanel.add(nomContainer);
+        namePanel.add(prenomContainer);
+        panel.add(namePanel);
+        panel.add(Box.createVerticalStrut(20));
+
+        // Email
+        JLabel emailLabel = createStyledLabel("Adresse Email");
+        panel.add(emailLabel);
+        panel.add(Box.createVerticalStrut(8));
+        JTextField emailField = createStyledTextField();
+        panel.add(emailField);
+        panel.add(Box.createVerticalStrut(20));
+
+        // Password
+        JLabel passwordLabel = createStyledLabel("Mot de passe");
+        panel.add(passwordLabel);
+        panel.add(Box.createVerticalStrut(8));
+        JPasswordField passwordField = createStyledPasswordField();
+        panel.add(passwordField);
+        panel.add(Box.createVerticalStrut(20));
+
+        // Confirm Password
+        JLabel confirmLabel = createStyledLabel("Confirmer le mot de passe");
+        panel.add(confirmLabel);
+        panel.add(Box.createVerticalStrut(8));
+        JPasswordField confirmField = createStyledPasswordField();
+        panel.add(confirmField);
+        panel.add(Box.createVerticalStrut(20));
+
+        // Compétence et Téléphone (côte à côte)
+        JPanel contactPanel = new JPanel(new GridLayout(1, 2, 15, 0));
+        contactPanel.setBackground(CARD_COLOR);
+        contactPanel.setMaximumSize(new Dimension(Integer.MAX_VALUE, 70));
+        
+        JPanel compContainer = new JPanel();
+        compContainer.setLayout(new BoxLayout(compContainer, BoxLayout.Y_AXIS));
+        compContainer.setBackground(CARD_COLOR);
+        JLabel compLabel = createStyledLabel("Compétence");
+        JTextField competanceField = createStyledTextField();
+        compContainer.add(compLabel);
+        compContainer.add(Box.createVerticalStrut(8));
+        compContainer.add(competanceField);
+        
+        JPanel telContainer = new JPanel();
+        telContainer.setLayout(new BoxLayout(telContainer, BoxLayout.Y_AXIS));
+        telContainer.setBackground(CARD_COLOR);
+        JLabel telLabel = createStyledLabel("Téléphone");
+        JTextField telephoneField = createStyledTextField();
+        telContainer.add(telLabel);
+        telContainer.add(Box.createVerticalStrut(8));
+        telContainer.add(telephoneField);
+        
+        contactPanel.add(compContainer);
+        contactPanel.add(telContainer);
+        panel.add(contactPanel);
+        panel.add(Box.createVerticalStrut(20));
+
+        // Disponibilité supprimée (par défaut true)
+        panel.add(Box.createVerticalStrut(5));
+
+        // Button
+        JButton btnRegister = createStyledButton("Créer mon compte", PRIMARY_COLOR);
+        panel.add(btnRegister);
+        panel.add(Box.createVerticalStrut(15));
+
+        // Message
+        JLabel message = new JLabel("", SwingConstants.CENTER);
+        message.setFont(new Font("Segoe UI", Font.PLAIN, 13));
+        message.setAlignmentX(Component.CENTER_ALIGNMENT);
+        panel.add(message);
+
+        // Action
+        btnRegister.addActionListener(e -> {
+            // Validation
+            if (nomField.getText().trim().isEmpty() || prenomField.getText().trim().isEmpty() ||
+                emailField.getText().trim().isEmpty() || passwordField.getPassword().length == 0) {
+                showMessage(message, "✗ Veuillez remplir tous les champs obligatoires", ERROR_COLOR);
+                return;
+            }
+
+            if (!new String(passwordField.getPassword()).equals(new String(confirmField.getPassword()))) {
+                showMessage(message, "✗ Les mots de passe ne correspondent pas", ERROR_COLOR);
+                return;
+            }
+
+            if (passwordField.getPassword().length < 6) {
+                showMessage(message, "✗ Le mot de passe doit contenir au moins 6 caractères", ERROR_COLOR);
+                return;
+            }
+
+            btnRegister.setEnabled(false);
+            btnRegister.setText("Création en cours...");
+
+            SwingWorker<String, Void> worker = new SwingWorker<>() {
+                @Override
+                protected String doInBackground() throws Exception {
+                    String json = "{"
+                            + "\"nom\": \"" + nomField.getText() + "\","
+                            + "\"prenom\": \"" + prenomField.getText() + "\","
+                            + "\"email\": \"" + emailField.getText() + "\","
+                            + "\"password\": \"" + new String(passwordField.getPassword()) + "\","
+                            + "\"competance\": \"" + competanceField.getText() + "\","
+                            + "\"telephone\": \"" + telephoneField.getText() + "\","
+                            + "\"disponibilite\": true"
+                            + "}";
+                    return sendPOST(BASE_URL + "/register", json);
+                }
+
+                @Override
+                protected void done() {
+                    try {
+                        String response = get();
+                        if (response.contains("success") || response.contains("succès")) {
+                            showMessage(message, "✓ Compte créé avec succès !", SUCCESS_COLOR);
+                            
+                            // Attendre 1.5 secondes puis rediriger vers login
+                            Timer timer = new Timer(1500, evt -> {
+                                tabs.setSelectedIndex(0); // Aller à l'onglet Login
+                                clearRegisterFields(nomField, prenomField, emailField, 
+                                                  passwordField, confirmField, competanceField, 
+                                                  telephoneField);
+                                message.setText("");
+                            });
+                            timer.setRepeats(false);
+                            timer.start();
+                        } else {
+                            showMessage(message, "✗ " + extractErrorMessage(response), ERROR_COLOR);
+                        }
+                    } catch (Exception ex) {
+                        showMessage(message, "✗ Erreur lors de la création du compte", ERROR_COLOR);
+                    } finally {
+                        btnRegister.setEnabled(true);
+                        btnRegister.setText("Créer mon compte");
+                    }
+                }
+            };
+            worker.execute();
+        });
+
+        scrollPane.setViewportView(panel);
+        mainPanel.add(scrollPane, BorderLayout.CENTER);
+        return mainPanel;
+    }
+
+    // ================= UTILITAIRES UI ===================
+    private JLabel createStyledLabel(String text) {
+        JLabel label = new JLabel(text);
+        label.setFont(new Font("Segoe UI", Font.BOLD, 13));
+        label.setForeground(new Color(55, 65, 81));
+        label.setAlignmentX(Component.LEFT_ALIGNMENT);
+        return label;
+    }
+
+    private JTextField createStyledTextField() {
+        JTextField field = new JTextField();
+        field.setFont(new Font("Segoe UI", Font.PLAIN, 14));
+        field.setPreferredSize(new Dimension(0, 40));
+        field.setMaximumSize(new Dimension(Integer.MAX_VALUE, 40));
+        field.setBorder(BorderFactory.createCompoundBorder(
+            BorderFactory.createLineBorder(new Color(209, 213, 219), 1),
+            new EmptyBorder(5, 12, 5, 12)
+        ));
+        return field;
+    }
+
+    private JPasswordField createStyledPasswordField() {
+        JPasswordField field = new JPasswordField();
+        field.setFont(new Font("Segoe UI", Font.PLAIN, 14));
+        field.setPreferredSize(new Dimension(0, 40));
+        field.setMaximumSize(new Dimension(Integer.MAX_VALUE, 40));
+        field.setBorder(BorderFactory.createCompoundBorder(
+            BorderFactory.createLineBorder(new Color(209, 213, 219), 1),
+            new EmptyBorder(5, 12, 5, 12)
+        ));
+        return field;
+    }
+
+    private JButton createStyledButton(String text, Color bgColor) {
+        JButton button = new JButton(text);
+        button.setFont(new Font("Segoe UI", Font.BOLD, 14));
+        button.setForeground(Color.WHITE);
+        button.setBackground(bgColor);
+        button.setFocusPainted(false);
+        button.setBorderPainted(false);
+        button.setPreferredSize(new Dimension(0, 45));
+        button.setMaximumSize(new Dimension(Integer.MAX_VALUE, 45));
+        button.setCursor(new Cursor(Cursor.HAND_CURSOR));
+        button.setAlignmentX(Component.CENTER_ALIGNMENT);
+        
+        button.addMouseListener(new java.awt.event.MouseAdapter() {
+            public void mouseEntered(java.awt.event.MouseEvent evt) {
+                button.setBackground(bgColor.darker());
+            }
+            public void mouseExited(java.awt.event.MouseEvent evt) {
+                button.setBackground(bgColor);
+            }
+        });
+        
+        return button;
+    }
+
+    private void showMessage(JLabel label, String text, Color color) {
+        label.setText(text);
+        label.setForeground(color);
+    }
+
+    private String extractErrorMessage(String response) {
+        if (response.contains("error")) {
+            int start = response.indexOf("\"error\"");
+            if (start != -1) {
+                int valueStart = response.indexOf(":", start) + 1;
+                int valueEnd = response.indexOf("}", valueStart);
+                if (valueEnd == -1) valueEnd = response.length();
+                return response.substring(valueStart, valueEnd)
+                    .replace("\"", "").trim();
+            }
+        }
+        return response;
+    }
+
+    private void clearRegisterFields(JTextField nom, JTextField prenom, JTextField email,
+                                     JPasswordField password, JPasswordField confirm,
+                                     JTextField comp, JTextField tel) {
+        nom.setText("");
+        prenom.setText("");
+        email.setText("");
+        password.setText("");
+        confirm.setText("");
+        comp.setText("");
+        tel.setText("");
+    }
+
+    // ========== MÉTHODE HTTP POST ==========
+    private String sendPOST(String url, String jsonInput) throws Exception {
+        URL obj = new URL(url);
+        HttpURLConnection con = (HttpURLConnection) obj.openConnection();
+        con.setRequestMethod("POST");
+        con.setRequestProperty("Content-Type", "application/json; charset=UTF-8");
+        con.setDoOutput(true);
+        con.setConnectTimeout(5000);
+        con.setReadTimeout(5000);
+
+        try (OutputStream os = con.getOutputStream()) {
+            os.write(jsonInput.getBytes("UTF-8"));
+            os.flush();
+        }
+
+        int responseCode = con.getResponseCode();
+        System.out.println("Response Code: " + responseCode);
+
+        InputStreamReader streamReader;
+        if (responseCode >= 200 && responseCode < 400) {
+            streamReader = new InputStreamReader(con.getInputStream(), "UTF-8");
+        } else {
+            streamReader = new InputStreamReader(con.getErrorStream(), "UTF-8");
+        }
+
+        try (BufferedReader in = new BufferedReader(streamReader)) {
+            String inputLine;
+            StringBuilder response = new StringBuilder();
+            while ((inputLine = in.readLine()) != null) {
+                response.append(inputLine);
+            }
+
+            String result = response.toString();
+            System.out.println("Response: " + result);
+            return result;
+        }
+    }
+
+    // Lancement
+    public static void main(String[] args) {
+        try {
+            UIManager.setLookAndFeel(UIManager.getSystemLookAndFeelClassName());
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+        SwingUtilities.invokeLater(() -> new Auth().setVisible(true));
     }
 }
