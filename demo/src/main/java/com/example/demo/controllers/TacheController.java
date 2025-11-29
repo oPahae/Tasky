@@ -1,231 +1,102 @@
 package com.example.demo.controllers;
-
 import com.example.demo.models.*;
-import com.example.demo.repositories.TacheRepository;
-import com.example.demo.repositories.SousTacheRepository;
-import com.example.demo.repositories.DocumentRepository;
-import com.example.demo.repositories.CommentaireRepository;
-import com.example.demo.repositories.BlocageRepository;
+import com.example.demo.repositories.*;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
-
 import java.time.LocalDate;
 import java.util.List;
-import java.util.Optional;
-import java.util.stream.Collectors;
-
+import java.util.Map;
+import java.util.HashMap;
 @RestController
 @RequestMapping("/api/tache")
 public class TacheController {
-
     @Autowired
     private TacheRepository tacheRepository;
-
     @Autowired
     private SousTacheRepository sousTacheRepository;
-
     @Autowired
     private DocumentRepository documentRepository;
-
     @Autowired
     private CommentaireRepository commentaireRepository;
-
     @Autowired
     private BlocageRepository blocageRepository;
-
     // Récupérer toutes les données de la tâche actuelle
     @GetMapping("/{id}")
-    public ResponseEntity<?> getTacheData(@PathVariable int id) {
-        Optional<Tache> tacheOpt = tacheRepository.findById(id);
-        if (!tacheOpt.isPresent()) {
-            return ResponseEntity.notFound().build();
-        }
-        Tache tache = tacheOpt.get();
-        return ResponseEntity.ok(new TacheDTO(tache));
+    public ResponseEntity<Map<String, Object>> getTacheData(@PathVariable int id) {
+        Tache tache = tacheRepository.findById(id).orElseThrow(() -> new RuntimeException("Tâche non trouvée"));
+        List<SousTache> sousTaches = sousTacheRepository.findByTacheId(id);
+        List<Document> documents = documentRepository.findByTacheId(id);
+        List<Commentaire> commentaires = commentaireRepository.findByTacheId(id);
+        Map<String, Object> response = new HashMap<>();
+        response.put("tache", tache);
+        response.put("sousTaches", sousTaches);
+        response.put("documents", documents);
+        response.put("commentaires", commentaires);
+        return ResponseEntity.ok(response);
     }
-
     // Ajouter une sous-tâche
     @PostMapping("/{id}/sous-tache")
-    public ResponseEntity<?> addSousTache(@PathVariable int id, @RequestBody SousTacheDTO sousTacheDTO) {
-        Optional<Tache> tacheOpt = tacheRepository.findById(id);
-        if (!tacheOpt.isPresent()) {
-            return ResponseEntity.notFound().build();
-        }
+    public ResponseEntity<SousTache> addSousTache(@PathVariable int id, @RequestBody Map<String, String> payload) {
+        Tache tache = tacheRepository.findById(id).orElseThrow(() -> new RuntimeException("Tâche non trouvée"));
         SousTache sousTache = new SousTache();
-        sousTache.setTitre(sousTacheDTO.getTitre());
+        sousTache.setTitre(payload.get("titre"));
         sousTache.setTermine(false);
         sousTache.setDateCreation(LocalDate.now());
-        sousTache.setTache(tacheOpt.get());
-        sousTacheRepository.save(sousTache);
-        return ResponseEntity.ok().build();
+        sousTache.setTache(tache);
+        SousTache saved = sousTacheRepository.save(sousTache);
+        return ResponseEntity.ok(saved);
     }
-
     // Cocher/décocher une sous-tâche
     @PutMapping("/sous-tache/{sousTacheId}")
-    public ResponseEntity<?> toggleSousTache(@PathVariable int sousTacheId) {
-        Optional<SousTache> sousTacheOpt = sousTacheRepository.findById(sousTacheId);
-        if (!sousTacheOpt.isPresent()) {
-            return ResponseEntity.notFound().build();
-        }
-        SousTache sousTache = sousTacheOpt.get();
+    public ResponseEntity<SousTache> toggleSousTache(@PathVariable int sousTacheId) {
+        SousTache sousTache = sousTacheRepository.findById(sousTacheId).orElseThrow(() -> new RuntimeException("Sous-tâche non trouvée"));
         sousTache.setTermine(!sousTache.isTermine());
-        sousTacheRepository.save(sousTache);
-        return ResponseEntity.ok().build();
+        SousTache updated = sousTacheRepository.save(sousTache);
+        return ResponseEntity.ok(updated);
     }
-
     // Ajouter un document
     @PostMapping("/{id}/document")
-    public ResponseEntity<?> addDocument(@PathVariable int id, @RequestBody DocumentDTO documentDTO) {
-        Optional<Tache> tacheOpt = tacheRepository.findById(id);
-        if (!tacheOpt.isPresent()) {
-            return ResponseEntity.notFound().build();
-        }
+    public ResponseEntity<Document> addDocument(@PathVariable int id, @RequestBody Map<String, String> payload) {
+        Tache tache = tacheRepository.findById(id).orElseThrow(() -> new RuntimeException("Tâche non trouvée"));
         Document document = new Document();
-        document.setNom(documentDTO.getNom());
-        document.setDescription(documentDTO.getDescription());
+        document.setNom(payload.get("nom"));
+        document.setDescription(payload.get("description"));
         document.setDateCreation(LocalDate.now());
-        document.setTache(tacheOpt.get());
-        documentRepository.save(document);
-        return ResponseEntity.ok().build();
+        document.setTache(tache);
+        Document saved = documentRepository.save(document);
+        return ResponseEntity.ok(saved);
     }
-
     // Ajouter un commentaire
     @PostMapping("/{id}/commentaire")
-    public ResponseEntity<?> addCommentaire(@PathVariable int id, @RequestBody CommentaireDTO commentaireDTO) {
-        Optional<Tache> tacheOpt = tacheRepository.findById(id);
-        if (!tacheOpt.isPresent()) {
-            return ResponseEntity.notFound().build();
-        }
+    public ResponseEntity<Commentaire> addCommentaire(@PathVariable int id, @RequestBody Map<String, String> payload) {
+        Tache tache = tacheRepository.findById(id).orElseThrow(() -> new RuntimeException("Tâche non trouvée"));
         Commentaire commentaire = new Commentaire();
-        commentaire.setContenu(commentaireDTO.getContenu());
+        commentaire.setContenu(payload.get("contenu"));
         commentaire.setDateCreation(LocalDate.now());
-        commentaire.setTache(tacheOpt.get());
-        commentaireRepository.save(commentaire);
-        return ResponseEntity.ok().build();
+        commentaire.setTache(tache);
+        Commentaire saved = commentaireRepository.save(commentaire);
+        return ResponseEntity.ok(saved);
     }
-
     // Ajouter un bloquage
     @PostMapping("/{id}/blocage")
-    public ResponseEntity<?> addBlocage(@PathVariable int id, @RequestBody BlocageDTO blocageDTO) {
-        Optional<Tache> tacheOpt = tacheRepository.findById(id);
-        if (!tacheOpt.isPresent()) {
-            return ResponseEntity.notFound().build();
-        }
+    public ResponseEntity<Blocage> addBlocage(@PathVariable int id, @RequestBody Map<String, String> payload) {
+        Tache tache = tacheRepository.findById(id).orElseThrow(() -> new RuntimeException("Tâche non trouvée"));
         Blocage blocage = new Blocage();
-        blocage.setDescription(blocageDTO.getDescription());
+        blocage.setDescription(payload.get("description"));
         blocage.setDateSignalement(LocalDate.now());
-        blocage.setStatut("Signalé");
-        blocage.setTache(tacheOpt.get());
-        blocageRepository.save(blocage);
-        return ResponseEntity.ok().build();
+        blocage.setStatut("Signale");
+        blocage.setTache(tache);
+        Blocage saved = blocageRepository.save(blocage);
+        return ResponseEntity.ok(saved);
     }
-
-    // Ajouter une dépense (exemple simplifié)
+    // Ajouter une dépense
     @PostMapping("/{id}/depense")
-    public ResponseEntity<?> addDepense(@PathVariable int id, @RequestBody DepenseDTO depenseDTO) {
-        // Logique pour ajouter une dépense (à adapter selon votre modèle)
-        return ResponseEntity.ok().build();
-    }
-
-    // DTOs
-    public static class TacheDTO {
-        private int id;
-        private String titre;
-        private String description;
-        private LocalDate dateCreation;
-        private LocalDate dateLimite;
-        private List<SousTacheDTO> sousTaches;
-        private List<DocumentDTO> documents;
-        private List<CommentaireDTO> commentaires;
-
-        public TacheDTO(Tache tache) {
-            this.id = tache.getId();
-            this.titre = tache.getTitre();
-            this.description = tache.getDescription();
-            this.dateCreation = tache.getDateCreation();
-            this.dateLimite = tache.getDateLimite();
-            this.sousTaches = tache.getSousTaches().stream().map(SousTacheDTO::new).collect(Collectors.toList());
-            this.documents = tache.getDocuments().stream().map(DocumentDTO::new).collect(Collectors.toList());
-            this.commentaires = tache.getCommentaires().stream().map(CommentaireDTO::new).collect(Collectors.toList());
-        }
-
-        // Getters
-        public int getId() { return id; }
-        public String getTitre() { return titre; }
-        public String getDescription() { return description; }
-        public LocalDate getDateCreation() { return dateCreation; }
-        public LocalDate getDateLimite() { return dateLimite; }
-        public List<SousTacheDTO> getSousTaches() { return sousTaches; }
-        public List<DocumentDTO> getDocuments() { return documents; }
-        public List<CommentaireDTO> getCommentaires() { return commentaires; }
-    }
-
-    public static class SousTacheDTO {
-        private int id;
-        private String titre;
-        private boolean termine;
-
-        public SousTacheDTO(SousTache sousTache) {
-            this.id = sousTache.getId();
-            this.titre = sousTache.getTitre();
-            this.termine = sousTache.isTermine();
-        }
-
-        // Getters
-        public int getId() { return id; }
-        public String getTitre() { return titre; }
-        public boolean isTermine() { return termine; }
-    }
-
-    public static class DocumentDTO {
-        private int id;
-        private String nom;
-        private String description;
-
-        public DocumentDTO(Document document) {
-            this.id = document.getId();
-            this.nom = document.getNom();
-            this.description = document.getDescription();
-        }
-
-        // Getters
-        public int getId() { return id; }
-        public String getNom() { return nom; }
-        public String getDescription() { return description; }
-    }
-
-    public static class CommentaireDTO {
-        private int id;
-        private String contenu;
-        private LocalDate dateCreation;
-
-        public CommentaireDTO(Commentaire commentaire) {
-            this.id = commentaire.getId();
-            this.contenu = commentaire.getContenu();
-            this.dateCreation = commentaire.getDateCreation();
-        }
-
-        // Getters
-        public int getId() { return id; }
-        public String getContenu() { return contenu; }
-        public LocalDate getDateCreation() { return dateCreation; }
-    }
-
-    public static class BlocageDTO {
-        private String description;
-
-        public String getDescription() { return description; }
-        public void setDescription(String description) { this.description = description; }
-    }
-
-    public static class DepenseDTO {
-        private double montant;
-        private String description;
-
-        public double getMontant() { return montant; }
-        public void setMontant(double montant) { this.montant = montant; }
-        public String getDescription() { return description; }
-        public void setDescription(String description) { this.description = description; }
+    public ResponseEntity<Tache> addDepense(@PathVariable int id, @RequestBody Map<String, Integer> payload) {
+        Tache tache = tacheRepository.findById(id).orElseThrow(() -> new RuntimeException("Tâche non trouvée"));
+        int montant = payload.get("montant");
+        tache.setDepense(tache.getDepense() + montant);
+        Tache updated = tacheRepository.save(tache);
+        return ResponseEntity.ok(updated);
     }
 }

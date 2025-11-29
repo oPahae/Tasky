@@ -18,6 +18,7 @@ public class Tache {
     private String etat;
     private LocalDate dateCreation;
     private LocalDate dateFin;
+    private int depense;
 
     @ManyToOne
     @JoinColumn(name = "projetID")
@@ -53,6 +54,8 @@ public class Tache {
     public void setDateCreation(LocalDate dateCreation) { this.dateCreation = dateCreation; }
     public LocalDate getDateFin() { return dateFin; }
     public void setDateFin(LocalDate dateFin) { this.dateFin = dateFin; }
+    public int getDepense() { return depense; }
+    public void setDepense(int depense) { this.depense = depense; }
     public Projet getProjet() { return projet; }
     public void setProjet(Projet projet) { this.projet = projet; }
     public List<SousTache> getSousTaches() { return sousTaches; }
