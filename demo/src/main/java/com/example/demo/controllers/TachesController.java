@@ -73,7 +73,7 @@ public class TachesController {
 
     @GetMapping("/taches/membre/{id}")
     public List<Tache> getTachesByMembreId(@PathVariable int id){
-        return tacheRepository.findByMembreId(id);
+        return tacheRepository.findByMembres_Id(id);
     }
     @GetMapping("/taches/projet/{id}")
     public List<Tache> getTachesByProjetId(@PathVariable int id){

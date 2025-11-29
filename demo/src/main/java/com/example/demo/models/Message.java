@@ -22,6 +22,7 @@ public class Message {
     @JoinColumn(name = "projetID")
     private Projet projet;
 
+    public Message() {}
     public Message(String contenu ,boolean estLu,Projet projet) {
         this.contenu = contenu;
         this.dateEnvoi = new Date();

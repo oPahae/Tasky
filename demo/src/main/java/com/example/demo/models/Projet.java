@@ -36,6 +36,7 @@ public class Projet {
     @OneToMany(mappedBy = "projet")
     private List<Appel> appels;
 
+    public Projet() {}
     public Projet(String nom, String description, Date deadline, float budget, String code) {
         this.nom = nom;
         this.description = description;

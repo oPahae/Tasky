@@ -112,8 +112,6 @@ public class Tache extends JPanel {
                                         LocalDate.parse((String) commentData.get("dateCreation")),
                                         getRandomColor()));
                             }
-
-                            System.out.println("Sous-tâches reçues : " + subTasksData);
                             refreshUI();
                         }
                     });
@@ -328,7 +326,6 @@ public class Tache extends JPanel {
                     card.add(Box.createRigidArea(new Dimension(0, 8)));
                 }
             }
-            System.out.println("Nombre de sous-tâches ajoutées : " + subTasks.size());
         }
         section.add(card);
         return section;
@@ -616,7 +613,7 @@ public class Tache extends JPanel {
         datePanel.setOpaque(false);
         datePanel.setMaximumSize(new Dimension(Integer.MAX_VALUE, 25));
         DateTimeFormatter formatter = DateTimeFormatter.ofPattern("dd MMM yyyy", Locale.FRENCH);
-        JLabel dateLabel = new JLabel("📅 " + comment.date.format(formatter));
+        JLabel dateLabel = new JLabel(comment.date.format(formatter));
         dateLabel.setFont(new Font("Segoe UI", Font.PLAIN, 12));
         dateLabel.setForeground(textSecondary);
         datePanel.add(dateLabel);
@@ -732,8 +729,8 @@ public class Tache extends JPanel {
         cardsContainer.setOpaque(false);
         cardsContainer.setAlignmentX(Component.LEFT_ALIGNMENT);
         cardsContainer.setMaximumSize(new Dimension(Integer.MAX_VALUE, 140));
-        cardsContainer.add(createActionCard("🚨 Signaler un bloquage", "Informer l'équipe d'un obstacle", dangerColor));
-        cardsContainer.add(createActionCard("💰 Préciser une dépense", "Ajouter une dépense au projet", warningColor));
+        cardsContainer.add(createActionCard("Signaler un bloquage", "Informer l'équipe d'un obstacle", dangerColor));
+        cardsContainer.add(createActionCard("Préciser une dépense", "Ajouter une dépense au projet", warningColor));
         section.add(cardsContainer);
         return section;
     }
@@ -837,30 +834,52 @@ public class Tache extends JPanel {
         int result = fileChooser.showOpenDialog(this);
         if (result == JFileChooser.APPROVE_OPTION) {
             File file = fileChooser.getSelectedFile();
-            long sizeKB = file.length() / 1024;
-            String type = getFileType(file.getName());
-            Map<String, String> body = new HashMap<>();
-            body.put("nom", file.getName());
-            body.put("description", "Document ajouté via l'interface");
-            body.put("type", type);
-            Queries.post("/api/tache/" + tacheId + "/document", body)
-                    .thenAccept(response -> {
-                        SwingUtilities.invokeLater(() -> {
-                            if (response.containsKey("error")) {
-                                JOptionPane.showMessageDialog(this, "Erreur: " + response.get("error"), "Erreur",
-                                        JOptionPane.ERROR_MESSAGE);
-                            } else {
-                                Map<String, Object> docData = (Map<String, Object>) response;
-                                documents.add(new Document(
-                                        (String) docData.get("nom"),
-                                        ((Number) docData.get("size")).intValue(),
-                                        (String) docData.get("type")));
-                                JOptionPane.showMessageDialog(this, "Document ajouté avec succès!", "Succès",
-                                        JOptionPane.INFORMATION_MESSAGE);
-                                refreshUI();
-                            }
+            try {
+                byte[] fileContent = java.nio.file.Files.readAllBytes(file.toPath());
+                String base64Content = java.util.Base64.getEncoder().encodeToString(fileContent);
+
+                Map<String, String> body = new HashMap<>();
+                body.put("nom", file.getName());
+                body.put("description", "Document ajouté via l'interface");
+                body.put("type", getFileType(file.getName()));
+                body.put("contenu", base64Content);
+
+                Queries.post("/api/tache/" + tacheId + "/document", body)
+                        .thenAccept(response -> {
+                            SwingUtilities.invokeLater(() -> {
+                                if (response.containsKey("error")) {
+                                    JOptionPane.showMessageDialog(this, "Erreur: " + response.get("error"), "Erreur",
+                                            JOptionPane.ERROR_MESSAGE);
+                                } else {
+                                    Map<String, Object> responseWrapper = (Map<String, Object>) response;
+                                    Map<String, Object> docData = (Map<String, Object>) responseWrapper.get("document");
+
+                                    if (docData != null) {
+                                        System.out.println("Nom du document : " + docData.get("nom"));
+                                        System.out.println("Taille du document : " + docData.get("size"));
+
+                                        int size = 0;
+                                        if (docData.get("size") != null) {
+                                            size = ((Number) docData.get("size")).intValue();
+                                        }
+                                        String type = (String) docData.getOrDefault("type", "application/octet-stream");
+
+                                        documents.add(new Document(
+                                                (String) docData.get("nom"),
+                                                size,
+                                                type));
+                                    }
+
+                                    loadTacheData();
+                                    JOptionPane.showMessageDialog(this, "Document ajouté avec succès!", "Succès",
+                                            JOptionPane.INFORMATION_MESSAGE);
+                                }
+                            });
                         });
-                    });
+            } catch (Exception e) {
+                JOptionPane.showMessageDialog(this, "Erreur lors de la lecture du fichier : " + e.getMessage(),
+                        "Erreur", JOptionPane.ERROR_MESSAGE);
+            }
         }
     }
 
@@ -888,17 +907,16 @@ public class Tache extends JPanel {
     private void addExpense() {
         JPanel panel = new JPanel(new GridLayout(2, 2, 10, 10));
         JTextField amountField = new JTextField();
-        JTextField descField = new JTextField();
-        panel.add(new JLabel("Montant (€):"));
+        panel.add(new JLabel("Montant (DHS):"));
         panel.add(amountField);
-        panel.add(new JLabel("Description:"));
-        panel.add(descField);
+
         int result = JOptionPane.showConfirmDialog(this, panel, "Ajouter une dépense", JOptionPane.OK_CANCEL_OPTION);
         if (result == JOptionPane.OK_OPTION) {
             try {
                 int montant = Integer.parseInt(amountField.getText().trim());
                 Map<String, Integer> body = new HashMap<>();
                 body.put("montant", montant);
+
                 Queries.post("/api/tache/" + tacheId + "/depense", body)
                         .thenAccept(response -> {
                             SwingUtilities.invokeLater(() -> {
@@ -906,6 +924,8 @@ public class Tache extends JPanel {
                                     JOptionPane.showMessageDialog(this, "Erreur: " + response.get("error"), "Erreur",
                                             JOptionPane.ERROR_MESSAGE);
                                 } else {
+                                    // Recharger les données de la tâche après l'ajout
+                                    loadTacheData();
                                     JOptionPane.showMessageDialog(this, "Dépense ajoutée avec succès!", "Succès",
                                             JOptionPane.INFORMATION_MESSAGE);
                                 }

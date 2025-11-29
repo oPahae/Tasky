@@ -12,6 +12,8 @@ public class TacheMembre {
     @JoinColumn(name = "membreID")
     private Membre membre;
 
+    public TacheMembre() {}
+
     // Getters et Setters
     public Tache getTache() { return tache; }
     public void setTache(Tache tache) { this.tache = tache; }

@@ -13,6 +13,8 @@ public class Document {
     private String nom;
     private String description;
     private LocalDate dateCreation;
+
+    @Lob
     private byte[] contenu;
 
     @ManyToOne
