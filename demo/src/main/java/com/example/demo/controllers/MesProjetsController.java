@@ -64,6 +64,14 @@ public class MesProjetsController {
                 .collect(Collectors.toList());
     }
 
+    @GetMapping("/projet/user/{id}")
+    public List<ProjetDTO> getProjetsByUserId(@PathVariable int id) {
+        List<Membre> membres = membreRepository.findByUser_Id(id);
+        return membres.stream()
+                .map(membre -> convertToProjetDTO(membre.getProjet()))
+                .collect(Collectors.toList());
+    }
+
     @PutMapping("projet/modifier/{id}")
     public boolean updateProjetById(@PathVariable int id, @RequestBody Projet pr) {
         Projet pr1 = projetRepository.findById(id);
@@ -89,7 +97,6 @@ public class MesProjetsController {
             return m.stream().map(this::convertToMembreDTO).collect(Collectors.toList());
         }
         return null;
-
     }
 
     private ProjetDTO convertToProjetDTO(Projet t) {
@@ -152,8 +159,9 @@ public class MesProjetsController {
         return false;
     }
 
-    @PostMapping("projet/creer")
-    public ProjetDTO createProjet(@RequestBody ProjetDTO dto) {
+    @PostMapping("projet/creer/{userId}")
+    public ProjetDTO createProjet(@PathVariable int userId, @RequestBody ProjetDTO dto) {
+        // Création du projet
         Projet p = new Projet();
         p.setNom(dto.nom);
         p.setCode(dto.code);
@@ -164,6 +172,22 @@ public class MesProjetsController {
         p.setDateDebut(dto.dateDebut);
         p.setDateFin(dto.dateFin);
         projetRepository.save(p);
+
+        // Récupération de l'utilisateur
+        User user = userRepository.findById(userId).orElse(null);
+        if (user != null) {
+            // Création du membre
+            Membre membre = new Membre();
+            membre.setNom(user.getNom() + " " + user.getPrenom());
+            membre.setEmail(user.getEmail());
+            membre.setDescription("Créateur du projet");
+            membre.setRole("Créateur");
+            membre.setType("Standard");
+            membre.setUser(user);
+            membre.setProjet(p);
+            membre.setDateRejointe(new Date());
+            membreRepository.save(membre);
+        }
 
         return convertToProjetDTO(p);
     }

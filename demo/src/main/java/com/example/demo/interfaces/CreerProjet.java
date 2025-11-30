@@ -490,21 +490,18 @@ public class CreerProjet extends JPanel {
             return;
         }
 
-        // Générer le code du projet
         String projectCode = generateProjectCode(nom);
 
-        // Créer un objet ProjetDTO avec les données du formulaire
         ProjetDTO projetDTO = new ProjetDTO();
         projetDTO.nom = nom;
         projetDTO.description = description;
         projetDTO.budget = (float) Double.parseDouble(budgetStr);
-        projetDTO.budgetConsomme = 0; // Par défaut
+        projetDTO.budgetConsomme = 0;
         projetDTO.code = projectCode;
         projetDTO.deadline = java.sql.Date.valueOf(selectedDate);
-        projetDTO.dateDebut = new java.sql.Date(System.currentTimeMillis()); // Date actuelle
-        projetDTO.statut = "En cours"; // Par défaut
+        projetDTO.dateDebut = new java.sql.Date(System.currentTimeMillis()); 
+        projetDTO.statut = "En cours";
 
-        // Convertir l'objet en Map pour l'envoyer via Queries
         Map<String, Object> requestBody = new java.util.HashMap<>();
         requestBody.put("nom", projetDTO.nom);
         requestBody.put("description", projetDTO.description);
@@ -515,8 +512,7 @@ public class CreerProjet extends JPanel {
         requestBody.put("dateDebut", projetDTO.dateDebut);
         requestBody.put("statut", projetDTO.statut);
 
-        // Envoyer la requête au backend
-        Queries.post("/api/projet/creer", requestBody)
+        Queries.post("/api/projet/creer/4", requestBody)
                 .thenAccept(response -> {
                     SwingUtilities.invokeLater(() -> {
                         if (response.containsKey("error")) {

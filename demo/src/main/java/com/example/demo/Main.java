@@ -28,15 +28,15 @@ public class Main extends JFrame {
     private CardLayout cardLayout;
     private String prenom;
     private String nom;
+    private int userID;
 
-    // Constructeur avec paramètres (appelé depuis Auth)
-    public Main(String prenom, String nom) {
+    public Main(int userID, String prenom, String nom) {
+        this.userID = userID;
         this.prenom = prenom;
         this.nom = nom;
         initializeUI();
     }
 
-    // Constructeur sans paramètres (pour les tests ou si pas de connexion)
     public Main() {
         this.prenom = "Utilisateur";
         this.nom = "";
@@ -50,12 +50,12 @@ public class Main extends JFrame {
         setLocationRelativeTo(null);
         setLayout(new BorderLayout());
 
-        // Créer la sidebar avec les infos utilisateur
         Sidebar sidebar = new Sidebar(
             Arrays.asList("Principale", "Mes projets", "Créer un projet", "Rejoindre un projet"),
             element -> {
-                System.out.println("Navigation vers: " + element);
+                cardLayout.show(container, element);
             },
+            userID,
             prenom,
             nom
         );
@@ -66,10 +66,7 @@ public class Main extends JFrame {
         mainPanel.setBackground(Color.WHITE);
         add(mainPanel, BorderLayout.CENTER);
 
-        // Pages disponibles
         Map<String, JPanel> pages = new LinkedHashMap<>();
-        
-        // Initialiser cardLayout AVANT de créer les pages qui l'utilisent
         cardLayout = new CardLayout();
         container = new JPanel(cardLayout);
         
@@ -82,11 +79,9 @@ public class Main extends JFrame {
         pages.put("Rejoindre un projet", new RejoindreProjet());
         pages.put("Gestion", new Gestion());
 
-        // Éléments du header
-        ArrayList<String> headerElements = new ArrayList<>(Arrays.asList("Dashboard", "Tâches", "Chat", "Gestion"));
-
         // centerPanel = Header + Contenu
         JPanel centerPanel = new JPanel(new BorderLayout());
+        ArrayList<String> headerElements = new ArrayList<>(Arrays.asList("Dashboard", "Tâches", "Chat", "Gestion"));
         Header header = new Header(headerElements, page -> cardLayout.show(container, page));
         centerPanel.add(header, BorderLayout.NORTH);
         
@@ -94,7 +89,7 @@ public class Main extends JFrame {
         centerPanel.add(container, BorderLayout.CENTER);
         add(centerPanel, BorderLayout.CENTER);
 
-        // Page par défaut
+        // par défaut
         cardLayout.show(container, "Dashboard");
     }
 

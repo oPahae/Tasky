@@ -36,7 +36,7 @@ public class ProfileController {
             // Récupérer l'ID utilisateur depuis le token
             Integer userId = UserAuthController.getUserIdFromToken(token);
             
-            if (userId == null) {
+            if (userId == -1) {
                 return "{\"error\": \"Token invalide ou expiré\"}";
             }
             
@@ -82,7 +82,7 @@ public class ProfileController {
             // Récupérer l'ID utilisateur depuis le token
             Integer userId = UserAuthController.getUserIdFromToken(token);
             
-            if (userId == null) {
+            if (userId == -1) {
                 return "{\"error\": \"Token invalide ou expiré\"}";
             }
             
@@ -156,7 +156,7 @@ public class ProfileController {
             // Récupérer l'ID utilisateur depuis le token
             Integer userId = UserAuthController.getUserIdFromToken(token);
             
-            if (userId == null) {
+            if (userId == -1) {
                 return "{\"error\": \"Token invalide ou expiré\"}";
             }
             

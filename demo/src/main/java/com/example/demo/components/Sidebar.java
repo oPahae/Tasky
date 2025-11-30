@@ -1,91 +1,66 @@
 package com.example.demo.components;
 
-import java.awt.BasicStroke;
-import java.awt.BorderLayout;
-import java.awt.Color;
-import java.awt.Component;
-import java.awt.Container;
-import java.awt.Cursor;
-import java.awt.Dimension;
-import java.awt.FlowLayout;
-import java.awt.Font;
-import java.awt.FontMetrics;
-import java.awt.GradientPaint;
-import java.awt.Graphics;
-import java.awt.Graphics2D;
-import java.awt.Rectangle;
-import java.awt.RenderingHints;
-import java.awt.Window;
+import java.awt.*;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
 import java.awt.image.BufferedImage;
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.function.Consumer;
 
+import java.net.URI;
+import java.net.http.HttpClient;
+import java.net.http.HttpRequest;
+import java.net.http.HttpResponse;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.core.type.TypeReference;
+
 import javax.imageio.ImageIO;
-import javax.swing.BorderFactory;
-import javax.swing.Box;
-import javax.swing.BoxLayout;
-import javax.swing.JButton;
-import javax.swing.JComboBox;
-import javax.swing.JComponent;
-import javax.swing.JLabel;
-import javax.swing.JOptionPane;
-import javax.swing.JPanel;
-import javax.swing.JScrollBar;
-import javax.swing.JScrollPane;
-import javax.swing.SwingUtilities;
+import javax.swing.*;
 import javax.swing.border.EmptyBorder;
 import javax.swing.plaf.basic.BasicComboBoxUI;
 
 import com.example.demo.Params;
-
+import com.example.demo.Queries;
 
 public class Sidebar extends JPanel {
     private int theme;
     private Color bgColor, cardBgColor, textPrimary, textSecondary, accentColor, hoverColor, borderColor, shadowColor;
     private List<Map<String, Object>> projects;
+    private JComboBox<String> projectSelector;
     private String currentUserFirstName = "";
     private String currentUserLastName = "";
     private String selectedElement = "Principale";
+    private int userID;
 
-    public Sidebar(List<String> elements, Consumer<String> onClick, String firstName, String lastName) {
+    public Sidebar(List<String> elements, Consumer<String> onClick, int userID, String firstName, String lastName) {
         this.theme = Params.theme;
-        initializeProjects();
         initializeColors();
-        
-        // Si prénom/nom fournis, les utiliser directement
-        if (firstName != null && !firstName.isEmpty()) {
+
+        if (userID > 0 && firstName != null && !firstName.isEmpty()) {
+            this.userID = userID;
             this.currentUserFirstName = firstName;
             this.currentUserLastName = lastName != null ? lastName : "";
             System.out.println("✓ Sidebar créée avec: " + currentUserFirstName + " " + currentUserLastName);
         } else {
-            // Sinon, charger depuis le token
             loadUserInfo();
         }
 
+        initializeProjects();
         setLayout(new BorderLayout());
         setBackground(bgColor);
         setPreferredSize(new Dimension(280, 0));
 
-        // Main container
         JPanel container = new JPanel(new BorderLayout());
         container.setBackground(bgColor);
         container.setBorder(new EmptyBorder(20, 16, 20, 16));
-
-        // Scrollable content
         JPanel mainContent = new JPanel();
         mainContent.setLayout(new BoxLayout(mainContent, BoxLayout.Y_AXIS));
         mainContent.setBackground(bgColor);
 
-        // Header
         mainContent.add(createHeaderSection());
         mainContent.add(Box.createRigidArea(new Dimension(0, 28)));
-
-        // Navigation
         mainContent.add(createNavigationSection(elements, onClick));
         mainContent.add(Box.createVerticalGlue());
 
@@ -99,108 +74,50 @@ public class Sidebar extends JPanel {
         customizeScrollBar(scrollPane.getVerticalScrollBar());
 
         container.add(scrollPane, BorderLayout.CENTER);
-
-        // Profile section (fixed at bottom)
         container.add(createProfileSection(), BorderLayout.SOUTH);
 
         add(container, BorderLayout.CENTER);
     }
 
     private void loadUserInfo() {
-    String token = com.example.demo.TokenManager.loadToken();
-    
-    if (token == null || token.isEmpty()) {
-        System.out.println("⚠ Aucun token trouvé pour charger les infos utilisateur");
-        currentUserFirstName = "Invité";
-        currentUserLastName = "";
-        return;
-    }
-    
-    try {
-        String json = "{\"token\": \"" + token + "\"}";
-        String response = sendPOST("http://localhost:8080/user/info", json);
-        
-        System.out.println("Réponse getUserInfo: " + response);
-        
-        if (response.contains("success")) {
-            // Extraire le prénom
-            currentUserFirstName = extractJsonValue(response, "prenom");
-            if (currentUserFirstName.isEmpty()) {
-                currentUserFirstName = "User";
-            }
-            
-            // Extraire le nom
-            currentUserLastName = extractJsonValue(response, "nom");
-            if (currentUserLastName.isEmpty()) {
-                currentUserLastName = "";
-            }
-            
-            System.out.println("✓ Utilisateur chargé: " + currentUserFirstName + " " + currentUserLastName);
-        } else {
-            System.out.println("✗ Erreur lors du chargement des infos utilisateur");
+        String token = com.example.demo.TokenManager.loadToken();
+        if (token == null || token.isEmpty()) {
+            System.out.println("⚠ Aucun token trouvé pour charger les infos utilisateur");
+            currentUserFirstName = "Invité";
+            currentUserLastName = "";
+            return;
+        }
+
+        try {
+            Queries.post("/user/info", Map.of("token", token))
+                    .thenAccept(response -> {
+                        SwingUtilities.invokeLater(() -> {
+                            if (response.containsKey("success")) {
+                                currentUserFirstName = (String) response.getOrDefault("prenom", "User");
+                                currentUserLastName = (String) response.getOrDefault("nom", "");
+                                System.out.println(
+                                        "✓ Utilisateur chargé: " + currentUserFirstName + " " + currentUserLastName);
+                            } else {
+                                System.out.println("✗ Erreur lors du chargement des infos utilisateur");
+                                currentUserFirstName = "Utilisateur";
+                                currentUserLastName = "";
+                            }
+                        });
+                    })
+                    .exceptionally(e -> {
+                        System.err.println("✗ Erreur lors du chargement des infos utilisateur: " + e.getMessage());
+                        SwingUtilities.invokeLater(() -> {
+                            currentUserFirstName = "Utilisateur";
+                            currentUserLastName = "";
+                        });
+                        return null;
+                    });
+        } catch (Exception e) {
+            System.err.println("✗ Erreur inattendue: " + e.getMessage());
             currentUserFirstName = "Utilisateur";
             currentUserLastName = "";
         }
-    } catch (Exception e) {
-        System.err.println("✗ Erreur lors du chargement des infos utilisateur: " + e.getMessage());
-        e.printStackTrace();
-        currentUserFirstName = "Utilisateur";
-        currentUserLastName = "";
     }
-}
-
-private String sendPOST(String url, String jsonInput) throws Exception {
-    java.net.URL obj = new java.net.URL(url);
-    java.net.HttpURLConnection con = (java.net.HttpURLConnection) obj.openConnection();
-    con.setRequestMethod("POST");
-    con.setRequestProperty("Content-Type", "application/json; charset=UTF-8");
-    con.setDoOutput(true);
-    con.setConnectTimeout(5000);
-    con.setReadTimeout(5000);
-    
-    try (java.io.OutputStream os = con.getOutputStream()) {
-        os.write(jsonInput.getBytes("UTF-8"));
-        os.flush();
-    }
-    
-    int responseCode = con.getResponseCode();
-    
-    java.io.BufferedReader in;
-    if (responseCode >= 200 && responseCode < 400) {
-        in = new java.io.BufferedReader(new java.io.InputStreamReader(con.getInputStream(), "UTF-8"));
-    } else {
-        in = new java.io.BufferedReader(new java.io.InputStreamReader(con.getErrorStream(), "UTF-8"));
-    }
-    
-    StringBuilder response = new StringBuilder();
-    String inputLine;
-    while ((inputLine = in.readLine()) != null) {
-        response.append(inputLine);
-    }
-    in.close();
-    
-    return response.toString();
-}
-
-private String extractJsonValue(String json, String key) {
-    try {
-        int start = json.indexOf("\"" + key + "\"");
-        if (start == -1) return "";
-        
-        int valueStart = json.indexOf(":", start) + 1;
-        int valueEnd = json.indexOf(",", valueStart);
-        if (valueEnd == -1) valueEnd = json.indexOf("}", valueStart);
-        
-        String value = json.substring(valueStart, valueEnd).trim();
-        // Enlever les guillemets
-        value = value.replace("\"", "");
-        
-        return value;
-    } catch (Exception e) {
-        System.err.println("Erreur extraction JSON pour clé '" + key + "': " + e.getMessage());
-        return "";
-    }
-}
 
     private void initializeColors() {
         if (theme == 0) { // Light mode
@@ -226,18 +143,51 @@ private String extractJsonValue(String json, String key) {
 
     private void initializeProjects() {
         this.projects = new ArrayList<>();
-        Map<String, Object> p1 = new HashMap<>();
-        p1.put("id", 1);
-        p1.put("nom", "Projet Dashboard");
-        Map<String, Object> p2 = new HashMap<>();
-        p2.put("id", 2);
-        p2.put("nom", "Application Mobile");
-        Map<String, Object> p3 = new HashMap<>();
-        p3.put("id", 3);
-        p3.put("nom", "Site Web E-commerce");
-        this.projects.add(p1);
-        this.projects.add(p2);
-        this.projects.add(p3);
+        if (this.userID > 0) fetchProjectsFromBackend(this.userID);
+        else updateProjectSelector();
+    }
+
+    private void updateProjectSelector() {
+        if (projectSelector != null) {
+            projectSelector.removeAllItems();
+            for (Map<String, Object> project : projects) {
+                projectSelector.addItem((String) project.get("nom"));
+            }
+        }
+    }
+
+    private void fetchProjectsFromBackend(int userID) {
+        HttpClient httpClient = HttpClient.newHttpClient();
+        HttpRequest request = HttpRequest.newBuilder()
+                .uri(URI.create("http://localhost:8080/api/projet/user/" + userID))
+                .GET()
+                .build();
+
+        httpClient.sendAsync(request, HttpResponse.BodyHandlers.ofString())
+                .thenApply(HttpResponse::body)
+                .thenAccept(jsonResponse -> {
+                    SwingUtilities.invokeLater(() -> {
+                        try {
+                            ObjectMapper objectMapper = new ObjectMapper();
+                            List<Map<String, Object>> fetchedProjects = objectMapper.readValue(jsonResponse,
+                                    new TypeReference<List<Map<String, Object>>>() {
+                                    });
+                            this.projects.clear();
+                            this.projects.addAll(fetchedProjects);
+                            updateProjectSelector();
+                        } catch (Exception e) {
+                            System.err.println("✗ Erreur lors du parsing des projets : " + e.getMessage());
+                            updateProjectSelector();
+                        }
+                    });
+                })
+                .exceptionally(e -> {
+                    System.err.println("✗ Erreur lors de la requête : " + e.getMessage());
+                    SwingUtilities.invokeLater(() -> {
+                        updateProjectSelector();
+                    });
+                    return null;
+                });
     }
 
     private void customizeScrollBar(JScrollBar scrollBar) {
@@ -313,20 +263,13 @@ private String extractJsonValue(String json, String key) {
                 super.paintComponent(g);
                 Graphics2D g2 = (Graphics2D) g.create();
                 g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
-
-                // Shadow
                 g2.setColor(shadowColor);
                 g2.fillRoundRect(2, 2, getWidth() - 4, getHeight() - 4, 14, 14);
-
-                // Background
                 g2.setColor(cardBgColor);
                 g2.fillRoundRect(0, 0, getWidth() - 4, getHeight() - 4, 14, 14);
-
-                // Subtle border
                 g2.setColor(borderColor);
                 g2.setStroke(new BasicStroke(1));
                 g2.drawRoundRect(0, 0, getWidth() - 5, getHeight() - 5, 14, 14);
-
                 g2.dispose();
             }
         };
@@ -341,15 +284,13 @@ private String extractJsonValue(String json, String key) {
         label.setFont(new Font("Segoe UI", Font.BOLD, 10));
         label.setForeground(textSecondary);
         label.setAlignmentX(Component.LEFT_ALIGNMENT);
-
         selectorCard.add(label);
         selectorCard.add(Box.createRigidArea(new Dimension(0, 10)));
 
-        JComboBox<String> projectSelector = createModernComboBox();
-        for (Map<String, Object> project : projects) {
-            projectSelector.addItem((String) project.get("nom"));
-        }
+        // Initialiser le JComboBox
+        projectSelector = createModernComboBox();
 
+        // Ajouter un écouteur pour gérer la sélection
         projectSelector.addActionListener(e -> {
             int selectedIndex = projectSelector.getSelectedIndex();
             if (selectedIndex >= 0 && selectedIndex < projects.size()) {
@@ -492,7 +433,7 @@ private String extractJsonValue(String json, String key) {
         btn.setLayout(new BorderLayout(2, 0));
         JPanel spacer = new JPanel();
         spacer.setOpaque(false);
-        spacer.setPreferredSize(new Dimension(ICON_PADDING(), 0));
+        spacer.setPreferredSize(new Dimension(40, 0));
         btn.add(spacer, BorderLayout.WEST);
 
         btn.add(textLabel, BorderLayout.CENTER);
@@ -520,47 +461,25 @@ private String extractJsonValue(String json, String key) {
 
         btn.addActionListener(e -> {
             selectedElement = text;
-            onClick.accept(text);
+            onClick.accept(text.equals("Principale") ? "Dashboard" : text);
             Container parent = btn.getParent();
-            if (parent != null) {
-                for (Component comp : parent.getComponents()) {
-                    comp.repaint();
-                }
-            }
+            if (parent != null)
+                for (Component comp : parent.getComponents())
+                    if (comp instanceof JButton) {
+                        JButton navBtn = (JButton) comp;
+                        Component[] components = navBtn.getComponents();
+                        for (Component c : components)
+                            if (c instanceof JLabel) {
+                                JLabel label = (JLabel) c;
+                                String btnText = label.getText();
+                                label.setForeground(btnText.equals(selectedElement) ? Color.WHITE : textPrimary);
+                            }
+                    }
+            parent.repaint();
         });
 
         updateColors.run();
         return btn;
-    }
-
-    // Helper : espace à gauche équivalent au padding + taille icône
-    private int ICON_PADDING() {
-        return 14 + 18 + 8; // left padding + icon size + gap
-    }
-
-    // Helper : crée une image tintée (préserve l'alpha) — simple et efficace pour
-    // petites icônes
-    private BufferedImage createTintedImage(BufferedImage src, Color tint) {
-        if (src == null)
-            return null;
-        int w = src.getWidth();
-        int h = src.getHeight();
-        BufferedImage tinted = new BufferedImage(w, h, BufferedImage.TYPE_INT_ARGB);
-        for (int y = 0; y < h; y++) {
-            for (int x = 0; x < w; x++) {
-                int argb = src.getRGB(x, y);
-                int alpha = (argb >> 24) & 0xff;
-                if (alpha == 0) {
-                    tinted.setRGB(x, y, 0);
-                } else {
-                    // remplace la couleur par la couleur 'tint' tout en gardant l'alpha
-                    int rgb = (tint.getRed() << 16) | (tint.getGreen() << 8) | tint.getBlue();
-                    int newArgb = (alpha << 24) | rgb;
-                    tinted.setRGB(x, y, newArgb);
-                }
-            }
-        }
-        return tinted;
     }
 
     private JPanel createProfileSection() {
@@ -649,52 +568,44 @@ private String extractJsonValue(String json, String key) {
     }
 
     private JPanel createAvatar() {
-    JPanel avatar = new JPanel() {
-        @Override
-        protected void paintComponent(Graphics g) {
-            super.paintComponent(g);
-            Graphics2D g2 = (Graphics2D) g.create();
-            g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
+        JPanel avatar = new JPanel() {
+            @Override
+            protected void paintComponent(Graphics g) {
+                super.paintComponent(g);
+                Graphics2D g2 = (Graphics2D) g.create();
+                g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
 
-            // Gradient
-            GradientPaint gradient = new GradientPaint(
-                    0, 0, accentColor,
-                    getWidth(), getHeight(), new Color(139, 92, 246));
-            g2.setPaint(gradient);
-            g2.fillOval(0, 0, getWidth(), getHeight());
+                // Gradient
+                GradientPaint gradient = new GradientPaint(
+                        0, 0, accentColor,
+                        getWidth(), getHeight(), new Color(139, 92, 246));
+                g2.setPaint(gradient);
+                g2.fillOval(0, 0, getWidth(), getHeight());
 
-            // Initials
-            g2.setColor(Color.WHITE);
-            g2.setFont(new Font("Segoe UI", Font.BOLD, 16));
-            
-            // ⭐ GÉRER LES INITIALES CORRECTEMENT
-            String initials = "";
-            if (!currentUserFirstName.isEmpty()) {
-                initials += currentUserFirstName.charAt(0);
-            }
-            if (!currentUserLastName.isEmpty()) {
-                initials += currentUserLastName.charAt(0);
-            }
-            
-            // Si pas d'initiales, afficher "?"
-            if (initials.isEmpty()) {
-                initials = "?";
-            }
-            
-            initials = initials.toUpperCase();
-            
-            FontMetrics fm = g2.getFontMetrics();
-            int x = (getWidth() - fm.stringWidth(initials)) / 2;
-            int y = ((getHeight() - fm.getHeight()) / 2) + fm.getAscent();
-            g2.drawString(initials, x, y);
+                // Initials
+                g2.setColor(Color.WHITE);
+                g2.setFont(new Font("Segoe UI", Font.BOLD, 16));
+                String initials = "";
+                if (!currentUserFirstName.isEmpty())
+                    initials += currentUserFirstName.charAt(0);
 
-            g2.dispose();
-        }
-    };
-    avatar.setPreferredSize(new Dimension(40, 40));
-    avatar.setOpaque(false);
-    return avatar;
-}
+                if (initials.isEmpty())
+                    initials = "?";
+
+                initials = initials.toUpperCase();
+
+                FontMetrics fm = g2.getFontMetrics();
+                int x = (getWidth() - fm.stringWidth(initials)) / 2;
+                int y = ((getHeight() - fm.getHeight()) / 2) + fm.getAscent();
+                g2.drawString(initials, x, y);
+
+                g2.dispose();
+            }
+        };
+        avatar.setPreferredSize(new Dimension(40, 40));
+        avatar.setOpaque(false);
+        return avatar;
+    }
 
     private JPanel createStatusPanel() {
         JPanel statusPanel = new JPanel(new FlowLayout(FlowLayout.LEFT, 6, 0));
@@ -725,78 +636,89 @@ private String extractJsonValue(String json, String key) {
         return statusPanel;
     }
 
-   private JButton createLogoutButton() {
-    JButton logoutBtn = new JButton() {
-        @Override
-        protected void paintComponent(Graphics g) {
-            Graphics2D g2 = (Graphics2D) g.create();
-            g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
+    private JButton createLogoutButton() {
+        JButton logoutBtn = new JButton() {
+            @Override
+            protected void paintComponent(Graphics g) {
+                Graphics2D g2 = (Graphics2D) g.create();
+                g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
 
-            Color bgColor = getModel().isRollover()
-                    ? new Color(239, 68, 68, 30)
-                    : new Color(239, 68, 68, 12);
-            g2.setColor(bgColor);
-            g2.fillRoundRect(0, 0, getWidth(), getHeight(), 10, 10);
+                Color bgColor = getModel().isRollover()
+                        ? new Color(239, 68, 68, 30)
+                        : new Color(239, 68, 68, 12);
+                g2.setColor(bgColor);
+                g2.fillRoundRect(0, 0, getWidth(), getHeight(), 10, 10);
 
-            g2.dispose();
-            super.paintComponent(g);
-        }
-    };
+                g2.dispose();
+                super.paintComponent(g);
+            }
+        };
 
-    logoutBtn.setLayout(new FlowLayout(FlowLayout.CENTER, 8, 11));
-    logoutBtn.setOpaque(false);
-    logoutBtn.setContentAreaFilled(false);
-    logoutBtn.setBorder(null);
-    logoutBtn.setFocusPainted(false);
-    logoutBtn.setCursor(new Cursor(Cursor.HAND_CURSOR));
-    logoutBtn.setMaximumSize(new Dimension(Integer.MAX_VALUE, 42));
+        logoutBtn.setLayout(new FlowLayout(FlowLayout.CENTER, 8, 11));
+        logoutBtn.setOpaque(false);
+        logoutBtn.setContentAreaFilled(false);
+        logoutBtn.setBorder(null);
+        logoutBtn.setFocusPainted(false);
+        logoutBtn.setCursor(new Cursor(Cursor.HAND_CURSOR));
+        logoutBtn.setMaximumSize(new Dimension(Integer.MAX_VALUE, 42));
 
-    JLabel logoutIcon = new JLabel("⎋");
-    logoutIcon.setFont(new Font("Segoe UI Emoji", Font.PLAIN, 15));
-    logoutIcon.setForeground(new Color(239, 68, 68));
+        JLabel logoutIcon = new JLabel("⎋");
+        logoutIcon.setFont(new Font("Segoe UI Emoji", Font.PLAIN, 15));
+        logoutIcon.setForeground(new Color(239, 68, 68));
 
-    JLabel logoutText = new JLabel("Déconnexion");
-    logoutText.setFont(new Font("Segoe UI", Font.PLAIN, 13));
-    logoutText.setForeground(new Color(239, 68, 68));
+        JLabel logoutText = new JLabel("Déconnexion");
+        logoutText.setFont(new Font("Segoe UI", Font.PLAIN, 13));
+        logoutText.setForeground(new Color(239, 68, 68));
 
-    logoutBtn.add(logoutIcon);
-    logoutBtn.add(logoutText);
+        logoutBtn.add(logoutIcon);
+        logoutBtn.add(logoutText);
 
-    logoutBtn.addActionListener(e -> {
-        int result = JOptionPane.showConfirmDialog(
-                this,
-                "Êtes-vous sûr de vouloir vous déconnecter ?",
-                "Déconnexion",
-                JOptionPane.YES_NO_OPTION,
-                JOptionPane.WARNING_MESSAGE);
-        if (result == JOptionPane.YES_OPTION) {
-            // ⭐ DÉCONNEXION AVEC SUPPRESSION DU TOKEN
-            String token = com.example.demo.TokenManager.loadToken();
-            if (token != null) {
-                try {
-                    String json = "{\"token\": \"" + token + "\"}";
-                    sendPOST("http://localhost:8080/auth/logout", json);
-                } catch (Exception ex) {
-                    System.err.println("Erreur lors de la déconnexion: " + ex.getMessage());
+        logoutBtn.addActionListener(e -> {
+            int result = JOptionPane.showConfirmDialog(
+                    this,
+                    "Êtes-vous sûr de vouloir vous déconnecter ?",
+                    "Déconnexion",
+                    JOptionPane.YES_NO_OPTION,
+                    JOptionPane.WARNING_MESSAGE);
+            if (result == JOptionPane.YES_OPTION) {
+                String token = com.example.demo.TokenManager.loadToken();
+                if (token != null) {
+                    Queries.post("/auth/logout", Map.of("token", token))
+                            .thenAccept(response -> {
+                                SwingUtilities.invokeLater(() -> {
+                                    com.example.demo.TokenManager.deleteToken();
+                                    Window window = SwingUtilities.getWindowAncestor(Sidebar.this);
+                                    if (window != null) {
+                                        window.dispose();
+                                    }
+                                    new com.example.demo.Auth().setVisible(true);
+                                });
+                            })
+                            .exceptionally(ex -> {
+                                System.err.println("Erreur lors de la déconnexion: " + ex.getMessage());
+                                SwingUtilities.invokeLater(() -> {
+                                    com.example.demo.TokenManager.deleteToken();
+                                    Window window = SwingUtilities.getWindowAncestor(Sidebar.this);
+                                    if (window != null) {
+                                        window.dispose();
+                                    }
+                                    new com.example.demo.Auth().setVisible(true);
+                                });
+                                return null;
+                            });
+                } else {
+                    com.example.demo.TokenManager.deleteToken();
+                    Window window = SwingUtilities.getWindowAncestor(Sidebar.this);
+                    if (window != null) {
+                        window.dispose();
+                    }
+                    new com.example.demo.Auth().setVisible(true);
                 }
             }
-            
-            // Supprimer le token local
-            com.example.demo.TokenManager.deleteToken();
-            
-            // Fermer l'application et retourner à l'écran de connexion
-            SwingUtilities.invokeLater(() -> {
-                Window window = SwingUtilities.getWindowAncestor(Sidebar.this);
-                if (window != null) {
-                    window.dispose();
-                }
-                new com.example.demo.Auth().setVisible(true);
-            });
-        }
-    });
+        });
 
-    return logoutBtn;
-}
+        return logoutBtn;
+    }
 
     private JPanel createDivider() {
         JPanel dividerPanel = new JPanel() {
@@ -816,7 +738,6 @@ private String extractJsonValue(String json, String key) {
     }
 }
 
-// Extension pour le JLabel avec letter-spacing
 class StyledLabel extends JLabel {
     private float letterSpacing = 0;
 

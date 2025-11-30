@@ -13,6 +13,7 @@ public class Auth extends JFrame {
 
     private static final String BASE_URL = "http://localhost:8080/auth";
     private JTabbedPane tabs;
+    private int userId = -1;
     
     // Couleurs modernes
     private static final Color PRIMARY_COLOR = new Color(59, 130, 246); // Bleu moderne
@@ -149,10 +150,9 @@ public class Auth extends JFrame {
                             
                             // Extraire l'ID utilisateur
                             String userIdStr = extractValue(response, "id");
-                            Long userId = null;
                             try {
                                 if (userIdStr != null && !userIdStr.isEmpty()) {
-                                    userId = Long.parseLong(userIdStr);
+                                    userId = Integer.parseInt(userIdStr);
                                 }
                             } catch (NumberFormatException e) {
                                 System.err.println("Erreur conversion userId: " + e.getMessage());
@@ -175,7 +175,7 @@ public class Auth extends JFrame {
                             Timer timer = new Timer(1000, evt -> {
                                 dispose();
                                 SwingUtilities.invokeLater(() -> {
-                                    Main mainGUI = new Main(prenom, nom);
+                                    Main mainGUI = new Main(userId, prenom, nom);
                                     mainGUI.setVisible(true);
                                 });
                             });
