@@ -29,8 +29,12 @@ public class Gestion extends JPanel {
     public Gestion() {
         this.theme = Params.theme;
         initializeColors();
-        initializeDemoData();
+
+        historyEvents = new ArrayList<>();
+        expenses = new ArrayList<>();
+        documents = new ArrayList<>();
         loadGestionData();
+
         setLayout(new BorderLayout());
         setBackground(bgColor);
         contentLayout = new CardLayout();
@@ -62,67 +66,6 @@ public class Gestion extends JPanel {
             warningColor = new Color(255, 180, 0);
             dangerColor = new Color(255, 80, 80);
         }
-    }
-
-    private void initializeDemoData() {
-        historyEvents = new ArrayList<>();
-        expenses = new ArrayList<>();
-        documents = new ArrayList<>();
-
-        // Récupérer l'historique (notifications)
-        Queries.get("/api/gestion/historique/" + Params.projetID)
-                .thenAccept(response -> {
-                    if (response.containsKey("error")) {
-                        System.err.println("Erreur lors de la récupération de l'historique: " + response.get("error"));
-                        return;
-                    }
-                    List<Map<String, Object>> notifications = (List<Map<String, Object>>) response.get("body");
-                    notifications.forEach(n -> {
-                        Date date = new Date(((Number) n.get("dateEnvoie")).longValue());
-                        historyEvents.add(new HistoryEvent(
-                                date,
-                                (String) n.get("contenu"),
-                                ((String) n.get("membre")).split(" ")[0],
-                                ((String) n.get("membre")).split(" ")[1]));
-                    });
-                    SwingUtilities.invokeLater(this::repaint);
-                });
-
-        // Récupérer la facturation (dépenses des tâches)
-        Queries.get("/api/gestion/facturation/" + Params.projetID)
-                .thenAccept(response -> {
-                    if (response.containsKey("error")) {
-                        System.err
-                                .println("Erreur lors de la récupération de la facturation: " + response.get("error"));
-                        return;
-                    }
-                    List<Map<String, Object>> taches = (List<Map<String, Object>>) response.get("body");
-                    taches.forEach(t -> {
-                        expenses.add(new Expense(
-                                (String) t.get("titre"),
-                                ((Number) t.get("depense")).doubleValue()));
-                    });
-                    SwingUtilities.invokeLater(this::repaint);
-                });
-
-        // Récupérer les documents
-        Queries.get("/api/gestion/documents/" + Params.projetID)
-                .thenAccept(response -> {
-                    if (response.containsKey("error")) {
-                        System.err.println("Erreur lors de la récupération des documents: " + response.get("error"));
-                        return;
-                    }
-                    List<Map<String, Object>> docs = (List<Map<String, Object>>) response.get("body");
-                    docs.forEach(d -> {
-                        Date date = new Date(((Number) d.get("dateCreation")).longValue());
-                        documents.add(new Document(
-                                (String) d.get("nom"),
-                                date,
-                                ((Number) d.get("size")).longValue(),
-                                (String) d.get("contenuBase64")));
-                    });
-                    SwingUtilities.invokeLater(this::repaint);
-                });
     }
 
     private void loadGestionData() {
@@ -372,10 +315,15 @@ public class Gestion extends JPanel {
         dateLabel.setForeground(accentColor);
         dateLabel.setAlignmentX(Component.LEFT_ALIGNMENT);
 
-        JLabel eventLabel = new JLabel(event.description);
-        eventLabel.setFont(new Font("Segoe UI", Font.PLAIN, 14));
-        eventLabel.setForeground(textPrimary);
-        eventLabel.setAlignmentX(Component.LEFT_ALIGNMENT);
+        JLabel eventLabel1 = new JLabel((event.description.split(":")[0] + " :").trim());
+        eventLabel1.setFont(new Font("Segoe UI", Font.PLAIN, 14));
+        eventLabel1.setForeground(textPrimary);
+        eventLabel1.setAlignmentX(Component.LEFT_ALIGNMENT);
+
+        JLabel eventLabel2 = new JLabel((event.description.split(":")[1]).trim());
+        eventLabel2.setFont(new Font("Segoe UI", Font.BOLD, 14));
+        eventLabel2.setForeground(textPrimary);
+        eventLabel2.setAlignmentX(Component.LEFT_ALIGNMENT);
 
         JLabel memberLabel = new JLabel(event.firstName + " " + event.lastName);
         memberLabel.setFont(new Font("Segoe UI", Font.PLAIN, 12));
@@ -384,7 +332,8 @@ public class Gestion extends JPanel {
 
         contentPanel.add(dateLabel);
         contentPanel.add(Box.createRigidArea(new Dimension(0, 4)));
-        contentPanel.add(eventLabel);
+        contentPanel.add(eventLabel1);
+        contentPanel.add(eventLabel2);
         contentPanel.add(Box.createRigidArea(new Dimension(0, 4)));
         contentPanel.add(memberLabel);
 
