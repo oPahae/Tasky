@@ -67,6 +67,7 @@ public class Tache extends JPanel {
     }
 
     private void loadTacheData() {
+        System.out.println("tacheID: " + tacheId);
         Queries.get("/api/tache/" + tacheId)
                 .thenAccept(response -> {
                     SwingUtilities.invokeLater(() -> {
