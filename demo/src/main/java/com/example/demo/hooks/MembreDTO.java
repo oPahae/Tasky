@@ -10,15 +10,13 @@ public class MembreDTO {
     public Date dateRejointe;
     public String role;
     public String type;
-    public String password;
    public MembreDTO(){}
-     public MembreDTO(String nom,String email,String description,String role,String type,String password,Date dateR) {
+     public MembreDTO(String nom,String email,String description,String role,String type,Date dateR) {
         this.nom=nom;
         this.email=email;
         this.description=description;
         this.role=role;
         this.type=type;
-        this.password=password;
         this.dateRejointe=dateR;
     }
     

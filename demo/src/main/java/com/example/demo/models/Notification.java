@@ -18,6 +18,10 @@ public class Notification {
     @JoinColumn(name = "membreID")
     private Membre membre;
 
+    @ManyToOne
+    @JoinColumn(name = "projetID")
+    private Projet projet;
+
     public Notification() {}
     public Notification(String contenu ,boolean estLue) {
         this.contenu = contenu;
@@ -35,4 +39,6 @@ public class Notification {
     public void setEstLue(boolean estLue) { this.estLue = estLue; }
     public Membre getMembre() { return membre; }
     public void setMembre(Membre membre) { this.membre = membre; }
+    public Projet getProjet() { return projet; }
+    public void setProjet(Projet projet) { this.projet = projet; }
 }

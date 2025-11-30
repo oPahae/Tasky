@@ -7,8 +7,9 @@ import javax.swing.SwingUtilities;
 public class Params {
     public static int theme = 0;
     public static String appName = "TASKY";
+    public static String selectedHeaderElement = "Dashboard";
 
-    public static int projectID = 1;
+    public static int projetID = 1;
     public static int membreID = 1;
     public static int tacheID = 1;
 

@@ -19,183 +19,199 @@ import java.util.Base64;
 @RequestMapping("/api/tache")
 public class TacheController {
 
-    @Autowired
-    private TacheRepository tacheRepository;
+        @Autowired
+        private TacheRepository tacheRepository;
 
-    @Autowired
-    private SousTacheRepository sousTacheRepository;
+        @Autowired
+        private SousTacheRepository sousTacheRepository;
 
-    @Autowired
-    private DocumentRepository documentRepository;
+        @Autowired
+        private DocumentRepository documentRepository;
 
-    @Autowired
-    private CommentaireRepository commentaireRepository;
+        @Autowired
+        private CommentaireRepository commentaireRepository;
 
-    @Autowired
-    private BlocageRepository blocageRepository;
+        @Autowired
+        private BlocageRepository blocageRepository;
 
-    // Récupérer toutes les données de la tâche actuelle
-    @GetMapping("/{id}")
-    public ResponseEntity<Map<String, Object>> getTacheData(@PathVariable int id) {
-        Tache tache = tacheRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("Tâche non trouvée"));
-        List<SousTache> sousTaches = sousTacheRepository.findByTacheId(id);
-        List<Document> documents = documentRepository.findByTacheId(id);
-        List<Commentaire> commentaires = commentaireRepository.findByTacheId(id);
+        @Autowired
+        private ProjetRepository projetRepository;
 
-        // DTO Tache
-        TacheDTO tacheDTO = new TacheDTO(
-                tache.getId(),
-                tache.getTitre(),
-                tache.getDescription(),
-                tache.getDateLimite(),
-                tache.getEtat(),
-                tache.getDateCreation(),
-                tache.getDateFin());
+        // Récupérer toutes les données de la tâche actuelle
+        @GetMapping("/{id}")
+        public ResponseEntity<Map<String, Object>> getTacheData(@PathVariable int id) {
+                Tache tache = tacheRepository.findById(id)
+                                .orElseThrow(() -> new RuntimeException("Tâche non trouvée"));
+                List<SousTache> sousTaches = sousTacheRepository.findByTacheId(id);
+                List<Document> documents = documentRepository.findByTacheId(id);
+                List<Commentaire> commentaires = commentaireRepository.findByTacheId(id);
 
-        // DTO SousTache
-        List<SousTacheDTO> sousTachesDTO = sousTaches.stream()
-                .map(st -> new SousTacheDTO(st.getId(), st.getTitre(), st.isTermine()))
-                .toList();
+                // DTO Tache
+                TacheDTO tacheDTO = new TacheDTO(
+                                tache.getId(),
+                                tache.getTitre(),
+                                tache.getDescription(),
+                                tache.getDateLimite(),
+                                tache.getEtat(),
+                                tache.getDateCreation(),
+                                tache.getDateFin());
 
-        // DTO Document (avec contenu en base64)
-        List<DocumentDTO> documentsDTO = documents.stream()
-                .map(d -> {
-                    String contenuBase64 = Base64.getEncoder().encodeToString(d.getContenu());
-                    String type = DocumentDTO.getFileType(d.getNom());
-                    int size = d.getContenu().length / 1024;
-                    return new DocumentDTO(
-                            d.getId(),
-                            d.getNom(),
-                            d.getDescription(),
-                            contenuBase64,
-                            d.getDateCreation(),
-                            size,
-                            type);
-                })
-                .toList();
+                // DTO SousTache
+                List<SousTacheDTO> sousTachesDTO = sousTaches.stream()
+                                .map(st -> new SousTacheDTO(st.getId(), st.getTitre(), st.isTermine()))
+                                .toList();
 
-        // DTO Commentaire
-        List<CommentaireDTO> commentairesDTO = commentaires.stream()
-                .map(c -> new CommentaireDTO(
-                        c.getId(),
-                        "Anonyme",
-                        c.getContenu(),
-                        c.getDateCreation()))
-                .toList();
+                // DTO Document (avec contenu en base64)
+                List<DocumentDTO> documentsDTO = documents.stream()
+                                .map(d -> {
+                                        String contenuBase64 = Base64.getEncoder().encodeToString(d.getContenu());
+                                        String type = DocumentDTO.getFileType(d.getNom());
+                                        int size = d.getContenu().length / 1024;
+                                        return new DocumentDTO(
+                                                        d.getId(),
+                                                        d.getNom(),
+                                                        d.getDescription(),
+                                                        contenuBase64,
+                                                        d.getDateCreation(),
+                                                        size,
+                                                        type);
+                                })
+                                .toList();
 
-        // Wrapper final comme attendu par le frontend
-        Map<String, Object> tacheWrapper = new HashMap<>();
-        tacheWrapper.put("tache", tacheDTO);
-        tacheWrapper.put("sousTaches", sousTachesDTO);
-        tacheWrapper.put("documents", documentsDTO);
-        tacheWrapper.put("commentaires", commentairesDTO);
+                // DTO Commentaire
+                List<CommentaireDTO> commentairesDTO = commentaires.stream()
+                                .map(c -> new CommentaireDTO(
+                                                c.getId(),
+                                                "Anonyme",
+                                                c.getContenu(),
+                                                c.getDateCreation()))
+                                .toList();
 
-        Map<String, Object> response = new HashMap<>();
-        response.put("tache", tacheWrapper);
-        return ResponseEntity.ok(response);
-    }
+                // Wrapper final comme attendu par le frontend
+                Map<String, Object> tacheWrapper = new HashMap<>();
+                tacheWrapper.put("tache", tacheDTO);
+                tacheWrapper.put("sousTaches", sousTachesDTO);
+                tacheWrapper.put("documents", documentsDTO);
+                tacheWrapper.put("commentaires", commentairesDTO);
 
-    // Ajouter une sous-tâche
-    @PostMapping("/{id}/sous-tache")
-    public ResponseEntity<SousTache> addSousTache(@PathVariable int id, @RequestBody Map<String, String> payload) {
-        Tache tache = tacheRepository.findById(id).orElseThrow(() -> new RuntimeException("Tâche non trouvée"));
-        SousTache sousTache = new SousTache();
-        sousTache.setTitre(payload.get("titre"));
-        sousTache.setTermine(false);
-        sousTache.setDateCreation(LocalDate.now());
-        sousTache.setTache(tache);
-        SousTache saved = sousTacheRepository.save(sousTache);
-        return ResponseEntity.ok(saved);
-    }
+                Map<String, Object> response = new HashMap<>();
+                response.put("tache", tacheWrapper);
+                return ResponseEntity.ok(response);
+        }
 
-    // Cocher/décocher une sous-tâche
-    @PutMapping("/sous-tache/{sousTacheId}")
-    public ResponseEntity<SousTache> toggleSousTache(@PathVariable int sousTacheId) {
-        SousTache sousTache = sousTacheRepository.findById(sousTacheId)
-                .orElseThrow(() -> new RuntimeException("Sous-tâche non trouvée"));
-        sousTache.setTermine(!sousTache.isTermine());
-        SousTache updated = sousTacheRepository.save(sousTache);
-        return ResponseEntity.ok(updated);
-    }
+        // Ajouter une sous-tâche
+        @PostMapping("/{id}/sous-tache")
+        public ResponseEntity<SousTache> addSousTache(@PathVariable int id, @RequestBody Map<String, String> payload) {
+                Tache tache = tacheRepository.findById(id).orElseThrow(() -> new RuntimeException("Tâche non trouvée"));
+                SousTache sousTache = new SousTache();
+                sousTache.setTitre(payload.get("titre"));
+                sousTache.setTermine(false);
+                sousTache.setDateCreation(LocalDate.now());
+                sousTache.setTache(tache);
+                SousTache saved = sousTacheRepository.save(sousTache);
+                return ResponseEntity.ok(saved);
+        }
 
-    // ajouter doc
-    @PostMapping("/{id}/document")
-    public ResponseEntity<Map<String, Object>> addDocument(
-            @PathVariable int id,
-            @RequestBody Map<String, String> payload) throws Exception {
+        // Cocher/décocher une sous-tâche
+        @PutMapping("/sous-tache/{sousTacheId}")
+        public ResponseEntity<SousTache> toggleSousTache(@PathVariable int sousTacheId) {
+                SousTache sousTache = sousTacheRepository.findById(sousTacheId)
+                                .orElseThrow(() -> new RuntimeException("Sous-tâche non trouvée"));
+                sousTache.setTermine(!sousTache.isTermine());
+                SousTache updated = sousTacheRepository.save(sousTache);
+                return ResponseEntity.ok(updated);
+        }
 
-        Tache tache = tacheRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("Tâche non trouvée"));
+        // ajouter doc
+        @PostMapping("/{id}/document")
+        public ResponseEntity<Map<String, Object>> addDocument(
+                        @PathVariable int id,
+                        @RequestBody Map<String, String> payload) throws Exception {
 
-        // Récupérer le contenu en base64 depuis le payload
-        String base64Content = payload.get("contenu");
-        byte[] fileBytes = Base64.getDecoder().decode(base64Content);
+                Tache tache = tacheRepository.findById(id)
+                                .orElseThrow(() -> new RuntimeException("Tâche non trouvée"));
 
-        // Créer et sauvegarder le document
-        Document document = new Document();
-        document.setNom(payload.get("nom"));
-        document.setDescription(payload.get("description"));
-        document.setContenu(fileBytes); // Stocke les bytes bruts en BLOB
-        document.setDateCreation(LocalDate.now());
-        document.setTache(tache);
+                // Récupérer le contenu en base64 depuis le payload
+                String base64Content = payload.get("contenu");
+                byte[] fileBytes = Base64.getDecoder().decode(base64Content);
 
-        Document saved = documentRepository.save(document);
+                // Créer et sauvegarder le document
+                Document document = new Document();
+                document.setNom(payload.get("nom"));
+                document.setDescription(payload.get("description"));
+                document.setContenu(fileBytes); // Stocke les bytes bruts en BLOB
+                document.setDateCreation(LocalDate.now());
+                document.setTache(tache);
 
-        // Retourner une réponse avec le DTO
-        DocumentDTO documentDTO = new DocumentDTO(
-                saved.getId(),
-                saved.getNom(),
-                saved.getDescription(),
-                base64Content, // On renvoie le même contenu en base64
-                saved.getDateCreation(),
-                base64Content.length() / 1024,
-                DocumentDTO.getFileType(saved.getNom()));
+                Document saved = documentRepository.save(document);
 
-        Map<String, Object> response = new HashMap<>();
-        response.put("document", documentDTO);
-        response.put("message", "Document ajouté avec succès !");
+                // Retourner une réponse avec le DTO
+                DocumentDTO documentDTO = new DocumentDTO(
+                                saved.getId(),
+                                saved.getNom(),
+                                saved.getDescription(),
+                                base64Content, // On renvoie le même contenu en base64
+                                saved.getDateCreation(),
+                                base64Content.length() / 1024,
+                                DocumentDTO.getFileType(saved.getNom()));
 
-        return ResponseEntity.ok(response);
-    }
+                Map<String, Object> response = new HashMap<>();
+                response.put("document", documentDTO);
+                response.put("message", "Document ajouté avec succès !");
 
-    // Ajouter un commentaire
-    @PostMapping("/{id}/commentaire")
-    public ResponseEntity<Commentaire> addCommentaire(@PathVariable int id, @RequestBody Map<String, String> payload) {
-        Tache tache = tacheRepository.findById(id).orElseThrow(() -> new RuntimeException("Tâche non trouvée"));
-        Commentaire commentaire = new Commentaire();
-        commentaire.setContenu(payload.get("contenu"));
-        commentaire.setDateCreation(LocalDate.now());
-        commentaire.setTache(tache);
-        Commentaire saved = commentaireRepository.save(commentaire);
-        return ResponseEntity.ok(saved);
-    }
+                return ResponseEntity.ok(response);
+        }
 
-    // Ajouter un bloquage
-    @PostMapping("/{id}/blocage")
-    public ResponseEntity<Blocage> addBlocage(@PathVariable int id, @RequestBody Map<String, String> payload) {
-        Tache tache = tacheRepository.findById(id).orElseThrow(() -> new RuntimeException("Tâche non trouvée"));
-        Blocage blocage = new Blocage();
-        blocage.setDescription(payload.get("description"));
-        blocage.setDateSignalement(LocalDate.now());
-        blocage.setStatut("Signale");
-        blocage.setTache(tache);
-        Blocage saved = blocageRepository.save(blocage);
-        return ResponseEntity.ok(saved);
-    }
+        // Ajouter un commentaire
+        @PostMapping("/{id}/commentaire")
+        public ResponseEntity<Commentaire> addCommentaire(@PathVariable int id,
+                        @RequestBody Map<String, String> payload) {
+                Tache tache = tacheRepository.findById(id).orElseThrow(() -> new RuntimeException("Tâche non trouvée"));
+                Commentaire commentaire = new Commentaire();
+                commentaire.setContenu(payload.get("contenu"));
+                commentaire.setDateCreation(LocalDate.now());
+                commentaire.setTache(tache);
+                Commentaire saved = commentaireRepository.save(commentaire);
+                return ResponseEntity.ok(saved);
+        }
 
-    // Ajouter une dépense
-    @PostMapping("/{id}/depense")
-    public ResponseEntity<Map<String, Object>> addDepense(@PathVariable int id,
-            @RequestBody Map<String, Integer> payload) {
-        Tache tache = tacheRepository.findById(id).orElseThrow(() -> new RuntimeException("Tâche non trouvée"));
-        int montant = payload.get("montant");
-        tache.setDepense(tache.getDepense() + montant);
-        Tache updated = tacheRepository.save(tache);
+        // Ajouter un bloquage
+        @PostMapping("/{id}/blocage")
+        public ResponseEntity<Blocage> addBlocage(@PathVariable int id, @RequestBody Map<String, String> payload) {
+                Tache tache = tacheRepository.findById(id).orElseThrow(() -> new RuntimeException("Tâche non trouvée"));
+                Blocage blocage = new Blocage();
+                blocage.setDescription(payload.get("description"));
+                blocage.setDateSignalement(LocalDate.now());
+                blocage.setStatut("Signale");
+                blocage.setTache(tache);
+                Blocage saved = blocageRepository.save(blocage);
+                return ResponseEntity.ok(saved);
+        }
 
-        Map<String, Object> response = new HashMap<>();
-        response.put("tache", updated);
-        response.put("message", "Dépense ajoutée avec succès !");
-        return ResponseEntity.ok(response);
-    }
+        // Ajouter une dépense
+        @PostMapping("/{id}/depense")
+        public ResponseEntity<Map<String, Object>> addDepense(@PathVariable int id,
+                        @RequestBody Map<String, Integer> payload) {
+
+                Tache tache = tacheRepository.findById(id)
+                                .orElseThrow(() -> new RuntimeException("Tâche non trouvée"));
+
+                int montant = payload.get("montant");
+                tache.setDepense(tache.getDepense() + montant);
+                Tache updatedTache = tacheRepository.save(tache);
+
+                Projet projet = tache.getProjet();
+                if (projet == null) {
+                        throw new RuntimeException("Projet non trouvé pour cette tâche");
+                }
+                projet.setBudgetConsomme(projet.getBudgetConsomme() + montant);
+                projetRepository.save(projet);
+
+                Map<String, Object> response = new HashMap<>();
+                response.put("tache", updatedTache);
+                response.put("projet", projet);
+                response.put("message", "Dépense ajoutée avec succès et budget du projet mis à jour !");
+
+                return ResponseEntity.ok(response);
+        }
 }
