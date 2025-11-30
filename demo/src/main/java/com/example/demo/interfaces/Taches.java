@@ -66,35 +66,35 @@ public class Taches extends JPanel {
         members.add(new ProjectMember("Diana", "Rousseau", "QA Engineer"));
 
         // Demo tasks avec deadline et membres assignés
-        tasks.add(new Task("Conception UI/UX", 100, "Design",
+        tasks.add(new Task(1, "Conception UI/UX", 100, "Design",
                 LocalDate.now().plusDays(5),
                 Arrays.asList(members.get(0))));
 
-        tasks.add(new Task("API Backend", 75, "Backend",
+        tasks.add(new Task(2, "API Backend", 75, "Backend",
                 LocalDate.now().plusDays(10),
                 Arrays.asList(members.get(1))));
 
-        tasks.add(new Task("Intégration Frontend", 60, "Frontend",
+        tasks.add(new Task(3, "Intégration Frontend", 60, "Frontend",
                 LocalDate.now().plusDays(15),
                 Arrays.asList(members.get(2), members.get(0))));
 
-        tasks.add(new Task("Tests unitaires", 40, "Testing",
+        tasks.add(new Task(4, "Tests unitaires", 40, "Testing",
                 LocalDate.now().plusDays(20),
                 Arrays.asList(members.get(3), members.get(1))));
 
-        tasks.add(new Task("Documentation", 30, "Docs",
+        tasks.add(new Task(5, "Documentation", 30, "Docs",
                 LocalDate.now().plusDays(25),
                 Arrays.asList(members.get(0))));
 
-        tasks.add(new Task("Déploiement", 0, "DevOps",
+        tasks.add(new Task(6, "Déploiement", 0, "DevOps",
                 LocalDate.now().plusDays(30),
                 Arrays.asList(members.get(1), members.get(2))));
 
-        tasks.add(new Task("Revue de code", 85, "Quality",
+        tasks.add(new Task(7, "Revue de code", 85, "Quality",
                 LocalDate.now().plusDays(7),
                 Arrays.asList(members.get(1), members.get(3))));
 
-        tasks.add(new Task("Optimisation performance", 50, "Backend",
+        tasks.add(new Task(8, "Optimisation performance", 50, "Backend",
                 LocalDate.now().plusDays(12),
                 Arrays.asList(members.get(1), members.get(2), members.get(0))));
     }
@@ -378,11 +378,10 @@ public class Taches extends JPanel {
         String category;
         LocalDate deadline;
         List<ProjectMember> assignedMembers;
-        private static int nextId = 1;
 
-        public Task(String name, int progress, String category, LocalDate deadline,
+        public Task(int id, String name, int progress, String category, LocalDate deadline,
                 List<ProjectMember> assignedMembers) {
-            this.id = nextId++;
+            this.id = id;
             this.name = name;
             this.progress = progress;
             this.category = category;

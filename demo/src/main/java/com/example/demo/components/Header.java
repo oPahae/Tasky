@@ -37,7 +37,7 @@ public class Header extends JPanel {
         rightSection.setBackground(bgColor);
         JButton notifBtn = createNotificationButton();
         rightSection.add(notifBtn);
-        themeToggleBtn = createThemeToggleButton();
+        themeToggleBtn = createThemeToggleButton(onClick);
         rightSection.add(themeToggleBtn);
 
         add(rightSection, BorderLayout.EAST);
@@ -121,7 +121,6 @@ public class Header extends JPanel {
         btn.addActionListener(e -> {
             selectedElement = text;
             onClick.accept(text);
-            // Update all buttons
             Container parent = btn.getParent();
             if (parent != null) {
                 for (Component comp : parent.getComponents()) {
@@ -195,13 +194,14 @@ public class Header extends JPanel {
         return btn;
     }
 
-    private JButton createThemeToggleButton() {
+    private JButton createThemeToggleButton(Consumer<String> onClick) {
         JButton btn = new JButton() {
             private Image bellImage;
 
             {
                 try {
-                    bellImage = ImageIO.read(getClass().getResource("/assets/" + (theme == 0 ? "moon" : "moon") + ".png"));
+                    bellImage = ImageIO
+                            .read(getClass().getResource("/assets/" + (theme == 0 ? "moon" : "moon") + ".png"));
                 } catch (Exception e) {
                     e.printStackTrace();
                 }
@@ -235,36 +235,32 @@ public class Header extends JPanel {
         btn.setCursor(new Cursor(Cursor.HAND_CURSOR));
         btn.setToolTipText("Notifications");
 
-        btn.addActionListener(e -> toggleTheme());
+        btn.addActionListener(e -> toggleTheme(onClick));
 
         return btn;
     }
 
-    private void toggleTheme() {
+    private void toggleTheme(Consumer<String> onClick) {
         Params.theme = Params.theme == 0 ? 1 : 0;
+        onClick.accept(selectedElement);
     }
 
-    // Method to update colors when theme changes externally
     public void updateTheme(int newTheme) {
         this.theme = newTheme;
         initializeColors();
-
         if (themeToggleBtn != null) {
             JLabel iconLabel = (JLabel) themeToggleBtn.getComponent(0);
             iconLabel.setText(theme == 0 ? "☀" : "🌙");
             iconLabel.setForeground(textPrimary);
             themeToggleBtn.setToolTipText(theme == 0 ? "Mode sombre" : "Mode clair");
         }
-
         setBackground(bgColor);
 
-        // Update all child components
         for (Component comp : getComponents()) {
             if (comp instanceof JPanel) {
                 comp.setBackground(bgColor);
             }
         }
-
         repaint();
     }
 }

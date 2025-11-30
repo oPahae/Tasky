@@ -69,7 +69,7 @@ public class Gestion extends JPanel {
     }
 
     private void loadGestionData() {
-        Queries.get("/api/gestion/" + Params.projetID).thenAccept(response -> {
+        Queries.get("/api/gestion/" + 1).thenAccept(response -> {
             SwingUtilities.invokeLater(() -> {
                 try {
                     if (response.containsKey("success") && (Boolean) response.get("success")) {

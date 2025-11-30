@@ -204,7 +204,7 @@ public class RejoindreProjet extends JPanel {
             return;
         }
 
-        Queries.get("/api/projet/join/" + code + "/" + 1)
+        Queries.get("/api/projet/join/" + code + "/" + 4)
                 .thenAccept(response -> {
                     SwingUtilities.invokeLater(() -> {
                         if (response.containsKey("error")) {
