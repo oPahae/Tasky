@@ -8,7 +8,7 @@ public class SessionManager {
     private String email;
     private String competance;
     private String telephone;
-    private Long userId;
+    private int userId;
 
     private SessionManager() {}
 
@@ -25,7 +25,7 @@ public class SessionManager {
 
     // Méthode pour sauvegarder toutes les infos de session
     public void setUserSession(String token, String prenom, String nom, String email, 
-                               String competance, String telephone, Long userId) {
+                               String competance, String telephone, int userId) {
         this.token = token;
         this.prenom = prenom;
         this.nom = nom;
@@ -71,7 +71,7 @@ public class SessionManager {
         return telephone != null ? telephone : "";
     }
 
-    public Long getUserId() {
+    public int getUserId() {
         return userId;
     }
 
@@ -87,7 +87,7 @@ public class SessionManager {
         this.email = null;
         this.competance = null;
         this.telephone = null;
-        this.userId = null;
+        this.userId = -1;
     }
 
     // Méthode pour afficher les infos (debug)

@@ -3,7 +3,7 @@ package com.example.demo.hooks;
 import java.util.Date;
 
 public class ProjetDTO {
-     public int id;
+    public int id;
     public String nom;
     public String description;
     public Date dateDebut;
@@ -13,10 +13,14 @@ public class ProjetDTO {
     public float budgetConsomme;
     public String statut;
     public String code;
-    public ProjetDTO(){}
-     public ProjetDTO(int id,String nom, String description, Date deadline, float budget, String code,Date dateDebut,float budgetc,String statut) {
+    public int userID;
+
+    public ProjetDTO() {}
+
+    public ProjetDTO(int id, String nom, String description, Date deadline, float budget, String code, Date dateDebut,
+            float budgetc, String statut) {
         this.nom = nom;
-        this.id=id;
+        this.id = id;
         this.description = description;
         this.dateDebut = dateDebut;
         this.deadline = deadline;
@@ -25,5 +29,5 @@ public class ProjetDTO {
         this.statut = statut;
         this.code = code;
     }
-    
+
 }
