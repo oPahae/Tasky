@@ -693,6 +693,7 @@ public class Tache extends JPanel {
     private void addComment(String content) {
         Map<String, String> body = new HashMap<>();
         body.put("contenu", content);
+        body.put("membreID", "2");
         Queries.post("/api/tache/" + tacheId + "/commentaire", body)
                 .thenAccept(response -> {
                     SwingUtilities.invokeLater(() -> {

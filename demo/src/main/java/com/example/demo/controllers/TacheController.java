@@ -37,6 +37,9 @@ public class TacheController {
         @Autowired
         private ProjetRepository projetRepository;
 
+        @Autowired
+        private MembreRepository membreRepository;
+
         // Récupérer toutes les données de la tâche actuelle
         @GetMapping("/{id}")
         public ResponseEntity<Map<String, Object>> getTacheData(@PathVariable int id) {
@@ -167,7 +170,9 @@ public class TacheController {
         public ResponseEntity<Commentaire> addCommentaire(@PathVariable int id,
                         @RequestBody Map<String, String> payload) {
                 Tache tache = tacheRepository.findById(id).orElseThrow(() -> new RuntimeException("Tâche non trouvée"));
+                Membre membre = membreRepository.findById(Integer.parseInt(payload.get("membreID"))).orElseThrow(() -> new RuntimeException("Membre non trouvée"));
                 Commentaire commentaire = new Commentaire();
+                commentaire.setMembre(membre);
                 commentaire.setContenu(payload.get("contenu"));
                 commentaire.setDateCreation(LocalDate.now());
                 commentaire.setTache(tache);

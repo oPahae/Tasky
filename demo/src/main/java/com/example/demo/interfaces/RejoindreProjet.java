@@ -1,6 +1,7 @@
 package com.example.demo.interfaces;
 
 import com.example.demo.Params;
+import com.example.demo.Queries;
 import com.example.demo.components.Scrollbar;
 
 import javax.swing.*;
@@ -10,7 +11,6 @@ import java.awt.geom.*;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.*;
-import java.util.Locale;
 
 public class RejoindreProjet extends JPanel {
     private int theme;
@@ -170,7 +170,7 @@ public class RejoindreProjet extends JPanel {
         card.add(Box.createRigidArea(new Dimension(0, 25)));
 
         verifyButton = createModernButton("✓ Vérifier le code",
-            new Color(16, 185, 129), new Color(52, 211, 153));
+                new Color(16, 185, 129), new Color(52, 211, 153));
         verifyButton.setPreferredSize(new Dimension(300, 54));
         verifyButton.setFont(new Font("Segoe UI", Font.BOLD, 16));
         verifyButton.setMaximumSize(new Dimension(300, 54));
@@ -195,32 +195,41 @@ public class RejoindreProjet extends JPanel {
 
     private void verifyCode() {
         String code = codeField.getText().trim().toUpperCase();
-
         if (code.isEmpty()) {
             showMessage("Veuillez entrer un code", false, true);
             return;
         }
-
         if (code.length() < 6) {
             showMessage("Le code doit contenir au moins 6 caractères", false, true);
             return;
         }
 
-        boolean isValid = checkCode(code);
-
-        if (isValid) {
-            showMessage("Code valide ! Bienvenue dans le projet", true, false);
-            codeField.setEnabled(false);
-            verifyButton.setEnabled(false);
-        } else {
-            showMessage("Code invalide. Veuillez réessayer", false, false);
-            codeField.selectAll();
-            codeField.requestFocus();
-        }
-    }
-
-    private boolean checkCode(String code) {
-        return validCodes.contains(code);
+        Queries.get("/api/projet/join/" + code + "/" + 1)
+                .thenAccept(response -> {
+                    SwingUtilities.invokeLater(() -> {
+                        if (response.containsKey("error")) {
+                            showMessage("Erreur réseau : " + response.get("error"), false, false);
+                        } else {
+                            boolean success = (boolean) response.getOrDefault("success", false);
+                            String message = (String) response.getOrDefault("message", "Erreur inconnue");
+                            if (success) {
+                                showMessage(message, true, false);
+                                codeField.setEnabled(false);
+                                verifyButton.setEnabled(false);
+                            } else {
+                                showMessage(message, false, false);
+                                codeField.selectAll();
+                                codeField.requestFocus();
+                            }
+                        }
+                    });
+                })
+                .exceptionally(e -> {
+                    SwingUtilities.invokeLater(() -> {
+                        showMessage("Erreur réseau : " + e.getMessage(), false, false);
+                    });
+                    return null;
+                });
     }
 
     private void showMessage(String message, boolean success, boolean warning) {
@@ -233,9 +242,11 @@ public class RejoindreProjet extends JPanel {
                 Graphics2D g2 = (Graphics2D) g.create();
                 g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
 
-                Color bgColor = success ? new Color(successColor.getRed(), successColor.getGreen(), successColor.getBlue(), 20)
-                               : warning ? new Color(warningColor.getRed(), warningColor.getGreen(), warningColor.getBlue(), 20)
-                               : new Color(dangerColor.getRed(), dangerColor.getGreen(), dangerColor.getBlue(), 20);
+                Color bgColor = success
+                        ? new Color(successColor.getRed(), successColor.getGreen(), successColor.getBlue(), 20)
+                        : warning
+                                ? new Color(warningColor.getRed(), warningColor.getGreen(), warningColor.getBlue(), 20)
+                                : new Color(dangerColor.getRed(), dangerColor.getGreen(), dangerColor.getBlue(), 20);
 
                 g2.setColor(bgColor);
                 g2.fillRoundRect(0, 0, getWidth(), getHeight(), 16, 16);
@@ -291,15 +302,15 @@ public class RejoindreProjet extends JPanel {
             messagePanel.add(Box.createRigidArea(new Dimension(0, 15)));
 
             JButton actionButton = createModernButton("→ Accéder au projet",
-                primaryGradient1, primaryGradient2);
+                    primaryGradient1, primaryGradient2);
             actionButton.setPreferredSize(new Dimension(280, 48));
             actionButton.setFont(new Font("Segoe UI", Font.BOLD, 15));
             actionButton.setMaximumSize(new Dimension(280, 48));
             actionButton.setAlignmentX(Component.CENTER_ALIGNMENT);
             actionButton.addActionListener(e -> {
                 JOptionPane.showMessageDialog(this,
-                    createMessageComponent("Redirection vers le projet..."),
-                    "Accès", JOptionPane.PLAIN_MESSAGE);
+                        createMessageComponent("Redirection vers le projet..."),
+                        "Accès", JOptionPane.PLAIN_MESSAGE);
             });
 
             messagePanel.add(actionButton);
@@ -340,7 +351,7 @@ public class RejoindreProjet extends JPanel {
         titleLabel.setAlignmentX(Component.LEFT_ALIGNMENT);
 
         String timestamp = LocalDateTime.now()
-            .format(DateTimeFormatter.ofPattern("dd MMM yyyy - HH:mm", Locale.FRENCH));
+                .format(DateTimeFormatter.ofPattern("dd MMM yyyy - HH:mm", Locale.FRENCH));
 
         JLabel infoLabel = new JLabel("Date d'accès : " + timestamp);
         infoLabel.setFont(new Font("Segoe UI", Font.PLAIN, 13));
@@ -421,9 +432,8 @@ public class RejoindreProjet extends JPanel {
                 g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
 
                 GradientPaint gradient = new GradientPaint(
-                    0, 0, getModel().isPressed() ? color2 : color1,
-                    0, getHeight(), getModel().isPressed() ? color1 : color2
-                );
+                        0, 0, getModel().isPressed() ? color2 : color1,
+                        0, getHeight(), getModel().isPressed() ? color1 : color2);
                 g2.setPaint(gradient);
                 g2.fillRoundRect(0, 0, getWidth(), getHeight(), 14, 14);
 
