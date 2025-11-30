@@ -233,17 +233,17 @@ public class Membre extends JPanel {
         infoGrid.setMaximumSize(new Dimension(Integer.MAX_VALUE, 200));
         infoGrid.setAlignmentX(Component.LEFT_ALIGNMENT);
 
-        infoGrid.add(createInfoCard("📧 Email", memberData.email, new Color(59, 130, 246), new Color(96, 165, 250)));
-        infoGrid.add(createInfoCard("📱 Téléphone", memberData.telephone, new Color(16, 185, 129),
+        infoGrid.add(createInfoCard("Email", memberData.email, new Color(59, 130, 246), new Color(96, 165, 250)));
+        infoGrid.add(createInfoCard("Téléphone", memberData.telephone, new Color(16, 185, 129),
                 new Color(52, 211, 153)));
 
         DateTimeFormatter formatter = DateTimeFormatter.ofPattern("dd MMMM yyyy", Locale.FRENCH);
         long daysSinceJoined = ChronoUnit.DAYS.between(memberData.dateRejointe, LocalDate.now());
         String joinedText = memberData.dateRejointe.format(formatter) + " (" + daysSinceJoined + " jours)";
 
-        infoGrid.add(createInfoCard("📅 Date d'adhésion", joinedText, new Color(236, 72, 153),
+        infoGrid.add(createInfoCard("Date d'adhésion", joinedText, new Color(236, 72, 153),
                 new Color(244, 114, 182)));
-        infoGrid.add(createInfoCard("🎯 Rôle", memberData.role, new Color(245, 158, 11), new Color(251, 191, 36)));
+        infoGrid.add(createInfoCard("Rôle", memberData.role, new Color(245, 158, 11), new Color(251, 191, 36)));
 
         card.add(infoGrid);
         section.add(card);
@@ -441,7 +441,7 @@ public class Membre extends JPanel {
         sidePanel.setOpaque(false);
 
         DateTimeFormatter formatter = DateTimeFormatter.ofPattern("dd MMM yyyy", Locale.FRENCH);
-        JLabel dateLabel = new JLabel("⏰ " + task.dateLimite.format(formatter));
+        JLabel dateLabel = new JLabel(task.dateLimite.format(formatter));
         dateLabel.setFont(new Font("Segoe UI", Font.PLAIN, 13));
         dateLabel.setForeground(textSecondary);
         dateLabel.setAlignmentX(Component.RIGHT_ALIGNMENT);
