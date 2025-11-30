@@ -1,5 +1,5 @@
 package com.example.demo;
-import com.example.demo.Main;
+
 import javax.swing.*;
 import javax.swing.border.EmptyBorder;
 import java.awt.*;
@@ -115,21 +115,67 @@ public class Auth extends JFrame {
                     return sendPOST(BASE_URL + "/login", json);
                 }
 
+                // Dans la méthode loginPanel(), dans le SwingWorker, modifiez done() :
+
                 @Override
                 protected void done() {
                     try {
                         String response = get();
-                        if (response.contains("success") || response.contains("token")) {
+                        
+                        // ⭐ AJOUTEZ CES LIGNES POUR DEBUG
+                        System.out.println("========================================");
+                        System.out.println("RÉPONSE COMPLÈTE DE L'API:");
+                        System.out.println(response);
+                        System.out.println("========================================");
+                        
+                        if (response.contains("success") && response.contains("token")) {
+                            // Extraire toutes les informations
+                            String token = extractToken(response);
+                            String prenom = extractValue(response, "prenom");
+                            String nom = extractValue(response, "nom");
+                            String email = extractValue(response, "email");
+                            String competance = extractValue(response, "competance");
+                            String telephone = extractValue(response, "telephone");
+                            
+                            // DEBUG : Afficher ce qui est extrait
+                            System.out.println("--- EXTRACTION ---");
+                            System.out.println("Token extrait: " + token);
+                            System.out.println("Prénom extrait: " + prenom);
+                            System.out.println("Nom extrait: " + nom);
+                            System.out.println("Email extrait: " + email);
+                            System.out.println("Compétence extraite: " + competance);
+                            System.out.println("Téléphone extrait: " + telephone);
+                            System.out.println("------------------");
+                            
+                            // Extraire l'ID utilisateur
+                            String userIdStr = extractValue(response, "id");
+                            Long userId = null;
+                            try {
+                                if (userIdStr != null && !userIdStr.isEmpty()) {
+                                    userId = Long.parseLong(userIdStr);
+                                }
+                            } catch (NumberFormatException e) {
+                                System.err.println("Erreur conversion userId: " + e.getMessage());
+                            }
+                            
+                            // Sauvegarder dans la session
+                            if (token != null && !token.equals("session-active")) {
+                                TokenManager.saveToken(token);
+                            }
+                            
+                            SessionManager.getInstance().setUserSession(
+                                token, prenom, nom, email, competance, telephone, userId
+                            );
+                            
+                            // Afficher les infos
+                            SessionManager.getInstance().printSessionInfo();
+                            
                             showMessage(message, "✓ Connexion réussie !", SUCCESS_COLOR);
                             
-                            // Attendre 1 seconde pour voir le message de succès
                             Timer timer = new Timer(1000, evt -> {
-                                // Ferme la fenêtre actuelle
                                 dispose();
-                                
-                                // Ouvre la fenêtre Main
                                 SwingUtilities.invokeLater(() -> {
-                                    Main mainGUI = new Main();
+                                    Main mainGUI = new Main(prenom, nom);
                                     mainGUI.setVisible(true);
                                 });
                             });
@@ -141,6 +187,7 @@ public class Auth extends JFrame {
                             btnLogin.setText("Se connecter");
                         }
                     } catch (Exception ex) {
+                        ex.printStackTrace(); // Afficher l'erreur complète
                         showMessage(message, "✗ Erreur de connexion", ERROR_COLOR);
                         btnLogin.setEnabled(true);
                         btnLogin.setText("Se connecter");
@@ -426,6 +473,95 @@ public class Auth extends JFrame {
         return response;
     }
 
+    private String extractToken(String response) {
+        if (response.contains("token")) {
+            int start = response.indexOf("\"token\"");
+            if (start != -1) {
+                int valueStart = response.indexOf(":", start) + 2;
+                int valueEnd = response.indexOf("\"", valueStart);
+                if (valueEnd != -1) {
+                    return response.substring(valueStart, valueEnd);
+                }
+            }
+        }
+        return null;
+    }
+    
+    private String extractValue(String json, String key) {
+    try {
+        if (json == null || json.isEmpty()) {
+            System.out.println("⚠️ JSON vide pour clé: " + key);
+            return "";
+        }
+        
+        // Chercher la clé
+        String searchKey = "\"" + key + "\"";
+        int keyIndex = json.indexOf(searchKey);
+        
+        if (keyIndex == -1) {
+            System.out.println("⚠️ Clé non trouvée: " + key);
+            return "";
+        }
+        
+        // Trouver le début de la valeur (après les ':')
+        int colonIndex = json.indexOf(":", keyIndex);
+        if (colonIndex == -1) {
+            System.out.println("⚠️ Pas de ':' après la clé: " + key);
+            return "";
+        }
+        
+        // Ignorer les espaces après ':'
+        int valueStart = colonIndex + 1;
+        while (valueStart < json.length() && 
+               (json.charAt(valueStart) == ' ' || json.charAt(valueStart) == '\t')) {
+            valueStart++;
+        }
+        
+        if (valueStart >= json.length()) {
+            System.out.println("⚠️ Pas de valeur après ':' pour: " + key);
+            return "";
+        }
+        
+        // Vérifier si c'est une string (commence par ")
+        boolean isString = json.charAt(valueStart) == '"';
+        
+        if (isString) {
+            // Pour les strings, trouver le " de fermeture
+            valueStart++; // Sauter le " d'ouverture
+            int valueEnd = json.indexOf("\"", valueStart);
+            
+            if (valueEnd == -1) {
+                System.out.println("⚠️ Guillemet de fermeture manquant pour: " + key);
+                return "";
+            }
+            
+            String value = json.substring(valueStart, valueEnd);
+            System.out.println("✓ Extrait " + key + " = " + value);
+            return value;
+        } else {
+            // Pour les nombres ou booléens, trouver la virgule ou accolade
+            int valueEnd = json.indexOf(",", valueStart);
+            if (valueEnd == -1) {
+                valueEnd = json.indexOf("}", valueStart);
+            }
+            
+            if (valueEnd == -1) {
+                System.out.println("⚠️ Fin de valeur non trouvée pour: " + key);
+                return "";
+            }
+            
+            String value = json.substring(valueStart, valueEnd).trim();
+            System.out.println("✓ Extrait " + key + " = " + value);
+            return value;
+        }
+        
+    } catch (Exception e) {
+        System.err.println("❌ Erreur extraction de '" + key + "': " + e.getMessage());
+        e.printStackTrace();
+        return "";
+    }
+}
+
     private void clearRegisterFields(JTextField nom, JTextField prenom, JTextField email,
                                      JPasswordField password, JPasswordField confirm,
                                      JTextField comp, JTextField tel) {
@@ -469,7 +605,6 @@ public class Auth extends JFrame {
             while ((inputLine = in.readLine()) != null) {
                 response.append(inputLine);
             }
-
             String result = response.toString();
             System.out.println("Response: " + result);
             return result;

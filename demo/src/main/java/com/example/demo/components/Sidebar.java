@@ -1,34 +1,72 @@
 package com.example.demo.components;
 
-import com.example.demo.Params;
-
-import javax.imageio.ImageIO;
-import javax.swing.*;
-import javax.swing.border.EmptyBorder;
-import javax.swing.plaf.basic.BasicComboBoxUI;
-import java.awt.*;
+import java.awt.BasicStroke;
+import java.awt.BorderLayout;
+import java.awt.Color;
+import java.awt.Component;
+import java.awt.Container;
+import java.awt.Cursor;
+import java.awt.Dimension;
+import java.awt.FlowLayout;
+import java.awt.Font;
+import java.awt.FontMetrics;
+import java.awt.GradientPaint;
+import java.awt.Graphics;
+import java.awt.Graphics2D;
+import java.awt.Rectangle;
+import java.awt.RenderingHints;
+import java.awt.Window;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
-import java.awt.geom.RoundRectangle2D;
 import java.awt.image.BufferedImage;
 import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.Map;
 import java.util.List;
+import java.util.Map;
 import java.util.function.Consumer;
+
+import javax.imageio.ImageIO;
+import javax.swing.BorderFactory;
+import javax.swing.Box;
+import javax.swing.BoxLayout;
+import javax.swing.JButton;
+import javax.swing.JComboBox;
+import javax.swing.JComponent;
+import javax.swing.JLabel;
+import javax.swing.JOptionPane;
+import javax.swing.JPanel;
+import javax.swing.JScrollBar;
+import javax.swing.JScrollPane;
+import javax.swing.SwingUtilities;
+import javax.swing.border.EmptyBorder;
+import javax.swing.plaf.basic.BasicComboBoxUI;
+
+import com.example.demo.Params;
+
 
 public class Sidebar extends JPanel {
     private int theme;
     private Color bgColor, cardBgColor, textPrimary, textSecondary, accentColor, hoverColor, borderColor, shadowColor;
     private List<Map<String, Object>> projects;
-    private String currentUserFirstName = "John";
-    private String currentUserLastName = "Doe";
+    private String currentUserFirstName = "";
+    private String currentUserLastName = "";
     private String selectedElement = "Principale";
 
-    public Sidebar(List<String> elements, Consumer<String> onClick) {
+    public Sidebar(List<String> elements, Consumer<String> onClick, String firstName, String lastName) {
         this.theme = Params.theme;
         initializeProjects();
         initializeColors();
+        
+        // Si prénom/nom fournis, les utiliser directement
+        if (firstName != null && !firstName.isEmpty()) {
+            this.currentUserFirstName = firstName;
+            this.currentUserLastName = lastName != null ? lastName : "";
+            System.out.println("✓ Sidebar créée avec: " + currentUserFirstName + " " + currentUserLastName);
+        } else {
+            // Sinon, charger depuis le token
+            loadUserInfo();
+        }
+
         setLayout(new BorderLayout());
         setBackground(bgColor);
         setPreferredSize(new Dimension(280, 0));
@@ -67,6 +105,102 @@ public class Sidebar extends JPanel {
 
         add(container, BorderLayout.CENTER);
     }
+
+    private void loadUserInfo() {
+    String token = com.example.demo.TokenManager.loadToken();
+    
+    if (token == null || token.isEmpty()) {
+        System.out.println("⚠ Aucun token trouvé pour charger les infos utilisateur");
+        currentUserFirstName = "Invité";
+        currentUserLastName = "";
+        return;
+    }
+    
+    try {
+        String json = "{\"token\": \"" + token + "\"}";
+        String response = sendPOST("http://localhost:8080/user/info", json);
+        
+        System.out.println("Réponse getUserInfo: " + response);
+        
+        if (response.contains("success")) {
+            // Extraire le prénom
+            currentUserFirstName = extractJsonValue(response, "prenom");
+            if (currentUserFirstName.isEmpty()) {
+                currentUserFirstName = "User";
+            }
+            
+            // Extraire le nom
+            currentUserLastName = extractJsonValue(response, "nom");
+            if (currentUserLastName.isEmpty()) {
+                currentUserLastName = "";
+            }
+            
+            System.out.println("✓ Utilisateur chargé: " + currentUserFirstName + " " + currentUserLastName);
+        } else {
+            System.out.println("✗ Erreur lors du chargement des infos utilisateur");
+            currentUserFirstName = "Utilisateur";
+            currentUserLastName = "";
+        }
+    } catch (Exception e) {
+        System.err.println("✗ Erreur lors du chargement des infos utilisateur: " + e.getMessage());
+        e.printStackTrace();
+        currentUserFirstName = "Utilisateur";
+        currentUserLastName = "";
+    }
+}
+
+private String sendPOST(String url, String jsonInput) throws Exception {
+    java.net.URL obj = new java.net.URL(url);
+    java.net.HttpURLConnection con = (java.net.HttpURLConnection) obj.openConnection();
+    con.setRequestMethod("POST");
+    con.setRequestProperty("Content-Type", "application/json; charset=UTF-8");
+    con.setDoOutput(true);
+    con.setConnectTimeout(5000);
+    con.setReadTimeout(5000);
+    
+    try (java.io.OutputStream os = con.getOutputStream()) {
+        os.write(jsonInput.getBytes("UTF-8"));
+        os.flush();
+    }
+    
+    int responseCode = con.getResponseCode();
+    
+    java.io.BufferedReader in;
+    if (responseCode >= 200 && responseCode < 400) {
+        in = new java.io.BufferedReader(new java.io.InputStreamReader(con.getInputStream(), "UTF-8"));
+    } else {
+        in = new java.io.BufferedReader(new java.io.InputStreamReader(con.getErrorStream(), "UTF-8"));
+    }
+    
+    StringBuilder response = new StringBuilder();
+    String inputLine;
+    while ((inputLine = in.readLine()) != null) {
+        response.append(inputLine);
+    }
+    in.close();
+    
+    return response.toString();
+}
+
+private String extractJsonValue(String json, String key) {
+    try {
+        int start = json.indexOf("\"" + key + "\"");
+        if (start == -1) return "";
+        
+        int valueStart = json.indexOf(":", start) + 1;
+        int valueEnd = json.indexOf(",", valueStart);
+        if (valueEnd == -1) valueEnd = json.indexOf("}", valueStart);
+        
+        String value = json.substring(valueStart, valueEnd).trim();
+        // Enlever les guillemets
+        value = value.replace("\"", "");
+        
+        return value;
+    } catch (Exception e) {
+        System.err.println("Erreur extraction JSON pour clé '" + key + "': " + e.getMessage());
+        return "";
+    }
+}
 
     private void initializeColors() {
         if (theme == 0) { // Light mode
@@ -515,36 +649,52 @@ public class Sidebar extends JPanel {
     }
 
     private JPanel createAvatar() {
-        JPanel avatar = new JPanel() {
-            @Override
-            protected void paintComponent(Graphics g) {
-                super.paintComponent(g);
-                Graphics2D g2 = (Graphics2D) g.create();
-                g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
+    JPanel avatar = new JPanel() {
+        @Override
+        protected void paintComponent(Graphics g) {
+            super.paintComponent(g);
+            Graphics2D g2 = (Graphics2D) g.create();
+            g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
 
-                // Gradient
-                GradientPaint gradient = new GradientPaint(
-                        0, 0, accentColor,
-                        getWidth(), getHeight(), new Color(139, 92, 246));
-                g2.setPaint(gradient);
-                g2.fillOval(0, 0, getWidth(), getHeight());
+            // Gradient
+            GradientPaint gradient = new GradientPaint(
+                    0, 0, accentColor,
+                    getWidth(), getHeight(), new Color(139, 92, 246));
+            g2.setPaint(gradient);
+            g2.fillOval(0, 0, getWidth(), getHeight());
 
-                // Initials
-                g2.setColor(Color.WHITE);
-                g2.setFont(new Font("Segoe UI", Font.BOLD, 16));
-                String initials = String.valueOf(currentUserFirstName.charAt(0)) + currentUserLastName.charAt(0);
-                FontMetrics fm = g2.getFontMetrics();
-                int x = (getWidth() - fm.stringWidth(initials)) / 2;
-                int y = ((getHeight() - fm.getHeight()) / 2) + fm.getAscent();
-                g2.drawString(initials, x, y);
-
-                g2.dispose();
+            // Initials
+            g2.setColor(Color.WHITE);
+            g2.setFont(new Font("Segoe UI", Font.BOLD, 16));
+            
+            // ⭐ GÉRER LES INITIALES CORRECTEMENT
+            String initials = "";
+            if (!currentUserFirstName.isEmpty()) {
+                initials += currentUserFirstName.charAt(0);
             }
-        };
-        avatar.setPreferredSize(new Dimension(40, 40));
-        avatar.setOpaque(false);
-        return avatar;
-    }
+            if (!currentUserLastName.isEmpty()) {
+                initials += currentUserLastName.charAt(0);
+            }
+            
+            // Si pas d'initiales, afficher "?"
+            if (initials.isEmpty()) {
+                initials = "?";
+            }
+            
+            initials = initials.toUpperCase();
+            
+            FontMetrics fm = g2.getFontMetrics();
+            int x = (getWidth() - fm.stringWidth(initials)) / 2;
+            int y = ((getHeight() - fm.getHeight()) / 2) + fm.getAscent();
+            g2.drawString(initials, x, y);
+
+            g2.dispose();
+        }
+    };
+    avatar.setPreferredSize(new Dimension(40, 40));
+    avatar.setOpaque(false);
+    return avatar;
+}
 
     private JPanel createStatusPanel() {
         JPanel statusPanel = new JPanel(new FlowLayout(FlowLayout.LEFT, 6, 0));
@@ -575,57 +725,78 @@ public class Sidebar extends JPanel {
         return statusPanel;
     }
 
-    private JButton createLogoutButton() {
-        JButton logoutBtn = new JButton() {
-            @Override
-            protected void paintComponent(Graphics g) {
-                Graphics2D g2 = (Graphics2D) g.create();
-                g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
+   private JButton createLogoutButton() {
+    JButton logoutBtn = new JButton() {
+        @Override
+        protected void paintComponent(Graphics g) {
+            Graphics2D g2 = (Graphics2D) g.create();
+            g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
 
-                Color bgColor = getModel().isRollover()
-                        ? new Color(239, 68, 68, 30)
-                        : new Color(239, 68, 68, 12);
-                g2.setColor(bgColor);
-                g2.fillRoundRect(0, 0, getWidth(), getHeight(), 10, 10);
+            Color bgColor = getModel().isRollover()
+                    ? new Color(239, 68, 68, 30)
+                    : new Color(239, 68, 68, 12);
+            g2.setColor(bgColor);
+            g2.fillRoundRect(0, 0, getWidth(), getHeight(), 10, 10);
 
-                g2.dispose();
-                super.paintComponent(g);
+            g2.dispose();
+            super.paintComponent(g);
+        }
+    };
+
+    logoutBtn.setLayout(new FlowLayout(FlowLayout.CENTER, 8, 11));
+    logoutBtn.setOpaque(false);
+    logoutBtn.setContentAreaFilled(false);
+    logoutBtn.setBorder(null);
+    logoutBtn.setFocusPainted(false);
+    logoutBtn.setCursor(new Cursor(Cursor.HAND_CURSOR));
+    logoutBtn.setMaximumSize(new Dimension(Integer.MAX_VALUE, 42));
+
+    JLabel logoutIcon = new JLabel("⎋");
+    logoutIcon.setFont(new Font("Segoe UI Emoji", Font.PLAIN, 15));
+    logoutIcon.setForeground(new Color(239, 68, 68));
+
+    JLabel logoutText = new JLabel("Déconnexion");
+    logoutText.setFont(new Font("Segoe UI", Font.PLAIN, 13));
+    logoutText.setForeground(new Color(239, 68, 68));
+
+    logoutBtn.add(logoutIcon);
+    logoutBtn.add(logoutText);
+
+    logoutBtn.addActionListener(e -> {
+        int result = JOptionPane.showConfirmDialog(
+                this,
+                "Êtes-vous sûr de vouloir vous déconnecter ?",
+                "Déconnexion",
+                JOptionPane.YES_NO_OPTION,
+                JOptionPane.WARNING_MESSAGE);
+        if (result == JOptionPane.YES_OPTION) {
+            // ⭐ DÉCONNEXION AVEC SUPPRESSION DU TOKEN
+            String token = com.example.demo.TokenManager.loadToken();
+            if (token != null) {
+                try {
+                    String json = "{\"token\": \"" + token + "\"}";
+                    sendPOST("http://localhost:8080/auth/logout", json);
+                } catch (Exception ex) {
+                    System.err.println("Erreur lors de la déconnexion: " + ex.getMessage());
+                }
             }
-        };
+            
+            // Supprimer le token local
+            com.example.demo.TokenManager.deleteToken();
+            
+            // Fermer l'application et retourner à l'écran de connexion
+            SwingUtilities.invokeLater(() -> {
+                Window window = SwingUtilities.getWindowAncestor(Sidebar.this);
+                if (window != null) {
+                    window.dispose();
+                }
+                new com.example.demo.Auth().setVisible(true);
+            });
+        }
+    });
 
-        logoutBtn.setLayout(new FlowLayout(FlowLayout.CENTER, 8, 11));
-        logoutBtn.setOpaque(false);
-        logoutBtn.setContentAreaFilled(false);
-        logoutBtn.setBorder(null);
-        logoutBtn.setFocusPainted(false);
-        logoutBtn.setCursor(new Cursor(Cursor.HAND_CURSOR));
-        logoutBtn.setMaximumSize(new Dimension(Integer.MAX_VALUE, 42));
-
-        JLabel logoutIcon = new JLabel("⎋");
-        logoutIcon.setFont(new Font("Segoe UI Emoji", Font.PLAIN, 15));
-        logoutIcon.setForeground(new Color(239, 68, 68));
-
-        JLabel logoutText = new JLabel("Déconnexion");
-        logoutText.setFont(new Font("Segoe UI", Font.PLAIN, 13));
-        logoutText.setForeground(new Color(239, 68, 68));
-
-        logoutBtn.add(logoutIcon);
-        logoutBtn.add(logoutText);
-
-        logoutBtn.addActionListener(e -> {
-            int result = JOptionPane.showConfirmDialog(
-                    this,
-                    "Êtes-vous sûr de vouloir vous déconnecter ?",
-                    "Déconnexion",
-                    JOptionPane.YES_NO_OPTION,
-                    JOptionPane.WARNING_MESSAGE);
-            if (result == JOptionPane.YES_OPTION) {
-                System.exit(0);
-            }
-        });
-
-        return logoutBtn;
-    }
+    return logoutBtn;
+}
 
     private JPanel createDivider() {
         JPanel dividerPanel = new JPanel() {
