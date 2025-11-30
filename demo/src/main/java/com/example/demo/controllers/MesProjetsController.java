@@ -11,14 +11,19 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 import com.example.demo.models.Projet;
 import com.example.demo.models.Tache;
+import com.example.demo.models.User;
 import com.example.demo.hooks.MembreDTO;
 import com.example.demo.hooks.ProjetDTO;
 import com.example.demo.models.Membre;
 import com.example.demo.repositories.ProjetRepository;
 import com.example.demo.repositories.MembreRepository;
+import com.example.demo.repositories.UserRepository;
 
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.stream.Collectors;
+import java.util.Date;
 
 @RestController
 @RequestMapping("/api")
@@ -27,6 +32,8 @@ public class MesProjetsController {
     private ProjetRepository projetRepository;
     @Autowired
     private MembreRepository membreRepository;
+    @Autowired
+    private UserRepository userRepository;
 
     @GetMapping("projet/all")
     public List<ProjetDTO> getAllProjet() {
@@ -159,5 +166,48 @@ public class MesProjetsController {
         projetRepository.save(p);
 
         return convertToProjetDTO(p);
+    }
+
+    @GetMapping("projet/join/{code}/{userId}")
+    public Map<String, Object> joinProjectByCode(@PathVariable String code, @PathVariable int userId) {
+        Map<String, Object> response = new HashMap<>();
+        Projet projet = projetRepository.findByCode(code);
+        if (projet == null) {
+            response.put("success", false);
+            response.put("message", "Code de projet invalide");
+            return response;
+        }
+
+        User user = userRepository.findById(userId).orElse(null);
+        if (user == null) {
+            response.put("success", false);
+            response.put("message", "Utilisateur introuvable");
+            return response;
+        }
+
+        boolean alreadyMember = projet.getMembres().stream()
+                .anyMatch(membre -> membre.getUser().getId() == userId);
+        if (alreadyMember) {
+            response.put("success", false);
+            response.put("message", "Vous êtes déjà membre de ce projet");
+            return response;
+        }
+
+        Membre membre = new Membre();
+        membre.setNom(user.getNom() + " " + user.getPrenom());
+        membre.setEmail(user.getEmail());
+        membre.setDescription("Membre depuis " + new Date());
+        membre.setRole("Membre");
+        membre.setType("Standard");
+        membre.setUser(user);
+        membre.setProjet(projet);
+        membre.setDateRejointe(new Date());
+
+        membreRepository.save(membre);
+
+        response.put("success", true);
+        response.put("message", "Vous avez rejoint le projet avec succès");
+        response.put("projet", convertToProjetDTO(projet));
+        return response;
     }
 }
