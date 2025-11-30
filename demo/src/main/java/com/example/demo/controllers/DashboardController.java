@@ -117,7 +117,6 @@ public class DashboardController {
         dto.nom = (t.getNom());
         dto.email = (t.getEmail());
         dto.description = (t.getDescription());
-        dto.password = (t.getPassword());
         dto.role = (t.getRole());
         dto.type = (t.getType());
 

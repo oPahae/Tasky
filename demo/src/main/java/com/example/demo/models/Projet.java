@@ -36,6 +36,9 @@ public class Projet {
     @OneToMany(mappedBy = "projet")
     private List<Appel> appels;
 
+    @OneToMany(mappedBy = "projet")
+    private List<Notification> notifications;
+
     public Projet() {}
     public Projet(String nom, String description, Date deadline, float budget, String code) {
         this.nom = nom;
@@ -83,4 +86,6 @@ public class Projet {
     public void setMessages(List<Message> messages) { this.messages = messages; }
     public List<Appel> getAppels() { return appels; }
     public void setAppels(List<Appel> appels) { this.appels = appels; }
+    public List<Notification> getNotificationss() { return notifications; }
+    public void setNotifications(List<Notification> notifications) { this.notifications = notifications; }
 }

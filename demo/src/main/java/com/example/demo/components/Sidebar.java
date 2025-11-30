@@ -219,7 +219,7 @@ public class Sidebar extends JPanel {
         projectSelector.addActionListener(e -> {
             int selectedIndex = projectSelector.getSelectedIndex();
             if (selectedIndex >= 0 && selectedIndex < projects.size()) {
-                Params.projectID = (int) projects.get(selectedIndex).get("id");
+                Params.projetID = (int) projects.get(selectedIndex).get("id");
             }
         });
 

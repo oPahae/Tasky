@@ -1,4 +1,11 @@
 package com.example.demo.repositories;
-import org.springframework.data.jpa.repository.JpaRepository;
+
 import com.example.demo.models.Notification;
-public interface NotificationRepository extends JpaRepository<Notification, Integer> {}
+import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.stereotype.Repository;
+import java.util.List;
+
+@Repository
+public interface NotificationRepository extends JpaRepository<Notification, Integer> {
+    List<Notification> findByProjetId(int projetId);
+}

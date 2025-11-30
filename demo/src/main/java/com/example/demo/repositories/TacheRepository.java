@@ -9,7 +9,7 @@ import java.util.Optional;
 public interface TacheRepository extends JpaRepository<Tache, Integer> {
     Optional<Tache> findById(int id);
 
-    List<Tache> findByMembres_Id(int id);
+    List<Tache> findByMembresId(int id);
 
     List<Tache> findByProjetId(int id);
 }

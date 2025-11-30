@@ -1,9 +1,9 @@
 package com.example.demo.interfaces;
 
-import com.example.demo.Auth;
-import com.example.demo.Main;
 import com.example.demo.Params;
+import com.example.demo.Queries;
 import com.example.demo.components.Scrollbar;
+
 import javax.swing.*;
 import javax.swing.border.*;
 import java.awt.*;
@@ -22,7 +22,7 @@ public class Gestion extends JPanel {
     private List<HistoryEvent> historyEvents;
     private List<Expense> expenses;
     private List<Document> documents;
-    private double budget = 50000.0;
+    private double budget = 4000.0;
     private JPanel mainContentPanel;
     private CardLayout contentLayout;
 
@@ -30,6 +30,7 @@ public class Gestion extends JPanel {
         this.theme = Params.theme;
         initializeColors();
         initializeDemoData();
+        loadGestionData();
         setLayout(new BorderLayout());
         setBackground(bgColor);
         contentLayout = new CardLayout();
@@ -67,39 +68,172 @@ public class Gestion extends JPanel {
         historyEvents = new ArrayList<>();
         expenses = new ArrayList<>();
         documents = new ArrayList<>();
-        Calendar cal = Calendar.getInstance();
-        cal.set(2024, Calendar.JANUARY, 15);
-        historyEvents.add(new HistoryEvent(cal.getTime(), "Création du projet", "Alice", "Martin"));
-        cal.set(2024, Calendar.JANUARY, 20);
-        historyEvents.add(new HistoryEvent(cal.getTime(), "Finalisation des maquettes UI/UX", "Alice", "Martin"));
-        cal.set(2024, Calendar.FEBRUARY, 5);
-        historyEvents.add(new HistoryEvent(cal.getTime(), "Démarrage du développement Backend", "Bob", "Durant"));
-        cal.set(2024, Calendar.FEBRUARY, 18);
-        historyEvents.add(new HistoryEvent(cal.getTime(), "Mise en place de l'API REST", "Bob", "Durant"));
-        cal.set(2024, Calendar.MARCH, 2);
-        historyEvents.add(new HistoryEvent(cal.getTime(), "Intégration Frontend démarrée", "Charlie", "Dubois"));
-        cal.set(2024, Calendar.MARCH, 15);
-        historyEvents.add(new HistoryEvent(cal.getTime(), "Tests unitaires en cours", "Diana", "Rousseau"));
-        cal.set(2024, Calendar.MARCH, 25);
-        historyEvents.add(new HistoryEvent(cal.getTime(), "Revue de code effectuée", "Alice", "Martin"));
-        cal.set(2024, Calendar.APRIL, 1);
-        historyEvents.add(new HistoryEvent(cal.getTime(), "Documentation technique complétée", "Alice", "Martin"));
-        expenses.add(new Expense("Conception UI/UX", 12000));
-        expenses.add(new Expense("Développement Backend", 18500));
-        expenses.add(new Expense("Développement Frontend", 15000));
-        expenses.add(new Expense("Tests et QA", 8000));
-        expenses.add(new Expense("Infrastructure Cloud", 4500));
-        expenses.add(new Expense("Licences logicielles", 3200));
-        cal.set(2024, Calendar.JANUARY, 10);
-        documents.add(new Document("Cahier des charges.pdf", cal.getTime(), 2450000, "dGVzdCBjb250ZW50"));
-        cal.set(2024, Calendar.JANUARY, 25);
-        documents.add(new Document("Maquettes UI.fig", cal.getTime(), 15600000, "ZmlnbWEgZmlsZQ=="));
-        cal.set(2024, Calendar.FEBRUARY, 12);
-        documents.add(new Document("Architecture technique.docx", cal.getTime(), 1850000, "ZG9jdW1lbnQgY29udGVudA=="));
-        cal.set(2024, Calendar.MARCH, 5);
-        documents.add(new Document("Guide utilisateur.pdf", cal.getTime(), 3200000, "dXNlciBndWlkZQ=="));
-        cal.set(2024, Calendar.MARCH, 20);
-        documents.add(new Document("Rapport de tests.xlsx", cal.getTime(), 980000, "dGVzdCByZXBvcnQ="));
+
+        // Récupérer l'historique (notifications)
+        Queries.get("/api/gestion/historique/" + Params.projetID)
+                .thenAccept(response -> {
+                    if (response.containsKey("error")) {
+                        System.err.println("Erreur lors de la récupération de l'historique: " + response.get("error"));
+                        return;
+                    }
+                    List<Map<String, Object>> notifications = (List<Map<String, Object>>) response.get("body");
+                    notifications.forEach(n -> {
+                        Date date = new Date(((Number) n.get("dateEnvoie")).longValue());
+                        historyEvents.add(new HistoryEvent(
+                                date,
+                                (String) n.get("contenu"),
+                                ((String) n.get("membre")).split(" ")[0],
+                                ((String) n.get("membre")).split(" ")[1]));
+                    });
+                    SwingUtilities.invokeLater(this::repaint);
+                });
+
+        // Récupérer la facturation (dépenses des tâches)
+        Queries.get("/api/gestion/facturation/" + Params.projetID)
+                .thenAccept(response -> {
+                    if (response.containsKey("error")) {
+                        System.err
+                                .println("Erreur lors de la récupération de la facturation: " + response.get("error"));
+                        return;
+                    }
+                    List<Map<String, Object>> taches = (List<Map<String, Object>>) response.get("body");
+                    taches.forEach(t -> {
+                        expenses.add(new Expense(
+                                (String) t.get("titre"),
+                                ((Number) t.get("depense")).doubleValue()));
+                    });
+                    SwingUtilities.invokeLater(this::repaint);
+                });
+
+        // Récupérer les documents
+        Queries.get("/api/gestion/documents/" + Params.projetID)
+                .thenAccept(response -> {
+                    if (response.containsKey("error")) {
+                        System.err.println("Erreur lors de la récupération des documents: " + response.get("error"));
+                        return;
+                    }
+                    List<Map<String, Object>> docs = (List<Map<String, Object>>) response.get("body");
+                    docs.forEach(d -> {
+                        Date date = new Date(((Number) d.get("dateCreation")).longValue());
+                        documents.add(new Document(
+                                (String) d.get("nom"),
+                                date,
+                                ((Number) d.get("size")).longValue(),
+                                (String) d.get("contenuBase64")));
+                    });
+                    SwingUtilities.invokeLater(this::repaint);
+                });
+    }
+
+    private void loadGestionData() {
+        Queries.get("/api/gestion/" + Params.projetID).thenAccept(response -> {
+            SwingUtilities.invokeLater(() -> {
+                try {
+                    if (response.containsKey("success") && (Boolean) response.get("success")) {
+                        // Charger l'historique
+                        List<Map<String, Object>> historiqueData = (List<Map<String, Object>>) response
+                                .get("historique");
+                        if (historiqueData != null) {
+                            historyEvents.clear();
+                            for (Map<String, Object> notif : historiqueData) {
+                                // Gérer la date correctement
+                                Long dateMillis = null;
+                                Object dateObj = notif.get("dateEnvoie");
+                                if (dateObj instanceof Long) {
+                                    dateMillis = (Long) dateObj;
+                                } else if (dateObj instanceof Integer) {
+                                    dateMillis = ((Integer) dateObj).longValue();
+                                } else if (dateObj instanceof String) {
+                                    dateMillis = Long.parseLong((String) dateObj);
+                                }
+
+                                Date date = dateMillis != null ? new Date(dateMillis) : new Date();
+                                String contenu = (String) notif.get("contenu");
+                                String membreNom = notif.containsKey("membreNom") ? (String) notif.get("membreNom")
+                                        : "Système";
+
+                                // Séparer prénom et nom (simple split par espace)
+                                String[] names = membreNom.split(" ", 2);
+                                String firstName = names.length > 0 ? names[0] : "";
+                                String lastName = names.length > 1 ? names[1] : "";
+
+                                historyEvents.add(new HistoryEvent(date, contenu, firstName, lastName));
+                            }
+                        }
+
+                        // Charger la facturation
+                        List<Map<String, Object>> facturationData = (List<Map<String, Object>>) response
+                                .get("facturation");
+                        if (facturationData != null) {
+                            expenses.clear();
+                            for (Map<String, Object> expense : facturationData) {
+                                String titre = (String) expense.get("titre");
+                                Number depenseNum = (Number) expense.get("depense");
+                                double depense = depenseNum != null ? depenseNum.doubleValue() : 0.0;
+                                expenses.add(new Expense(titre, depense));
+                            }
+                        }
+
+                        // Charger les documents
+                        List<Map<String, Object>> documentsData = (List<Map<String, Object>>) response.get("documents");
+                        if (documentsData != null) {
+                            documents.clear();
+                            for (Map<String, Object> doc : documentsData) {
+                                String nom = (String) doc.get("nom");
+                                String contenuBase64 = (String) doc.get("contenuBase64");
+                                Number sizeNum = (Number) doc.get("size");
+                                long size = sizeNum != null ? sizeNum.longValue() : 0;
+
+                                // Gérer la date
+                                Long dateMillis = null;
+                                Object dateObj = doc.get("dateCreation");
+                                if (dateObj instanceof Long) {
+                                    dateMillis = (Long) dateObj;
+                                } else if (dateObj instanceof Integer) {
+                                    dateMillis = ((Integer) dateObj).longValue();
+                                } else if (dateObj instanceof String) {
+                                    dateMillis = Long.parseLong((String) dateObj);
+                                }
+
+                                Date dateCreation = dateMillis != null ? new Date(dateMillis) : new Date();
+
+                                documents.add(new Document(nom, dateCreation, size, contenuBase64));
+                            }
+                        }
+
+                        // Rafraîchir l'interface
+                        refreshUI();
+
+                    } else {
+                        String error = response.containsKey("error") ? (String) response.get("error")
+                                : "Erreur inconnue";
+                        System.err.println("Erreur lors du chargement: " + error);
+                        // Garder les données de démo si échec
+                    }
+                } catch (Exception e) {
+                    System.err.println("Erreur lors du traitement des données: " + e.getMessage());
+                    e.printStackTrace();
+                    // Garder les données de démo si échec
+                }
+            });
+        }).exceptionally(ex -> {
+            SwingUtilities.invokeLater(() -> {
+                System.err.println("Erreur de connexion: " + ex.getMessage());
+                ex.printStackTrace();
+                // Garder les données de démo si échec
+            });
+            return null;
+        });
+    }
+
+    private void refreshUI() {
+        // Recréer le panel principal avec les nouvelles données
+        mainContentPanel.removeAll();
+        JPanel mainPanel = createMainPanel();
+        mainContentPanel.add(mainPanel, "main");
+        contentLayout.show(mainContentPanel, "main");
+        mainContentPanel.revalidate();
+        mainContentPanel.repaint();
     }
 
     private JPanel createMainPanel() {
