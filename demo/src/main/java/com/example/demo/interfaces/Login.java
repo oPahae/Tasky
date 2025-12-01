@@ -1,0 +1,608 @@
+package com.example.demo.interfaces;
+
+import com.example.demo.components.Scrollbar;
+
+import com.example.demo.*;
+import javax.swing.*;
+import javax.swing.border.EmptyBorder;
+import java.awt.*;
+import java.awt.geom.*;
+import java.io.BufferedReader;
+import java.io.InputStreamReader;
+import java.io.OutputStream;
+import java.net.HttpURLConnection;
+import java.net.URL;
+
+public class Login extends JPanel {
+    private Auth parent;
+    private int userId = -1;
+    private Color bgColor, cardBgColor, textPrimary, textSecondary, accentColor, inputBorder, successColor, errorColor,
+            inputBg, hoverColor;
+
+    // Palette de couleurs premium
+    private final Color GRADIENT_START = new Color(20, 30, 48);
+    private final Color GRADIENT_END = new Color(36, 59, 85);
+    private final Color CARD_BG = new Color(255, 255, 255);
+    private final Color PRIMARY_BLUE = new Color(59, 130, 246);
+    private final Color SUCCESS_GREEN = new Color(16, 185, 129);
+    private final Color ACCENT_ORANGE = new Color(251, 146, 60);
+    private final Color TEXT_DARK = new Color(17, 24, 39);
+    private final Color TEXT_LIGHT = new Color(107, 114, 128);
+    private final Color INPUT_BG = new Color(249, 250, 251);
+    private final Color BORDER_COLOR = new Color(229, 231, 235);
+
+    public Login(Auth parent) {
+        this.parent = parent;
+        this.bgColor = parent.getBgColor();
+        this.cardBgColor = parent.getCardBgColor();
+        this.textPrimary = parent.getTextPrimary();
+        this.textSecondary = parent.getTextSecondary();
+        this.accentColor = parent.getAccentColor();
+        this.inputBorder = parent.getInputBorder();
+        this.successColor = parent.getSuccessColor();
+        this.errorColor = parent.getErrorColor();
+        this.inputBg = parent.getInputBg();
+        this.hoverColor = parent.getHoverColor();
+        setLayout(new BorderLayout());
+        setBackground(bgColor);
+        initUI();
+    }
+
+    private void initUI() {
+        JPanel mainContainer = new JPanel(new GridBagLayout());
+        mainContainer.setBackground(bgColor);
+
+        JPanel formCard = new JPanel();
+        formCard.setLayout(new BoxLayout(formCard, BoxLayout.Y_AXIS));
+        formCard.setOpaque(false);
+        formCard.setBorder(new EmptyBorder(60, 60, 60, 60));
+        formCard.setPreferredSize(new Dimension(520, 700));
+
+        // Titre principal - centré
+        JPanel titlePanel = new JPanel();
+        titlePanel.setLayout(new BoxLayout(titlePanel, BoxLayout.Y_AXIS));
+        titlePanel.setOpaque(false);
+        titlePanel.setAlignmentX(Component.CENTER_ALIGNMENT);
+
+        JLabel welcomeLabel = new JLabel("Bienvenue !");
+        welcomeLabel.setFont(new Font("Segoe UI", Font.BOLD, 42));
+        welcomeLabel.setForeground(TEXT_DARK);
+        welcomeLabel.setAlignmentX(Component.CENTER_ALIGNMENT);
+        titlePanel.add(welcomeLabel);
+        titlePanel.add(Box.createVerticalStrut(12));
+
+        JLabel subtitleLabel = new JLabel("Connectez-vous pour continuer");
+        subtitleLabel.setFont(new Font("Segoe UI", Font.PLAIN, 17));
+        subtitleLabel.setForeground(TEXT_LIGHT);
+        subtitleLabel.setAlignmentX(Component.CENTER_ALIGNMENT);
+        titlePanel.add(subtitleLabel);
+
+        formCard.add(titlePanel);
+        formCard.add(Box.createVerticalStrut(48));
+
+        // Champ Email avec icône
+        JPanel emailContainer = new JPanel();
+        emailContainer.setLayout(new BoxLayout(emailContainer, BoxLayout.Y_AXIS));
+        emailContainer.setOpaque(false);
+        emailContainer.setAlignmentX(Component.CENTER_ALIGNMENT);
+
+        JLabel emailLabel = createModernLabel("Adresse Email", PRIMARY_BLUE);
+        emailLabel.setAlignmentX(Component.LEFT_ALIGNMENT);
+        emailContainer.add(emailLabel);
+        emailContainer.add(Box.createVerticalStrut(12));
+
+        JTextField emailField = createModernTextField("votre@email.com", PRIMARY_BLUE);
+        emailField.setText("pahae");
+        emailField.setAlignmentX(Component.LEFT_ALIGNMENT);
+        emailContainer.add(emailField);
+
+        formCard.add(emailContainer);
+        formCard.add(Box.createVerticalStrut(28));
+
+        // Champ Mot de passe avec icône
+        JPanel passwordContainer = new JPanel();
+        passwordContainer.setLayout(new BoxLayout(passwordContainer, BoxLayout.Y_AXIS));
+        passwordContainer.setOpaque(false);
+        passwordContainer.setAlignmentX(Component.CENTER_ALIGNMENT);
+
+        JLabel passwordLabel = createModernLabel("Mot de passe", SUCCESS_GREEN);
+        passwordLabel.setAlignmentX(Component.LEFT_ALIGNMENT);
+        passwordContainer.add(passwordLabel);
+        passwordContainer.add(Box.createVerticalStrut(12));
+
+        JPasswordField passwordField = createModernPasswordField("", SUCCESS_GREEN);
+        passwordField.setText("111111");
+        passwordField.setAlignmentX(Component.LEFT_ALIGNMENT);
+        passwordContainer.add(passwordField);
+
+        formCard.add(passwordContainer);
+        formCard.add(Box.createVerticalStrut(18));
+
+        // Lien mot de passe oublié
+        JPanel forgotPasswordPanel = new JPanel(new FlowLayout(FlowLayout.LEFT, 0, 0));
+        forgotPasswordPanel.setOpaque(false);
+        forgotPasswordPanel.setAlignmentX(Component.CENTER_ALIGNMENT);
+        JLabel forgotPasswordLink = new JLabel("Mot de passe oublié ?");
+        forgotPasswordLink.setFont(new Font("Segoe UI", Font.BOLD, 14));
+        forgotPasswordLink.setForeground(ACCENT_ORANGE);
+        forgotPasswordLink.setCursor(new Cursor(Cursor.HAND_CURSOR));
+        forgotPasswordLink.addMouseListener(new java.awt.event.MouseAdapter() {
+            public void mouseClicked(java.awt.event.MouseEvent e) {
+                parent.switchCard("forgot");
+            }
+
+            public void mouseEntered(java.awt.event.MouseEvent e) {
+                forgotPasswordLink.setForeground(ACCENT_ORANGE.darker());
+                forgotPasswordLink.setText("<html><u>Mot de passe oublié ?</u></html>");
+            }
+
+            public void mouseExited(java.awt.event.MouseEvent e) {
+                forgotPasswordLink.setForeground(ACCENT_ORANGE);
+                forgotPasswordLink.setText("Mot de passe oublié ?");
+            }
+        });
+        forgotPasswordPanel.add(forgotPasswordLink);
+        formCard.add(forgotPasswordPanel);
+        formCard.add(Box.createVerticalStrut(32));
+
+        // Bouton de connexion
+        JButton btnLogin = createModernButton("Se connecter", PRIMARY_BLUE);
+        btnLogin.setAlignmentX(Component.CENTER_ALIGNMENT);
+        formCard.add(btnLogin);
+        formCard.add(Box.createVerticalStrut(24));
+
+        // Message de statut
+        JLabel message = new JLabel("", SwingConstants.CENTER);
+        message.setFont(new Font("Segoe UI", Font.BOLD, 15));
+        message.setAlignmentX(Component.CENTER_ALIGNMENT);
+        formCard.add(message);
+        formCard.add(Box.createVerticalStrut(30));
+
+        // Séparateur
+        JPanel separatorContainer = new JPanel();
+        separatorContainer.setLayout(new BoxLayout(separatorContainer, BoxLayout.X_AXIS));
+        separatorContainer.setOpaque(false);
+        separatorContainer.setAlignmentX(Component.CENTER_ALIGNMENT);
+        JSeparator separator = new JSeparator();
+        separator.setForeground(BORDER_COLOR);
+        separator.setMaximumSize(new Dimension(Integer.MAX_VALUE, 1));
+        separatorContainer.add(separator);
+        formCard.add(separatorContainer);
+        formCard.add(Box.createVerticalStrut(30));
+
+        // Panel de switch
+        JPanel switchPanel = createSwitchPanel(
+                "Pas encore de compte ?",
+                "Créer un compte",
+                e -> parent.switchCard("register"));
+        switchPanel.setAlignmentX(Component.CENTER_ALIGNMENT);
+        formCard.add(switchPanel);
+
+        btnLogin.addActionListener(e -> handleLogin(emailField, passwordField, message, btnLogin));
+
+        Scrollbar scroll = new Scrollbar(0);
+        JScrollPane scrollPane = scroll.create(mainContainer);
+        scrollPane.setBorder(null);
+        scrollPane.setBackground(bgColor);
+        scrollPane.getViewport().setBackground(bgColor);
+        scrollPane.setHorizontalScrollBarPolicy(JScrollPane.HORIZONTAL_SCROLLBAR_NEVER);
+        scrollPane.setVerticalScrollBarPolicy(JScrollPane.VERTICAL_SCROLLBAR_AS_NEEDED);
+        scrollPane.getVerticalScrollBar().setUnitIncrement(16);
+        mainContainer.add(formCard);
+        scrollPane.setViewportView(mainContainer);
+        add(scrollPane, BorderLayout.CENTER);
+    }
+
+    private JLabel createModernLabel(String text, Color accentColor) {
+        JLabel label = new JLabel(text);
+        label.setFont(new Font("Segoe UI", Font.BOLD, 15));
+        label.setForeground(TEXT_DARK);
+        label.setAlignmentX(Component.LEFT_ALIGNMENT);
+        return label;
+    }
+
+    private JTextField createModernTextField(String placeholder, Color accentColor) {
+        JTextField field = new JTextField() {
+            private boolean focused = false;
+
+            @Override
+            protected void paintComponent(Graphics g) {
+                Graphics2D g2 = (Graphics2D) g.create();
+                g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
+
+                // Fond avec dégradé subtil
+                GradientPaint bgGradient = new GradientPaint(
+                        0, 0, INPUT_BG,
+                        0, getHeight(), new Color(246, 247, 249));
+                g2.setPaint(bgGradient);
+                g2.fillRoundRect(0, 0, getWidth(), getHeight(), 16, 16);
+
+                // Bordure avec effet glow au focus
+                if (focused) {
+                    // Effet glow externe
+                    g2.setColor(new Color(accentColor.getRed(), accentColor.getGreen(), accentColor.getBlue(), 30));
+                    g2.setStroke(new BasicStroke(6f));
+                    g2.drawRoundRect(2, 2, getWidth() - 5, getHeight() - 5, 16, 16);
+
+                    // Bordure principale
+                    g2.setColor(accentColor);
+                    g2.setStroke(new BasicStroke(2.5f));
+                    g2.drawRoundRect(1, 1, getWidth() - 3, getHeight() - 3, 16, 16);
+                } else {
+                    g2.setColor(BORDER_COLOR);
+                    g2.setStroke(new BasicStroke(1.5f));
+                    g2.drawRoundRect(1, 1, getWidth() - 3, getHeight() - 3, 16, 16);
+                }
+
+                g2.dispose();
+                super.paintComponent(g);
+            }
+
+            @Override
+            protected void processFocusEvent(java.awt.event.FocusEvent e) {
+                super.processFocusEvent(e);
+                focused = (e.getID() == java.awt.event.FocusEvent.FOCUS_GAINED);
+                repaint();
+            }
+        };
+        field.setFont(new Font("Segoe UI", Font.PLAIN, 16));
+        field.setPreferredSize(new Dimension(0, 58));
+        field.setMaximumSize(new Dimension(Integer.MAX_VALUE, 58));
+        field.setBackground(INPUT_BG);
+        field.setForeground(TEXT_DARK);
+        field.setCaretColor(accentColor);
+        field.setBorder(new EmptyBorder(16, 22, 16, 22));
+        field.setOpaque(false);
+        return field;
+    }
+
+    private JPasswordField createModernPasswordField(String placeholder, Color accentColor) {
+        JPasswordField field = new JPasswordField() {
+            private boolean focused = false;
+
+            @Override
+            protected void paintComponent(Graphics g) {
+                Graphics2D g2 = (Graphics2D) g.create();
+                g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
+
+                // Fond avec dégradé subtil
+                GradientPaint bgGradient = new GradientPaint(
+                        0, 0, INPUT_BG,
+                        0, getHeight(), new Color(246, 247, 249));
+                g2.setPaint(bgGradient);
+                g2.fillRoundRect(0, 0, getWidth(), getHeight(), 16, 16);
+
+                // Bordure avec effet glow au focus
+                if (focused) {
+                    // Effet glow externe
+                    g2.setColor(new Color(accentColor.getRed(), accentColor.getGreen(), accentColor.getBlue(), 30));
+                    g2.setStroke(new BasicStroke(6f));
+                    g2.drawRoundRect(2, 2, getWidth() - 5, getHeight() - 5, 16, 16);
+
+                    // Bordure principale
+                    g2.setColor(accentColor);
+                    g2.setStroke(new BasicStroke(2.5f));
+                    g2.drawRoundRect(1, 1, getWidth() - 3, getHeight() - 3, 16, 16);
+                } else {
+                    g2.setColor(BORDER_COLOR);
+                    g2.setStroke(new BasicStroke(1.5f));
+                    g2.drawRoundRect(1, 1, getWidth() - 3, getHeight() - 3, 16, 16);
+                }
+
+                g2.dispose();
+                super.paintComponent(g);
+            }
+
+            @Override
+            protected void processFocusEvent(java.awt.event.FocusEvent e) {
+                super.processFocusEvent(e);
+                focused = (e.getID() == java.awt.event.FocusEvent.FOCUS_GAINED);
+                repaint();
+            }
+        };
+        field.setFont(new Font("Segoe UI", Font.PLAIN, 16));
+        field.setPreferredSize(new Dimension(0, 58));
+        field.setMaximumSize(new Dimension(Integer.MAX_VALUE, 58));
+        field.setBackground(INPUT_BG);
+        field.setForeground(TEXT_DARK);
+        field.setCaretColor(accentColor);
+        field.setBorder(new EmptyBorder(16, 22, 16, 22));
+        field.setOpaque(false);
+        return field;
+    }
+
+    private JButton createModernButton(String text, Color bgColor) {
+        JButton button = new JButton(text) {
+            private float hoverAlpha = 0f;
+            private Timer hoverTimer;
+            {
+                addMouseListener(new java.awt.event.MouseAdapter() {
+                    public void mouseEntered(java.awt.event.MouseEvent e) {
+                        if (isEnabled())
+                            animateHover(true);
+                    }
+
+                    public void mouseExited(java.awt.event.MouseEvent e) {
+                        animateHover(false);
+                    }
+                });
+            }
+
+            private void animateHover(boolean enter) {
+                if (hoverTimer != null)
+                    hoverTimer.stop();
+                hoverTimer = new Timer(10, e -> {
+                    if (enter) {
+                        hoverAlpha = Math.min(1f, hoverAlpha + 0.15f);
+                    } else {
+                        hoverAlpha = Math.max(0f, hoverAlpha - 0.15f);
+                    }
+                    repaint();
+                    if ((enter && hoverAlpha >= 1f) || (!enter && hoverAlpha <= 0f)) {
+                        hoverTimer.stop();
+                    }
+                });
+                hoverTimer.start();
+            }
+
+            @Override
+            protected void paintComponent(Graphics g) {
+                Graphics2D g2 = (Graphics2D) g.create();
+                g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
+
+                Color baseColor = bgColor;
+                if (!isEnabled()) {
+                    baseColor = new Color(156, 163, 175);
+                } else if (getModel().isPressed()) {
+                    baseColor = bgColor.darker();
+                } else if (hoverAlpha > 0) {
+                    float factor = 1 - (hoverAlpha * 0.15f);
+                    int r = (int) (baseColor.getRed() * factor);
+                    int g_ = (int) (baseColor.getGreen() * factor);
+                    int b = (int) (baseColor.getBlue() * factor);
+                    baseColor = new Color(Math.max(0, r), Math.max(0, g_), Math.max(0, b));
+                }
+
+                // Ombre du bouton progressive
+                if (isEnabled()) {
+                    g2.setColor(new Color(0, 0, 0, 35));
+                    g2.fillRoundRect(0, 7, getWidth(), getHeight() - 7, 16, 16);
+                    g2.setColor(new Color(0, 0, 0, 20));
+                    g2.fillRoundRect(0, 5, getWidth(), getHeight() - 5, 16, 16);
+                }
+
+                // Gradient sur le bouton
+                GradientPaint gradient = new GradientPaint(
+                        0, 0, baseColor,
+                        0, getHeight(), new Color(
+                                Math.max(0, baseColor.getRed() - 20),
+                                Math.max(0, baseColor.getGreen() - 20),
+                                Math.max(0, baseColor.getBlue() - 20)));
+                g2.setPaint(gradient);
+                g2.fillRoundRect(0, 0, getWidth(), getHeight() - 6, 16, 16);
+
+                // Highlight subtil en haut
+                if (isEnabled() && !getModel().isPressed()) {
+                    g2.setColor(new Color(255, 255, 255, 25));
+                    g2.fillRoundRect(0, 0, getWidth(), getHeight() / 2 - 3, 16, 16);
+                }
+
+                g2.dispose();
+                super.paintComponent(g);
+            }
+        };
+        button.setFont(new Font("Segoe UI", Font.BOLD, 17));
+        button.setForeground(Color.WHITE);
+        button.setFocusPainted(false);
+        button.setBorderPainted(false);
+        button.setContentAreaFilled(false);
+        button.setPreferredSize(new Dimension(0, 62));
+        button.setMaximumSize(new Dimension(Integer.MAX_VALUE, 62));
+        button.setCursor(new Cursor(Cursor.HAND_CURSOR));
+        button.setAlignmentX(Component.CENTER_ALIGNMENT);
+        return button;
+    }
+
+    private JPanel createSwitchPanel(String text, String linkText, java.awt.event.ActionListener action) {
+        JPanel panel = new JPanel(new FlowLayout(FlowLayout.CENTER, 10, 0));
+        panel.setOpaque(false);
+        panel.setAlignmentX(Component.CENTER_ALIGNMENT);
+
+        JLabel label = new JLabel(text);
+        label.setFont(new Font("Segoe UI", Font.PLAIN, 15));
+        label.setForeground(TEXT_LIGHT);
+
+        JLabel link = new JLabel(linkText);
+        link.setFont(new Font("Segoe UI", Font.BOLD, 15));
+        link.setForeground(PRIMARY_BLUE);
+        link.setCursor(new Cursor(Cursor.HAND_CURSOR));
+        link.addMouseListener(new java.awt.event.MouseAdapter() {
+            public void mouseClicked(java.awt.event.MouseEvent e) {
+                action.actionPerformed(null);
+            }
+
+            public void mouseEntered(java.awt.event.MouseEvent e) {
+                link.setForeground(PRIMARY_BLUE.darker());
+                link.setText("<html><u>" + linkText + "</u></html>");
+            }
+
+            public void mouseExited(java.awt.event.MouseEvent e) {
+                link.setForeground(PRIMARY_BLUE);
+                link.setText(linkText);
+            }
+        });
+
+        panel.add(label);
+        panel.add(link);
+        return panel;
+    }
+
+    private void showMessage(JLabel label, String text, Color color) {
+        label.setText(text);
+        label.setForeground(color);
+        Timer fadeTimer = new Timer(3500, e -> {
+            Timer clearTimer = new Timer(40, evt -> {
+                Color current = label.getForeground();
+                int alpha = Math.max(0, current.getAlpha() - 12);
+                label.setForeground(new Color(current.getRed(), current.getGreen(), current.getBlue(), alpha));
+                if (alpha == 0) {
+                    label.setText("");
+                    ((Timer) evt.getSource()).stop();
+                }
+            });
+            clearTimer.start();
+        });
+        fadeTimer.setRepeats(false);
+        fadeTimer.start();
+    }
+
+    private void handleLogin(JTextField emailField, JPasswordField passwordField, JLabel message, JButton btnLogin) {
+        if (emailField.getText().trim().isEmpty() || passwordField.getPassword().length == 0) {
+            showMessage(message, "⚠ Veuillez remplir tous les champs", errorColor);
+            return;
+        }
+
+        btnLogin.setEnabled(false);
+        btnLogin.setText("Connexion en cours...");
+        message.setText("");
+
+        SwingWorker<String, Void> worker = new SwingWorker<>() {
+            @Override
+            protected String doInBackground() throws Exception {
+                String json = "{ \"email\": \"" + emailField.getText() + "\", " +
+                        "\"password\": \"" + new String(passwordField.getPassword()) + "\" }";
+                return sendPOST("http://localhost:8080/auth/login", json);
+            }
+
+            @Override
+            protected void done() {
+                try {
+                    String response = get();
+
+                    if (response.contains("success") && response.contains("token")) {
+                        String token = extractToken(response);
+                        String prenom = extractValue(response, "prenom");
+                        String nom = extractValue(response, "nom");
+                        String email = extractValue(response, "email");
+                        String competance = extractValue(response, "competance");
+                        String telephone = extractValue(response, "telephone");
+                        String userIdStr = extractValue(response, "id");
+                        try {
+                            if (userIdStr != null && !userIdStr.isEmpty())
+                                userId = Integer.parseInt(userIdStr);
+                        } catch (NumberFormatException ex) {
+                            System.err.println("Erreur conversion userId: " + ex.getMessage());
+                        }
+
+                        if (token != null && !token.equals("session-active"))
+                            TokenManager.saveToken(token);
+
+                        SessionManager.getInstance().setUserSession(token, prenom, nom, email, competance, telephone,
+                                userId);
+                        SessionManager.getInstance().printSessionInfo();
+
+                        showMessage(message, "Connexion réussie !", successColor);
+
+                        Timer timer = new Timer(1000, evt -> {
+                            SwingUtilities.invokeLater(() -> {
+                                Main mainGUI = new Main();
+                                mainGUI.setVisible(true);
+                            });
+                        });
+                        timer.setRepeats(false);
+                        timer.start();
+                    } else {
+                        showMessage(message, "✗ " + extractErrorMessage(response), errorColor);
+                        btnLogin.setEnabled(true);
+                        btnLogin.setText("Se connecter");
+                    }
+                } catch (Exception ex) {
+                    ex.printStackTrace();
+                    showMessage(message, "✗ Erreur de connexion", errorColor);
+                    btnLogin.setEnabled(true);
+                    btnLogin.setText("Se connecter");
+                }
+            }
+        };
+        worker.execute();
+    }
+
+    private String extractToken(String response) {
+        if (response.contains("token")) {
+            int start = response.indexOf("\"token\"");
+            if (start != -1) {
+                int valueStart = response.indexOf(":", start) + 2;
+                int valueEnd = response.indexOf("\"", valueStart);
+                if (valueEnd != -1)
+                    return response.substring(valueStart, valueEnd);
+            }
+        }
+        return null;
+    }
+
+    private String extractValue(String json, String key) {
+        if (json == null || json.isEmpty())
+            return "";
+        int i = json.indexOf("\"" + key + "\"");
+        if (i == -1)
+            return "";
+        i = json.indexOf(":", i) + 1;
+        while (i < json.length() && Character.isWhitespace(json.charAt(i)))
+            i++;
+        if (i >= json.length())
+            return "";
+        if (json.charAt(i) == '"') {
+            int j = json.indexOf("\"", i + 1);
+            return j == -1 ? "" : json.substring(i + 1, j);
+        } else {
+            int j = json.indexOf(",", i);
+            if (j == -1)
+                j = json.indexOf("}", i);
+            return j == -1 ? "" : json.substring(i, j).trim();
+        }
+    }
+
+    private String extractErrorMessage(String response) {
+        if (response.contains("error")) {
+            int start = response.indexOf("\"error\"");
+            if (start != -1) {
+                int valueStart = response.indexOf(":", start) + 1;
+                int valueEnd = response.indexOf("}", valueStart);
+                if (valueEnd == -1)
+                    valueEnd = response.length();
+                return response.substring(valueStart, valueEnd)
+                        .replace("\"", "").trim();
+            }
+        }
+        return response;
+    }
+
+    private String sendPOST(String url, String jsonInput) throws Exception {
+        URL obj = new URL(url);
+        HttpURLConnection con = (HttpURLConnection) obj.openConnection();
+        con.setRequestMethod("POST");
+        con.setRequestProperty("Content-Type", "application/json; charset=UTF-8");
+        con.setDoOutput(true);
+        con.setConnectTimeout(5000);
+        con.setReadTimeout(5000);
+        try (OutputStream os = con.getOutputStream()) {
+            os.write(jsonInput.getBytes("UTF-8"));
+            os.flush();
+        }
+        int responseCode = con.getResponseCode();
+        InputStreamReader streamReader;
+        if (responseCode >= 200 && responseCode < 400) {
+            streamReader = new InputStreamReader(con.getInputStream(), "UTF-8");
+        } else {
+            streamReader = new InputStreamReader(con.getErrorStream(), "UTF-8");
+        }
+        try (BufferedReader in = new BufferedReader(streamReader)) {
+            String inputLine;
+            StringBuilder response = new StringBuilder();
+            while ((inputLine = in.readLine()) != null) {
+                response.append(inputLine);
+            }
+            return response.toString();
+        }
+    }
+}

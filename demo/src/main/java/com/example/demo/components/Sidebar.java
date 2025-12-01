@@ -77,46 +77,6 @@ public class Sidebar extends JPanel {
         add(container, BorderLayout.CENTER);
     }
 
-    private void loadUserInfo() {
-        String token = com.example.demo.TokenManager.loadToken();
-        if (token == null || token.isEmpty()) {
-            System.out.println("⚠ Aucun token trouvé pour charger les infos utilisateur");
-            currentUserFirstName = "Invité";
-            currentUserLastName = "";
-            return;
-        }
-
-        try {
-            Queries.post("/user/info", Map.of("token", token))
-                    .thenAccept(response -> {
-                        SwingUtilities.invokeLater(() -> {
-                            if (response.containsKey("success")) {
-                                currentUserFirstName = (String) response.getOrDefault("prenom", "User");
-                                currentUserLastName = (String) response.getOrDefault("nom", "");
-                                System.out.println(
-                                        "Utilisateur chargé: " + currentUserFirstName + " " + currentUserLastName);
-                            } else {
-                                System.out.println("Erreur lors du chargement des infos utilisateur");
-                                currentUserFirstName = "Utilisateur";
-                                currentUserLastName = "";
-                            }
-                        });
-                    })
-                    .exceptionally(e -> {
-                        System.err.println("✗ Erreur lors du chargement des infos utilisateur: " + e.getMessage());
-                        SwingUtilities.invokeLater(() -> {
-                            currentUserFirstName = "Utilisateur";
-                            currentUserLastName = "";
-                        });
-                        return null;
-                    });
-        } catch (Exception e) {
-            System.err.println("✗ Erreur inattendue: " + e.getMessage());
-            currentUserFirstName = "Utilisateur";
-            currentUserLastName = "";
-        }
-    }
-
     private void initializeColors() {
         if (theme == 0) { // Light mode
             bgColor = new Color(250, 251, 252);
@@ -391,7 +351,7 @@ public class Sidebar extends JPanel {
     private JButton createNavButton(String text) {
         JButton btn = new JButton() {
             private BufferedImage iconImage;
-            private final int ICON_SIZE = 18;
+            private final int ICON_SIZE = 24;
 
             {
                 String iconPath;
