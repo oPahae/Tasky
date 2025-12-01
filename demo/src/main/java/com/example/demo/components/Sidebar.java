@@ -31,18 +31,19 @@ public class Sidebar extends JPanel {
     private JComboBox<String> projectSelector;
     private String currentUserFirstName = "";
     private String currentUserLastName = "";
-    private String selectedElement = "Principale";
+    private String selectedElement = Params.sidebarSelectedElement;
+    private Consumer<String> onClick;
     private int userID;
 
     public Sidebar(List<String> elements, Consumer<String> onClick, int userID, String firstName, String lastName) {
         this.theme = Params.theme;
+        this.onClick = onClick;
         initializeColors();
 
         if (userID > 0 && firstName != null && !firstName.isEmpty()) {
             this.userID = userID;
             this.currentUserFirstName = firstName;
             this.currentUserLastName = lastName != null ? lastName : "";
-            System.out.println("✓ Sidebar créée avec: " + currentUserFirstName + " " + currentUserLastName);
         } else {
             loadUserInfo();
         }
@@ -61,7 +62,7 @@ public class Sidebar extends JPanel {
 
         mainContent.add(createHeaderSection());
         mainContent.add(Box.createRigidArea(new Dimension(0, 28)));
-        mainContent.add(createNavigationSection(elements, onClick));
+        mainContent.add(createNavigationSection(elements));
         mainContent.add(Box.createVerticalGlue());
 
         JScrollPane scrollPane = new JScrollPane(mainContent);
@@ -96,9 +97,9 @@ public class Sidebar extends JPanel {
                                 currentUserFirstName = (String) response.getOrDefault("prenom", "User");
                                 currentUserLastName = (String) response.getOrDefault("nom", "");
                                 System.out.println(
-                                        "✓ Utilisateur chargé: " + currentUserFirstName + " " + currentUserLastName);
+                                        "Utilisateur chargé: " + currentUserFirstName + " " + currentUserLastName);
                             } else {
-                                System.out.println("✗ Erreur lors du chargement des infos utilisateur");
+                                System.out.println("Erreur lors du chargement des infos utilisateur");
                                 currentUserFirstName = "Utilisateur";
                                 currentUserLastName = "";
                             }
@@ -143,15 +144,19 @@ public class Sidebar extends JPanel {
 
     private void initializeProjects() {
         this.projects = new ArrayList<>();
-        if (this.userID > 0) fetchProjectsFromBackend(this.userID);
-        else updateProjectSelector();
+        if (this.userID > 0)
+            fetchProjectsFromBackend(this.userID);
+        else
+            updateProjectSelector();
     }
 
     private void updateProjectSelector() {
         if (projectSelector != null) {
             projectSelector.removeAllItems();
             for (Map<String, Object> project : projects) {
-                projectSelector.addItem((String) project.get("nom"));
+                int id = (int) project.get("id");
+                String nom = (String) project.get("nom");
+                projectSelector.addItem(nom);
             }
         }
     }
@@ -162,7 +167,6 @@ public class Sidebar extends JPanel {
                 .uri(URI.create("http://localhost:8080/api/projet/user/" + userID))
                 .GET()
                 .build();
-
         httpClient.sendAsync(request, HttpResponse.BodyHandlers.ofString())
                 .thenApply(HttpResponse::body)
                 .thenAccept(jsonResponse -> {
@@ -172,17 +176,33 @@ public class Sidebar extends JPanel {
                             List<Map<String, Object>> fetchedProjects = objectMapper.readValue(jsonResponse,
                                     new TypeReference<List<Map<String, Object>>>() {
                                     });
+
+                            // Trier la liste pour que le projet sélectionné soit le premier
+                            if (Params.projetID > 0) {
+                                fetchedProjects.sort((p1, p2) -> {
+                                    int id1 = (int) p1.get("id");
+                                    int id2 = (int) p2.get("id");
+                                    if (id1 == Params.projetID) {
+                                        return -1; // p1 vient en premier
+                                    } else if (id2 == Params.projetID) {
+                                        return 1; // p2 vient en premier
+                                    } else {
+                                        return 0; // ordre inchangé
+                                    }
+                                });
+                            }
+
                             this.projects.clear();
                             this.projects.addAll(fetchedProjects);
                             updateProjectSelector();
                         } catch (Exception e) {
-                            System.err.println("✗ Erreur lors du parsing des projets : " + e.getMessage());
+                            System.err.println("Erreur lors du parsing des projets : " + e.getMessage());
                             updateProjectSelector();
                         }
                     });
                 })
                 .exceptionally(e -> {
-                    System.err.println("✗ Erreur lors de la requête : " + e.getMessage());
+                    System.err.println("Erreur lors de la requête : " + e.getMessage());
                     SwingUtilities.invokeLater(() -> {
                         updateProjectSelector();
                     });
@@ -290,11 +310,26 @@ public class Sidebar extends JPanel {
         // Initialiser le JComboBox
         projectSelector = createModernComboBox();
 
-        // Ajouter un écouteur pour gérer la sélection
         projectSelector.addActionListener(e -> {
             int selectedIndex = projectSelector.getSelectedIndex();
             if (selectedIndex >= 0 && selectedIndex < projects.size()) {
-                Params.projetID = (int) projects.get(selectedIndex).get("id");
+                String selectedItem = (String) projectSelector.getSelectedItem();
+                int start = selectedItem.indexOf('[') + 1;
+                int end = selectedItem.indexOf(']');
+                if (start > 0 && end > start) {
+                    String idStr = selectedItem.substring(start, end);
+                    try {
+                        if (Params.projetID != Integer.parseInt(idStr)) {
+                            Params.projetID = Integer.parseInt(idStr);
+                            onClick.accept("Dashboard");
+                        }
+                    } catch (NumberFormatException ex) {
+                        System.err.println("Erreur lors de la conversion de l'ID : " + ex.getMessage());
+                        Params.projetID = -1;
+                    }
+                } else {
+                    Params.projetID = -1;
+                }
             }
         });
 
@@ -331,7 +366,7 @@ public class Sidebar extends JPanel {
         return comboBox;
     }
 
-    private JPanel createNavigationSection(List<String> elements, Consumer<String> onClick) {
+    private JPanel createNavigationSection(List<String> elements) {
         JPanel section = new JPanel();
         section.setLayout(new BoxLayout(section, BoxLayout.Y_AXIS));
         section.setBackground(bgColor);
@@ -349,14 +384,14 @@ public class Sidebar extends JPanel {
         section.add(Box.createRigidArea(new Dimension(0, 12)));
 
         for (String element : elements) {
-            section.add(createNavButton(element, onClick));
+            section.add(createNavButton(element));
             section.add(Box.createRigidArea(new Dimension(0, 4)));
         }
 
         return section;
     }
 
-    private JButton createNavButton(String text, Consumer<String> onClick) {
+    private JButton createNavButton(String text) {
         JButton btn = new JButton() {
             private BufferedImage iconImage;
             private final int ICON_SIZE = 18;
@@ -460,6 +495,7 @@ public class Sidebar extends JPanel {
         });
 
         btn.addActionListener(e -> {
+            Params.sidebarSelectedElement = text;
             selectedElement = text;
             onClick.accept(text.equals("Principale") ? "Dashboard" : text);
             Container parent = btn.getParent();

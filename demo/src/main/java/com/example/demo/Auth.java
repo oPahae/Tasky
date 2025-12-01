@@ -407,7 +407,7 @@ public class Auth extends JFrame {
     }
 
     private JTextField createStyledTextField() {
-        JTextField field = new JTextField();
+        JTextField field = new JTextField("pahae");
         field.setFont(new Font("Segoe UI", Font.PLAIN, 14));
         field.setPreferredSize(new Dimension(0, 40));
         field.setMaximumSize(new Dimension(Integer.MAX_VALUE, 40));
@@ -419,7 +419,7 @@ public class Auth extends JFrame {
     }
 
     private JPasswordField createStyledPasswordField() {
-        JPasswordField field = new JPasswordField();
+        JPasswordField field = new JPasswordField("111111");
         field.setFont(new Font("Segoe UI", Font.PLAIN, 14));
         field.setPreferredSize(new Dimension(0, 40));
         field.setMaximumSize(new Dimension(Integer.MAX_VALUE, 40));
