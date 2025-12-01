@@ -144,18 +144,18 @@ public class Dashboard extends JPanel {
         int totalMembers = members.size();
 
         panel.add(createStatCard("Tâches totales", String.valueOf(totalTasks),
-                new Color(99, 102, 241), "📋"));
+                new Color(99, 102, 241), "/assets/tasks.png"));
         panel.add(createStatCard("En cours", String.valueOf(inProgressTasks),
-                new Color(245, 158, 11), "⏳"));
+                new Color(245, 158, 11), "/assets/history.png"));
         panel.add(createStatCard("Terminées", String.valueOf(completedTasks),
-                new Color(16, 185, 129), "✓"));
+                new Color(16, 185, 129), "/assets/done.png"));
         panel.add(createStatCard("Membres", String.valueOf(totalMembers),
-                new Color(139, 92, 246), "👥"));
+                new Color(139, 92, 246), "/assets/users.png"));
 
         return panel;
     }
 
-    private JPanel createStatCard(String label, String value, Color accentColor, String emoji) {
+    private JPanel createStatCard(String label, String value, Color accentColor, String img) {
         JPanel card = new JPanel() {
             @Override
             protected void paintComponent(Graphics g) {
@@ -179,10 +179,18 @@ public class Dashboard extends JPanel {
         card.setBorder(BorderFactory.createEmptyBorder(20, 20, 20, 20));
         card.setCursor(new Cursor(Cursor.HAND_CURSOR));
 
-        // Emoji icon
-        JLabel iconLabel = new JLabel(emoji);
-        iconLabel.setFont(new Font("Segoe UI Emoji", Font.PLAIN, 32));
-        iconLabel.setForeground(accentColor);
+        // // Emoji icon
+        // JLabel iconLabel = new JLabel(emoji);
+        // iconLabel.setFont(new Font("Segoe UI Emoji", Font.PLAIN, 32));
+        // iconLabel.setForeground(accentColor);
+        // card.add(iconLabel, BorderLayout.WEST);
+
+        // img
+        ImageIcon icon = new ImageIcon(getClass().getResource(img));
+        Image image = icon.getImage();
+        Image scaledImage = image.getScaledInstance(38, 38, Image.SCALE_SMOOTH);
+        icon = new ImageIcon(scaledImage);
+        JLabel iconLabel = new JLabel(icon);
         card.add(iconLabel, BorderLayout.WEST);
 
         // Text content

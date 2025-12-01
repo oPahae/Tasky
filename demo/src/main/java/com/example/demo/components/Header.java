@@ -158,7 +158,7 @@ public class Header extends JPanel {
                 g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
                 g2.setRenderingHint(RenderingHints.KEY_RENDERING, RenderingHints.VALUE_RENDER_QUALITY);
 
-                int size = 24;
+                int size = 30;
                 int x = (getWidth() - size) / 2;
                 int y = (getHeight() - size) / 2;
                 g2.drawImage(bellImage, x, y, size, size, null);
@@ -219,7 +219,7 @@ public class Header extends JPanel {
                 g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
                 g2.setRenderingHint(RenderingHints.KEY_RENDERING, RenderingHints.VALUE_RENDER_QUALITY);
 
-                int size = 24;
+                int size = 30;
                 int x = (getWidth() - size) / 2;
                 int y = (getHeight() - size) / 2;
                 g2.drawImage(bellImage, x, y, size, size, null);

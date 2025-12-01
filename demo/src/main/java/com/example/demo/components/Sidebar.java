@@ -44,9 +44,6 @@ public class Sidebar extends JPanel {
         this.userID = SessionManager.getInstance().getUserId();
         this.currentUserFirstName = SessionManager.getInstance().getNom();
         this.currentUserLastName = SessionManager.getInstance().getPrenom();
-        System.out.println("--------------------------------");
-        System.out.println(SessionManager.getInstance().getToken());
-        System.out.println("--------------------------------");
 
         initializeProjects();
         setLayout(new BorderLayout());
@@ -354,7 +351,7 @@ public class Sidebar extends JPanel {
     private JButton createNavButton(String text) {
         JButton btn = new JButton() {
             private BufferedImage iconImage;
-            private final int ICON_SIZE = 18;
+            private final int ICON_SIZE = 24;
 
             {
                 String iconPath;
