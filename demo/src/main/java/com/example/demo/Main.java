@@ -33,13 +33,6 @@ public class Main extends JFrame {
     private Supplier<Header> headerFactory;
     private Supplier<Sidebar> sidebarFactory;
 
-    public Main(int userID, String prenom, String nom) {
-        this.userID = userID;
-        this.prenom = prenom;
-        this.nom = nom;
-        initializeUI();
-    }
-
     public Main() {
         this.prenom = "Utilisateur";
         this.nom = "";
@@ -60,10 +53,7 @@ public class Main extends JFrame {
         );
         sidebarFactory = () -> new Sidebar(
             Arrays.asList("Principale", "Mes projets", "Créer un projet", "Rejoindre un projet"),
-            this::navigateTo,
-            userID,
-            prenom,
-            nom
+            this::navigateTo
         );
 
         // pages

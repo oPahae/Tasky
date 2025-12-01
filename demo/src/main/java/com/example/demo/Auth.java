@@ -3,6 +3,7 @@ package com.example.demo;
 import javax.swing.*;
 import javax.swing.border.EmptyBorder;
 import java.awt.*;
+import java.awt.geom.*;
 import java.io.BufferedReader;
 import java.io.InputStreamReader;
 import java.io.OutputStream;
@@ -12,101 +13,179 @@ import java.net.URL;
 public class Auth extends JFrame {
 
     private static final String BASE_URL = "http://localhost:8080/auth";
-    private JTabbedPane tabs;
+    private JPanel mainContentPanel;
+    private CardLayout contentLayout;
     private int userId = -1;
+    private int theme;
     
-    // Couleurs modernes
-    private static final Color PRIMARY_COLOR = new Color(59, 130, 246); // Bleu moderne
-    private static final Color SECONDARY_COLOR = new Color(30, 64, 175); // Bleu foncé
-    private static final Color SUCCESS_COLOR = new Color(34, 197, 94); // Vert
-    private static final Color ERROR_COLOR = new Color(239, 68, 68); // Rouge
-    private static final Color BG_COLOR = new Color(249, 250, 251); // Gris très clair
-    private static final Color CARD_COLOR = Color.WHITE;
+    private Color bgColor, cardBgColor, textPrimary, textSecondary, accentColor, inputBorder, successColor, errorColor;
 
     public Auth() {
+        this.theme = Params.theme;
+        initializeColors();
+        
         setTitle("Authentification - Gestion des Utilisateurs");
-        setSize(500, 650);
+        setSize(550, 700);
         setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
         setLocationRelativeTo(null);
-        getContentPane().setBackground(BG_COLOR);
+        getContentPane().setBackground(bgColor);
 
-        tabs = new JTabbedPane();
-        tabs.setFont(new Font("Segoe UI", Font.BOLD, 14));
-        tabs.setBackground(CARD_COLOR);
-        
-        tabs.addTab("  Connexion  ", loginPanel());
-        tabs.addTab("  Inscription  ", registerPanel());
+        contentLayout = new CardLayout();
+        mainContentPanel = new JPanel(contentLayout);
+        mainContentPanel.setBackground(bgColor);
 
-        add(tabs);
+        JPanel loginPanel = createLoginPanel();
+        JPanel registerPanel = createRegisterPanel();
+
+        mainContentPanel.add(loginPanel, "login");
+        mainContentPanel.add(registerPanel, "register");
+
+        add(mainContentPanel);
+        contentLayout.show(mainContentPanel, "login");
+    }
+
+    private void initializeColors() {
+        if (theme == 0) {
+            bgColor = new Color(245, 247, 250);
+            cardBgColor = Color.WHITE;
+            textPrimary = new Color(30, 30, 30);
+            textSecondary = new Color(100, 100, 100);
+            accentColor = new Color(59, 130, 246);
+            inputBorder = new Color(209, 213, 219);
+            successColor = new Color(34, 197, 94);
+            errorColor = new Color(239, 68, 68);
+        } else {
+            bgColor = new Color(0, 0, 0);
+            cardBgColor = new Color(20, 20, 20);
+            textPrimary = new Color(230, 230, 230);
+            textSecondary = new Color(100, 100, 100);
+            accentColor = new Color(0, 120, 215);
+            inputBorder = new Color(50, 50, 50);
+            successColor = new Color(0, 200, 100);
+            errorColor = new Color(255, 80, 80);
+        }
     }
 
     // ================= LOGIN PANEL ===================
-    private JPanel loginPanel() {
+    private JPanel createLoginPanel() {
         JPanel mainPanel = new JPanel(new BorderLayout());
-        mainPanel.setBackground(BG_COLOR);
-        mainPanel.setBorder(new EmptyBorder(30, 40, 30, 40));
+        mainPanel.setBackground(bgColor);
+        mainPanel.setBorder(new EmptyBorder(40, 50, 40, 50));
 
-        JPanel panel = new JPanel();
-        panel.setLayout(new BoxLayout(panel, BoxLayout.Y_AXIS));
-        panel.setBackground(CARD_COLOR);
-        panel.setBorder(BorderFactory.createCompoundBorder(
-            BorderFactory.createLineBorder(new Color(229, 231, 235), 1),
-            new EmptyBorder(30, 30, 30, 30)
-        ));
+        JPanel card = new JPanel() {
+            @Override
+            protected void paintComponent(Graphics g) {
+                super.paintComponent(g);
+                Graphics2D g2 = (Graphics2D) g.create();
+                g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
+                g2.setColor(cardBgColor);
+                g2.fillRoundRect(0, 0, getWidth(), getHeight(), 20, 20);
+                g2.dispose();
+            }
+        };
+        card.setLayout(new BoxLayout(card, BoxLayout.Y_AXIS));
+        card.setOpaque(false);
+        card.setBorder(new EmptyBorder(40, 40, 40, 40));
 
-        // Titre
+        // Header avec icône
+        JPanel headerPanel = new JPanel();
+        headerPanel.setLayout(new BoxLayout(headerPanel, BoxLayout.Y_AXIS));
+        headerPanel.setOpaque(false);
+        headerPanel.setAlignmentX(Component.CENTER_ALIGNMENT);
+
+        JLabel iconLabel = new JLabel("🔐");
+        iconLabel.setFont(new Font("Segoe UI Emoji", Font.PLAIN, 48));
+        iconLabel.setAlignmentX(Component.CENTER_ALIGNMENT);
+        headerPanel.add(iconLabel);
+        headerPanel.add(Box.createVerticalStrut(15));
+
         JLabel title = new JLabel("Bienvenue");
-        title.setFont(new Font("Segoe UI", Font.BOLD, 28));
-        title.setForeground(SECONDARY_COLOR);
+        title.setFont(new Font("Segoe UI", Font.BOLD, 32));
+        title.setForeground(textPrimary);
         title.setAlignmentX(Component.CENTER_ALIGNMENT);
-        panel.add(title);
-        panel.add(Box.createVerticalStrut(10));
+        headerPanel.add(title);
+        headerPanel.add(Box.createVerticalStrut(8));
 
         JLabel subtitle = new JLabel("Connectez-vous à votre compte");
-        subtitle.setFont(new Font("Segoe UI", Font.PLAIN, 14));
-        subtitle.setForeground(Color.GRAY);
+        subtitle.setFont(new Font("Segoe UI", Font.PLAIN, 15));
+        subtitle.setForeground(textSecondary);
         subtitle.setAlignmentX(Component.CENTER_ALIGNMENT);
-        panel.add(subtitle);
-        panel.add(Box.createVerticalStrut(30));
+        headerPanel.add(subtitle);
+
+        card.add(headerPanel);
+        card.add(Box.createVerticalStrut(35));
 
         // Email
         JLabel emailLabel = createStyledLabel("Adresse Email");
-        panel.add(emailLabel);
-        panel.add(Box.createVerticalStrut(8));
+        card.add(emailLabel);
+        card.add(Box.createVerticalStrut(8));
         
         JTextField emailField = createStyledTextField();
-        panel.add(emailField);
-        panel.add(Box.createVerticalStrut(20));
+        emailField.setText("pahae");
+        card.add(emailField);
+        card.add(Box.createVerticalStrut(20));
 
         // Password
         JLabel passwordLabel = createStyledLabel("Mot de passe");
-        panel.add(passwordLabel);
-        panel.add(Box.createVerticalStrut(8));
+        card.add(passwordLabel);
+        card.add(Box.createVerticalStrut(8));
         
         JPasswordField passwordField = createStyledPasswordField();
-        panel.add(passwordField);
-        panel.add(Box.createVerticalStrut(25));
+        passwordField.setText("111111");
+        card.add(passwordField);
+        card.add(Box.createVerticalStrut(30));
 
         // Button
-        JButton btnLogin = createStyledButton("Se connecter", PRIMARY_COLOR);
-        panel.add(btnLogin);
-        panel.add(Box.createVerticalStrut(15));
+        JButton btnLogin = createStyledButton("Se connecter", accentColor);
+        card.add(btnLogin);
+        card.add(Box.createVerticalStrut(20));
 
         // Message
         JLabel message = new JLabel("", SwingConstants.CENTER);
-        message.setFont(new Font("Segoe UI", Font.PLAIN, 13));
+        message.setFont(new Font("Segoe UI", Font.BOLD, 13));
         message.setAlignmentX(Component.CENTER_ALIGNMENT);
-        panel.add(message);
+        card.add(message);
+        card.add(Box.createVerticalStrut(20));
+
+        // Switch to register
+        JPanel switchPanel = new JPanel(new FlowLayout(FlowLayout.CENTER, 5, 0));
+        switchPanel.setOpaque(false);
+        switchPanel.setAlignmentX(Component.CENTER_ALIGNMENT);
+        
+        JLabel switchText = new JLabel("Pas de compte ?");
+        switchText.setFont(new Font("Segoe UI", Font.PLAIN, 13));
+        switchText.setForeground(textSecondary);
+        
+        JLabel switchLink = new JLabel("S'inscrire");
+        switchLink.setFont(new Font("Segoe UI", Font.BOLD, 13));
+        switchLink.setForeground(accentColor);
+        switchLink.setCursor(new Cursor(Cursor.HAND_CURSOR));
+        switchLink.addMouseListener(new java.awt.event.MouseAdapter() {
+            public void mouseClicked(java.awt.event.MouseEvent evt) {
+                contentLayout.show(mainContentPanel, "register");
+            }
+            public void mouseEntered(java.awt.event.MouseEvent evt) {
+                switchLink.setForeground(accentColor.darker());
+            }
+            public void mouseExited(java.awt.event.MouseEvent evt) {
+                switchLink.setForeground(accentColor);
+            }
+        });
+        
+        switchPanel.add(switchText);
+        switchPanel.add(switchLink);
+        card.add(switchPanel);
 
         // Action
         btnLogin.addActionListener(e -> {
             if (emailField.getText().trim().isEmpty() || passwordField.getPassword().length == 0) {
-                showMessage(message, "Veuillez remplir tous les champs", ERROR_COLOR);
+                showMessage(message, "⚠ Veuillez remplir tous les champs", errorColor);
                 return;
             }
 
             btnLogin.setEnabled(false);
-            btnLogin.setText("Connexion...");
+            btnLogin.setText("Connexion en cours...");
+            message.setText("");
 
             SwingWorker<String, Void> worker = new SwingWorker<>() {
                 @Override
@@ -116,21 +195,17 @@ public class Auth extends JFrame {
                     return sendPOST(BASE_URL + "/login", json);
                 }
 
-                // Dans la méthode loginPanel(), dans le SwingWorker, modifiez done() :
-
                 @Override
                 protected void done() {
                     try {
                         String response = get();
                         
-                        // ⭐ AJOUTEZ CES LIGNES POUR DEBUG
                         System.out.println("========================================");
                         System.out.println("RÉPONSE COMPLÈTE DE L'API:");
                         System.out.println(response);
                         System.out.println("========================================");
                         
                         if (response.contains("success") && response.contains("token")) {
-                            // Extraire toutes les informations
                             String token = extractToken(response);
                             String prenom = extractValue(response, "prenom");
                             String nom = extractValue(response, "nom");
@@ -138,7 +213,6 @@ public class Auth extends JFrame {
                             String competance = extractValue(response, "competance");
                             String telephone = extractValue(response, "telephone");
                             
-                            // DEBUG : Afficher ce qui est extrait
                             System.out.println("--- EXTRACTION ---");
                             System.out.println("Token extrait: " + token);
                             System.out.println("Prénom extrait: " + prenom);
@@ -148,17 +222,15 @@ public class Auth extends JFrame {
                             System.out.println("Téléphone extrait: " + telephone);
                             System.out.println("------------------");
                             
-                            // Extraire l'ID utilisateur
                             String userIdStr = extractValue(response, "id");
                             try {
                                 if (userIdStr != null && !userIdStr.isEmpty()) {
                                     userId = Integer.parseInt(userIdStr);
                                 }
-                            } catch (NumberFormatException e) {
-                                System.err.println("Erreur conversion userId: " + e.getMessage());
+                            } catch (NumberFormatException ex) {
+                                System.err.println("Erreur conversion userId: " + ex.getMessage());
                             }
                             
-                            // Sauvegarder dans la session
                             if (token != null && !token.equals("session-active")) {
                                 TokenManager.saveToken(token);
                             }
@@ -167,28 +239,27 @@ public class Auth extends JFrame {
                                 token, prenom, nom, email, competance, telephone, userId
                             );
                             
-                            // Afficher les infos
                             SessionManager.getInstance().printSessionInfo();
                             
-                            showMessage(message, "✓ Connexion réussie !", SUCCESS_COLOR);
+                            showMessage(message, "✓ Connexion réussie !", successColor);
                             
                             Timer timer = new Timer(1000, evt -> {
                                 dispose();
                                 SwingUtilities.invokeLater(() -> {
-                                    Main mainGUI = new Main(userId, prenom, nom);
+                                    Main mainGUI = new Main();
                                     mainGUI.setVisible(true);
                                 });
                             });
                             timer.setRepeats(false);
                             timer.start();
                         } else {
-                            showMessage(message, "✗ " + extractErrorMessage(response), ERROR_COLOR);
+                            showMessage(message, "✗ " + extractErrorMessage(response), errorColor);
                             btnLogin.setEnabled(true);
                             btnLogin.setText("Se connecter");
                         }
                     } catch (Exception ex) {
-                        ex.printStackTrace(); // Afficher l'erreur complète
-                        showMessage(message, "✗ Erreur de connexion", ERROR_COLOR);
+                        ex.printStackTrace();
+                        showMessage(message, "✗ Erreur de connexion", errorColor);
                         btnLogin.setEnabled(true);
                         btnLogin.setText("Se connecter");
                     }
@@ -197,47 +268,72 @@ public class Auth extends JFrame {
             worker.execute();
         });
 
-        mainPanel.add(panel, BorderLayout.CENTER);
+        mainPanel.add(card, BorderLayout.CENTER);
         return mainPanel;
     }
 
     // ================= REGISTER PANEL ===================
-    private JPanel registerPanel() {
+    private JPanel createRegisterPanel() {
         JPanel mainPanel = new JPanel(new BorderLayout());
-        mainPanel.setBackground(BG_COLOR);
-        
-        JScrollPane scrollPane = new JScrollPane();
-        scrollPane.setBorder(null);
-        scrollPane.getVerticalScrollBar().setUnitIncrement(16);
-        
-        JPanel panel = new JPanel();
-        panel.setLayout(new BoxLayout(panel, BoxLayout.Y_AXIS));
-        panel.setBackground(CARD_COLOR);
-        panel.setBorder(new EmptyBorder(30, 40, 30, 40));
+        mainPanel.setBackground(bgColor);
+        mainPanel.setBorder(new EmptyBorder(30, 50, 30, 50));
 
-        // Titre
+        JPanel contentWrapper = new JPanel();
+        contentWrapper.setLayout(new BoxLayout(contentWrapper, BoxLayout.Y_AXIS));
+        contentWrapper.setBackground(bgColor);
+
+        JPanel card = new JPanel() {
+            @Override
+            protected void paintComponent(Graphics g) {
+                super.paintComponent(g);
+                Graphics2D g2 = (Graphics2D) g.create();
+                g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
+                g2.setColor(cardBgColor);
+                g2.fillRoundRect(0, 0, getWidth(), getHeight(), 20, 20);
+                g2.dispose();
+            }
+        };
+        card.setLayout(new BoxLayout(card, BoxLayout.Y_AXIS));
+        card.setOpaque(false);
+        card.setBorder(new EmptyBorder(40, 40, 40, 40));
+
+        // Header
+        JPanel headerPanel = new JPanel();
+        headerPanel.setLayout(new BoxLayout(headerPanel, BoxLayout.Y_AXIS));
+        headerPanel.setOpaque(false);
+        headerPanel.setAlignmentX(Component.CENTER_ALIGNMENT);
+
+        JLabel iconLabel = new JLabel("✨");
+        iconLabel.setFont(new Font("Segoe UI Emoji", Font.PLAIN, 48));
+        iconLabel.setAlignmentX(Component.CENTER_ALIGNMENT);
+        headerPanel.add(iconLabel);
+        headerPanel.add(Box.createVerticalStrut(15));
+
         JLabel title = new JLabel("Créer un compte");
-        title.setFont(new Font("Segoe UI", Font.BOLD, 28));
-        title.setForeground(SECONDARY_COLOR);
+        title.setFont(new Font("Segoe UI", Font.BOLD, 32));
+        title.setForeground(textPrimary);
         title.setAlignmentX(Component.CENTER_ALIGNMENT);
-        panel.add(title);
-        panel.add(Box.createVerticalStrut(10));
+        headerPanel.add(title);
+        headerPanel.add(Box.createVerticalStrut(8));
 
         JLabel subtitle = new JLabel("Remplissez les informations ci-dessous");
-        subtitle.setFont(new Font("Segoe UI", Font.PLAIN, 14));
-        subtitle.setForeground(Color.GRAY);
+        subtitle.setFont(new Font("Segoe UI", Font.PLAIN, 15));
+        subtitle.setForeground(textSecondary);
         subtitle.setAlignmentX(Component.CENTER_ALIGNMENT);
-        panel.add(subtitle);
-        panel.add(Box.createVerticalStrut(30));
+        headerPanel.add(subtitle);
 
-        // Nom et Prénom (côte à côte)
+        card.add(headerPanel);
+        card.add(Box.createVerticalStrut(30));
+
+        // Nom et Prénom
         JPanel namePanel = new JPanel(new GridLayout(1, 2, 15, 0));
-        namePanel.setBackground(CARD_COLOR);
+        namePanel.setBackground(Color.WHITE);
+        namePanel.setOpaque(false);
         namePanel.setMaximumSize(new Dimension(Integer.MAX_VALUE, 70));
         
         JPanel nomContainer = new JPanel();
         nomContainer.setLayout(new BoxLayout(nomContainer, BoxLayout.Y_AXIS));
-        nomContainer.setBackground(CARD_COLOR);
+        nomContainer.setOpaque(false);
         JLabel nomLabel = createStyledLabel("Nom");
         JTextField nomField = createStyledTextField();
         nomContainer.add(nomLabel);
@@ -246,7 +342,7 @@ public class Auth extends JFrame {
         
         JPanel prenomContainer = new JPanel();
         prenomContainer.setLayout(new BoxLayout(prenomContainer, BoxLayout.Y_AXIS));
-        prenomContainer.setBackground(CARD_COLOR);
+        prenomContainer.setOpaque(false);
         JLabel prenomLabel = createStyledLabel("Prénom");
         JTextField prenomField = createStyledTextField();
         prenomContainer.add(prenomLabel);
@@ -255,41 +351,41 @@ public class Auth extends JFrame {
         
         namePanel.add(nomContainer);
         namePanel.add(prenomContainer);
-        panel.add(namePanel);
-        panel.add(Box.createVerticalStrut(20));
+        card.add(namePanel);
+        card.add(Box.createVerticalStrut(18));
 
         // Email
         JLabel emailLabel = createStyledLabel("Adresse Email");
-        panel.add(emailLabel);
-        panel.add(Box.createVerticalStrut(8));
+        card.add(emailLabel);
+        card.add(Box.createVerticalStrut(8));
         JTextField emailField = createStyledTextField();
-        panel.add(emailField);
-        panel.add(Box.createVerticalStrut(20));
+        card.add(emailField);
+        card.add(Box.createVerticalStrut(18));
 
         // Password
         JLabel passwordLabel = createStyledLabel("Mot de passe");
-        panel.add(passwordLabel);
-        panel.add(Box.createVerticalStrut(8));
+        card.add(passwordLabel);
+        card.add(Box.createVerticalStrut(8));
         JPasswordField passwordField = createStyledPasswordField();
-        panel.add(passwordField);
-        panel.add(Box.createVerticalStrut(20));
+        card.add(passwordField);
+        card.add(Box.createVerticalStrut(18));
 
         // Confirm Password
         JLabel confirmLabel = createStyledLabel("Confirmer le mot de passe");
-        panel.add(confirmLabel);
-        panel.add(Box.createVerticalStrut(8));
+        card.add(confirmLabel);
+        card.add(Box.createVerticalStrut(8));
         JPasswordField confirmField = createStyledPasswordField();
-        panel.add(confirmField);
-        panel.add(Box.createVerticalStrut(20));
+        card.add(confirmField);
+        card.add(Box.createVerticalStrut(18));
 
-        // Compétence et Téléphone (côte à côte)
+        // Compétence et Téléphone
         JPanel contactPanel = new JPanel(new GridLayout(1, 2, 15, 0));
-        contactPanel.setBackground(CARD_COLOR);
+        contactPanel.setOpaque(false);
         contactPanel.setMaximumSize(new Dimension(Integer.MAX_VALUE, 70));
         
         JPanel compContainer = new JPanel();
         compContainer.setLayout(new BoxLayout(compContainer, BoxLayout.Y_AXIS));
-        compContainer.setBackground(CARD_COLOR);
+        compContainer.setOpaque(false);
         JLabel compLabel = createStyledLabel("Compétence");
         JTextField competanceField = createStyledTextField();
         compContainer.add(compLabel);
@@ -298,7 +394,7 @@ public class Auth extends JFrame {
         
         JPanel telContainer = new JPanel();
         telContainer.setLayout(new BoxLayout(telContainer, BoxLayout.Y_AXIS));
-        telContainer.setBackground(CARD_COLOR);
+        telContainer.setOpaque(false);
         JLabel telLabel = createStyledLabel("Téléphone");
         JTextField telephoneField = createStyledTextField();
         telContainer.add(telLabel);
@@ -307,44 +403,71 @@ public class Auth extends JFrame {
         
         contactPanel.add(compContainer);
         contactPanel.add(telContainer);
-        panel.add(contactPanel);
-        panel.add(Box.createVerticalStrut(20));
-
-        // Disponibilité supprimée (par défaut true)
-        panel.add(Box.createVerticalStrut(5));
+        card.add(contactPanel);
+        card.add(Box.createVerticalStrut(25));
 
         // Button
-        JButton btnRegister = createStyledButton("Créer mon compte", PRIMARY_COLOR);
-        panel.add(btnRegister);
-        panel.add(Box.createVerticalStrut(15));
+        JButton btnRegister = createStyledButton("Créer mon compte", accentColor);
+        card.add(btnRegister);
+        card.add(Box.createVerticalStrut(18));
 
         // Message
         JLabel message = new JLabel("", SwingConstants.CENTER);
-        message.setFont(new Font("Segoe UI", Font.PLAIN, 13));
+        message.setFont(new Font("Segoe UI", Font.BOLD, 13));
         message.setAlignmentX(Component.CENTER_ALIGNMENT);
-        panel.add(message);
+        card.add(message);
+        card.add(Box.createVerticalStrut(15));
+
+        // Switch to login
+        JPanel switchPanel = new JPanel(new FlowLayout(FlowLayout.CENTER, 5, 0));
+        switchPanel.setOpaque(false);
+        switchPanel.setAlignmentX(Component.CENTER_ALIGNMENT);
+        
+        JLabel switchText = new JLabel("Déjà un compte ?");
+        switchText.setFont(new Font("Segoe UI", Font.PLAIN, 13));
+        switchText.setForeground(textSecondary);
+        
+        JLabel switchLink = new JLabel("Se connecter");
+        switchLink.setFont(new Font("Segoe UI", Font.BOLD, 13));
+        switchLink.setForeground(accentColor);
+        switchLink.setCursor(new Cursor(Cursor.HAND_CURSOR));
+        switchLink.addMouseListener(new java.awt.event.MouseAdapter() {
+            public void mouseClicked(java.awt.event.MouseEvent evt) {
+                contentLayout.show(mainContentPanel, "login");
+            }
+            public void mouseEntered(java.awt.event.MouseEvent evt) {
+                switchLink.setForeground(accentColor.darker());
+            }
+            public void mouseExited(java.awt.event.MouseEvent evt) {
+                switchLink.setForeground(accentColor);
+            }
+        });
+        
+        switchPanel.add(switchText);
+        switchPanel.add(switchLink);
+        card.add(switchPanel);
 
         // Action
         btnRegister.addActionListener(e -> {
-            // Validation
             if (nomField.getText().trim().isEmpty() || prenomField.getText().trim().isEmpty() ||
                 emailField.getText().trim().isEmpty() || passwordField.getPassword().length == 0) {
-                showMessage(message, "✗ Veuillez remplir tous les champs obligatoires", ERROR_COLOR);
+                showMessage(message, "⚠ Veuillez remplir tous les champs obligatoires", errorColor);
                 return;
             }
 
             if (!new String(passwordField.getPassword()).equals(new String(confirmField.getPassword()))) {
-                showMessage(message, "✗ Les mots de passe ne correspondent pas", ERROR_COLOR);
+                showMessage(message, "✗ Les mots de passe ne correspondent pas", errorColor);
                 return;
             }
 
             if (passwordField.getPassword().length < 6) {
-                showMessage(message, "✗ Le mot de passe doit contenir au moins 6 caractères", ERROR_COLOR);
+                showMessage(message, "✗ Le mot de passe doit contenir au moins 6 caractères", errorColor);
                 return;
             }
 
             btnRegister.setEnabled(false);
             btnRegister.setText("Création en cours...");
+            message.setText("");
 
             SwingWorker<String, Void> worker = new SwingWorker<>() {
                 @Override
@@ -366,11 +489,10 @@ public class Auth extends JFrame {
                     try {
                         String response = get();
                         if (response.contains("success") || response.contains("succès")) {
-                            showMessage(message, "✓ Compte créé avec succès !", SUCCESS_COLOR);
+                            showMessage(message, "✓ Compte créé avec succès !", successColor);
                             
-                            // Attendre 1.5 secondes puis rediriger vers login
                             Timer timer = new Timer(1500, evt -> {
-                                tabs.setSelectedIndex(0); // Aller à l'onglet Login
+                                contentLayout.show(mainContentPanel, "login");
                                 clearRegisterFields(nomField, prenomField, emailField, 
                                                   passwordField, confirmField, competanceField, 
                                                   telephoneField);
@@ -379,10 +501,10 @@ public class Auth extends JFrame {
                             timer.setRepeats(false);
                             timer.start();
                         } else {
-                            showMessage(message, "✗ " + extractErrorMessage(response), ERROR_COLOR);
+                            showMessage(message, "✗ " + extractErrorMessage(response), errorColor);
                         }
                     } catch (Exception ex) {
-                        showMessage(message, "✗ Erreur lors de la création du compte", ERROR_COLOR);
+                        showMessage(message, "✗ Erreur lors de la création du compte", errorColor);
                     } finally {
                         btnRegister.setEnabled(true);
                         btnRegister.setText("Créer mon compte");
@@ -392,7 +514,14 @@ public class Auth extends JFrame {
             worker.execute();
         });
 
-        scrollPane.setViewportView(panel);
+        contentWrapper.add(card);
+
+        JScrollPane scrollPane = new JScrollPane(contentWrapper);
+        scrollPane.setBorder(null);
+        scrollPane.getVerticalScrollBar().setUnitIncrement(16);
+        scrollPane.setBackground(bgColor);
+        scrollPane.getViewport().setBackground(bgColor);
+
         mainPanel.add(scrollPane, BorderLayout.CENTER);
         return mainPanel;
     }
@@ -400,56 +529,105 @@ public class Auth extends JFrame {
     // ================= UTILITAIRES UI ===================
     private JLabel createStyledLabel(String text) {
         JLabel label = new JLabel(text);
-        label.setFont(new Font("Segoe UI", Font.BOLD, 13));
-        label.setForeground(new Color(55, 65, 81));
+        label.setFont(new Font("Segoe UI", Font.BOLD, 14));
+        label.setForeground(textPrimary);
         label.setAlignmentX(Component.LEFT_ALIGNMENT);
         return label;
     }
 
     private JTextField createStyledTextField() {
-        JTextField field = new JTextField("pahae");
+        JTextField field = new JTextField();
         field.setFont(new Font("Segoe UI", Font.PLAIN, 14));
-        field.setPreferredSize(new Dimension(0, 40));
-        field.setMaximumSize(new Dimension(Integer.MAX_VALUE, 40));
+        field.setPreferredSize(new Dimension(0, 42));
+        field.setMaximumSize(new Dimension(Integer.MAX_VALUE, 42));
+        field.setBackground(cardBgColor);
+        field.setForeground(textPrimary);
+        field.setCaretColor(textPrimary);
         field.setBorder(BorderFactory.createCompoundBorder(
-            BorderFactory.createLineBorder(new Color(209, 213, 219), 1),
-            new EmptyBorder(5, 12, 5, 12)
+            BorderFactory.createLineBorder(inputBorder, 1),
+            new EmptyBorder(8, 14, 8, 14)
         ));
+        
+        field.addFocusListener(new java.awt.event.FocusAdapter() {
+            public void focusGained(java.awt.event.FocusEvent evt) {
+                field.setBorder(BorderFactory.createCompoundBorder(
+                    BorderFactory.createLineBorder(accentColor, 2),
+                    new EmptyBorder(8, 14, 8, 14)
+                ));
+            }
+            public void focusLost(java.awt.event.FocusEvent evt) {
+                field.setBorder(BorderFactory.createCompoundBorder(
+                    BorderFactory.createLineBorder(inputBorder, 1),
+                    new EmptyBorder(8, 14, 8, 14)
+                ));
+            }
+        });
+        
         return field;
     }
 
     private JPasswordField createStyledPasswordField() {
-        JPasswordField field = new JPasswordField("111111");
+        JPasswordField field = new JPasswordField();
         field.setFont(new Font("Segoe UI", Font.PLAIN, 14));
-        field.setPreferredSize(new Dimension(0, 40));
-        field.setMaximumSize(new Dimension(Integer.MAX_VALUE, 40));
+        field.setPreferredSize(new Dimension(0, 42));
+        field.setMaximumSize(new Dimension(Integer.MAX_VALUE, 42));
+        field.setBackground(cardBgColor);
+        field.setForeground(textPrimary);
+        field.setCaretColor(textPrimary);
         field.setBorder(BorderFactory.createCompoundBorder(
-            BorderFactory.createLineBorder(new Color(209, 213, 219), 1),
-            new EmptyBorder(5, 12, 5, 12)
+            BorderFactory.createLineBorder(inputBorder, 1),
+            new EmptyBorder(8, 14, 8, 14)
         ));
+        
+        field.addFocusListener(new java.awt.event.FocusAdapter() {
+            public void focusGained(java.awt.event.FocusEvent evt) {
+                field.setBorder(BorderFactory.createCompoundBorder(
+                    BorderFactory.createLineBorder(accentColor, 2),
+                    new EmptyBorder(8, 14, 8, 14)
+                ));
+            }
+            public void focusLost(java.awt.event.FocusEvent evt) {
+                field.setBorder(BorderFactory.createCompoundBorder(
+                    BorderFactory.createLineBorder(inputBorder, 1),
+                    new EmptyBorder(8, 14, 8, 14)
+                ));
+            }
+        });
+        
         return field;
     }
 
     private JButton createStyledButton(String text, Color bgColor) {
-        JButton button = new JButton(text);
-        button.setFont(new Font("Segoe UI", Font.BOLD, 14));
+        JButton button = new JButton(text) {
+            @Override
+            protected void paintComponent(Graphics g) {
+                Graphics2D g2 = (Graphics2D) g.create();
+                g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
+                
+                if (getModel().isPressed()) {
+                    g2.setColor(bgColor.darker().darker());
+                } else if (getModel().isRollover()) {
+                    g2.setColor(bgColor.darker());
+                } else {
+                    g2.setColor(bgColor);
+                }
+                
+                g2.fillRoundRect(0, 0, getWidth(), getHeight(), 12, 12);
+                g2.dispose();
+                
+                super.paintComponent(g);
+            }
+        };
+        
+        button.setFont(new Font("Segoe UI", Font.BOLD, 15));
         button.setForeground(Color.WHITE);
-        button.setBackground(bgColor);
         button.setFocusPainted(false);
         button.setBorderPainted(false);
-        button.setPreferredSize(new Dimension(0, 45));
-        button.setMaximumSize(new Dimension(Integer.MAX_VALUE, 45));
+        button.setContentAreaFilled(false);
+        button.setPreferredSize(new Dimension(0, 48));
+        button.setMaximumSize(new Dimension(Integer.MAX_VALUE, 48));
         button.setCursor(new Cursor(Cursor.HAND_CURSOR));
         button.setAlignmentX(Component.CENTER_ALIGNMENT);
-        
-        button.addMouseListener(new java.awt.event.MouseAdapter() {
-            public void mouseEntered(java.awt.event.MouseEvent evt) {
-                button.setBackground(bgColor.darker());
-            }
-            public void mouseExited(java.awt.event.MouseEvent evt) {
-                button.setBackground(bgColor);
-            }
-        });
         
         return button;
     }
@@ -488,79 +666,73 @@ public class Auth extends JFrame {
     }
     
     private String extractValue(String json, String key) {
-    try {
-        if (json == null || json.isEmpty()) {
-            System.out.println("⚠️ JSON vide pour clé: " + key);
-            return "";
-        }
-        
-        // Chercher la clé
-        String searchKey = "\"" + key + "\"";
-        int keyIndex = json.indexOf(searchKey);
-        
-        if (keyIndex == -1) {
-            System.out.println("⚠️ Clé non trouvée: " + key);
-            return "";
-        }
-        
-        // Trouver le début de la valeur (après les ':')
-        int colonIndex = json.indexOf(":", keyIndex);
-        if (colonIndex == -1) {
-            System.out.println("⚠️ Pas de ':' après la clé: " + key);
-            return "";
-        }
-        
-        // Ignorer les espaces après ':'
-        int valueStart = colonIndex + 1;
-        while (valueStart < json.length() && 
-               (json.charAt(valueStart) == ' ' || json.charAt(valueStart) == '\t')) {
-            valueStart++;
-        }
-        
-        if (valueStart >= json.length()) {
-            System.out.println("⚠️ Pas de valeur après ':' pour: " + key);
-            return "";
-        }
-        
-        // Vérifier si c'est une string (commence par ")
-        boolean isString = json.charAt(valueStart) == '"';
-        
-        if (isString) {
-            // Pour les strings, trouver le " de fermeture
-            valueStart++; // Sauter le " d'ouverture
-            int valueEnd = json.indexOf("\"", valueStart);
-            
-            if (valueEnd == -1) {
-                System.out.println("⚠️ Guillemet de fermeture manquant pour: " + key);
+        try {
+            if (json == null || json.isEmpty()) {
+                System.out.println("⚠️ JSON vide pour clé: " + key);
                 return "";
             }
             
-            String value = json.substring(valueStart, valueEnd);
-            System.out.println("✓ Extrait " + key + " = " + value);
-            return value;
-        } else {
-            // Pour les nombres ou booléens, trouver la virgule ou accolade
-            int valueEnd = json.indexOf(",", valueStart);
-            if (valueEnd == -1) {
-                valueEnd = json.indexOf("}", valueStart);
-            }
+            String searchKey = "\"" + key + "\"";
+            int keyIndex = json.indexOf(searchKey);
             
-            if (valueEnd == -1) {
-                System.out.println("⚠️ Fin de valeur non trouvée pour: " + key);
+            if (keyIndex == -1) {
+                System.out.println("⚠️ Clé non trouvée: " + key);
                 return "";
             }
             
-            String value = json.substring(valueStart, valueEnd).trim();
-            System.out.println("✓ Extrait " + key + " = " + value);
-            return value;
+            int colonIndex = json.indexOf(":", keyIndex);
+            if (colonIndex == -1) {
+                System.out.println("⚠️ Pas de ':' après la clé: " + key);
+                return "";
+            }
+            
+            int valueStart = colonIndex + 1;
+            while (valueStart < json.length() && 
+                   (json.charAt(valueStart) == ' ' || json.charAt(valueStart) == '\t')) {
+                valueStart++;
+            }
+            
+            if (valueStart >= json.length()) {
+                System.out.println("⚠️ Pas de valeur après ':' pour: " + key);
+                return "";
+            }
+            
+            boolean isString = json.charAt(valueStart) == '"';
+            
+            if (isString) {
+                valueStart++;
+                int valueEnd = json.indexOf("\"", valueStart);
+                
+                if (valueEnd == -1) {
+                    System.out.println("⚠️ Guillemet de fermeture manquant pour: " + key);
+                    return "";
+                }
+                
+                String value = json.substring(valueStart, valueEnd);
+                System.out.println("✓ Extrait " + key + " = " + value);
+                return value;
+            } else {
+                int valueEnd = json.indexOf(",", valueStart);
+                if (valueEnd == -1) {
+                    valueEnd = json.indexOf("}", valueStart);
+                }
+                
+                if (valueEnd == -1) {
+                    System.out.println("⚠️ Fin de valeur non trouvée pour: " + key);
+                    return "";
+                }
+                
+                String value = json.substring(valueStart, valueEnd).trim();
+                System.out.println("✓ Extrait " + key + " = " + value);
+                return value;
+            }
+            
+        } catch (Exception e) {
+            System.err.println("❌ Erreur extraction de '" + key + "': " + e.getMessage());
+            e.printStackTrace();
+            return "";
         }
-        
-    } catch (Exception e) {
-        System.err.println("❌ Erreur extraction de '" + key + "': " + e.getMessage());
-        e.printStackTrace();
-        return "";
     }
-}
 
     private void clearRegisterFields(JTextField nom, JTextField prenom, JTextField email,
                                      JPasswordField password, JPasswordField confirm,
