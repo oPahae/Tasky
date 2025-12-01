@@ -1,1358 +1,1314 @@
-je suis en train de réaliser une application avec springboot et java swing.
+voici la GUI interfaces/Gestion.java qui est chargée d'afficher l'historique, la facturation et les documents :
 
-*** voici application.properties :
-spring.datasource.url=jdbc:mysql://localhost:3306/taskydb?useSSL=false&serverTimezone=UTC
-spring.datasource.username=root
-spring.datasource.password=
-spring.jpa.hibernate.ddl-auto=update
-spring.jpa.show-sql=true
-spring.jpa.properties.hibernate.dialect=org.hibernate.dialect.MySQLDialect
-server.port=8080
-
-*** voici la structure de la bdd :
-DROP DATABASE IF EXISTS taskydb;
-CREATE DATABASE taskydb;
-USE taskydb;
--- TABLE USER
-CREATE TABLE User (
-    id INT PRIMARY KEY AUTO_INCREMENT,
-    nom VARCHAR(100),
-    prenom VARCHAR(100),
-    email VARCHAR(150),
-    password VARCHAR(255),
-    competance VARCHAR(255),
-    telephone VARCHAR(50),
-    disponibilite BOOLEAN,
-    dateCreation DATE,
-    verifCode VARCHAR(255)
-);
--- TABLE PROJET
-CREATE TABLE Projet (
-    id INT PRIMARY KEY AUTO_INCREMENT,
-    nom VARCHAR(150),
-    description VARCHAR(255),
-    dateDebut DATE,
-    dateFin DATE,
-    deadline DATE,
-    budget FLOAT,
-    budgetConsomme FLOAT,
-    statut VARCHAR(50),
-    code VARCHAR(50)
-);
--- TABLE MEMBRE
-CREATE TABLE Membre (
-    id INT PRIMARY KEY AUTO_INCREMENT,
-    description VARCHAR(255),
-    dateRejointe DATE,
-    role VARCHAR(100),
-    type VARCHAR(100),
-    userID INT,
-    projetID INT,
-    FOREIGN KEY (userID) REFERENCES User(id),
-    FOREIGN KEY (projetID) REFERENCES Projet(id)
-);
--- TABLE RAPPORT
-CREATE TABLE Rapport (
-    id INT PRIMARY KEY AUTO_INCREMENT,
-    dateGeneration DATE,
-    nom VARCHAR(150),
-    projetID INT,
-    FOREIGN KEY (projetID) REFERENCES Projet(id)
-);
--- TABLE TACHE
-CREATE TABLE Tache (
-    id INT PRIMARY KEY AUTO_INCREMENT,
-    titre VARCHAR(150),
-    description VARCHAR(255),
-    dateLimite DATE,
-    etat VARCHAR(50),
-    dateCreation DATE,
-    dateFin DATE,
-    projetID INT,
-    depense INT DEFAULT 0,
-    FOREIGN KEY (projetID) REFERENCES Projet(id)
-);
--- TABLE SOUS-TACHE
-CREATE TABLE SousTache (
-    id INT PRIMARY KEY AUTO_INCREMENT,
-    titre VARCHAR(150),
-    dateCreation DATE,
-    dateFin DATE,
-    termine BOOLEAN,
-    tacheID INT,
-    FOREIGN KEY (tacheID) REFERENCES Tache(id)
-);
--- TABLE COMMENTAIRE
-CREATE TABLE Commentaire (
-    id INT PRIMARY KEY AUTO_INCREMENT,
-    contenu TEXT,
-    dateCreation DATE,
-    tacheID INT,
-    membreID INT,
-    FOREIGN KEY (tacheID) REFERENCES Tache(id),
-    FOREIGN KEY (membreID) REFERENCES Membre(id)
-);
--- TABLE DOCUMENT
-CREATE TABLE Document (
-    id INT PRIMARY KEY AUTO_INCREMENT,
-    nom VARCHAR(150),
-    description VARCHAR(255),
-    dateCreation DATE,
-    contenu BLOB,
-    tacheID INT,
-    FOREIGN KEY (tacheID) REFERENCES Tache(id)
-);
--- TABLE BLOCAGE (CORRIGÉE)
-CREATE TABLE Blocage (
-    id INT PRIMARY KEY AUTO_INCREMENT,
-    description VARCHAR(255),
-    dateSignalement DATE,
-    statut VARCHAR(50),
-    dateResolution DATE,
-    tacheID INT,
-    FOREIGN KEY (tacheID) REFERENCES Tache(id)
-);
--- TABLE MESSAGE
-CREATE TABLE Message (
-    id INT PRIMARY KEY AUTO_INCREMENT,
-    contenu TEXT,
-    dateEnvoi DATE,
-    estLu BOOLEAN,
-    membreID INT,
-    projetID INT,
-    FOREIGN KEY (membreID) REFERENCES Membre(id),
-    FOREIGN KEY (projetID) REFERENCES Projet(id)
-);
--- TABLE APPEL
-CREATE TABLE Appel (
-    id INT PRIMARY KEY AUTO_INCREMENT,
-    dateAppel DATE,
-    heureDebut TIME,
-    heureFin TIME,
-    duree INT,
-    projetID INT,
-    initiateurID INT,
-    FOREIGN KEY (projetID) REFERENCES Projet(id),
-    FOREIGN KEY (initiateurID) REFERENCES Membre(id)
-);
--- TABLE NOTIFICATION (CORRIGÉE)
-CREATE TABLE Notification (
-    id INT PRIMARY KEY AUTO_INCREMENT,
-    contenu VARCHAR(255),
-    dateEnvoie DATE,
-    estLue BOOLEAN,
-    membreID INT,
-    FOREIGN KEY (membreID) REFERENCES Membre(id)
-);
--- TABLE DE LIAISON TACHE-MEMBRE
-CREATE TABLE TacheMembre (
-    tacheID INT,
-    membreID INT,
-    PRIMARY KEY AUTO_INCREMENT (tacheID, membreID),
-    FOREIGN KEY (tacheID) REFERENCES Tache(id),
-    FOREIGN KEY (membreID) REFERENCES Membre(id)
-);
-
-voici le contenu de java/com/example/demo/ :
-
-*** voici interfaces/Tache.java :
 package com.example.demo.interfaces;
+
+import com.example.demo.Auth;
+
+import com.example.demo.Main;
+
 import com.example.demo.Params;
+
 import com.example.demo.components.Scrollbar;
+
 import javax.swing.*;
+
 import javax.swing.border.*;
+
 import java.awt.*;
+
 import java.awt.geom.*;
+
+import java.text.SimpleDateFormat;
+
 import java.util.*;
+
 import java.util.List;
+
 import java.io.*;
-import java.time.LocalDate;
-import java.time.format.DateTimeFormatter;
-public class Tache extends JPanel {
+
+import java.nio.file.Files;
+
+import java.nio.file.Paths;
+
+public class Gestion extends JPanel {
+
     private int theme;
-    private Color bgColor, cardBgColor, textPrimary, textSecondary, accentColor, progressBg, progressFill;
-    private Color successColor, warningColor, dangerColor;
-    private TaskData taskData;
-    private List<SubTask> subTasks;
+
+    private Color bgColor, cardBgColor, textPrimary, textSecondary, accentColor, successColor, warningColor,
+
+            dangerColor;
+
+    private List<HistoryEvent> historyEvents;
+
+    private List<Expense> expenses;
+
     private List<Document> documents;
-    private List<Comment> comments;
-    private int colorCounter = 0;
-    public Tache() {
+
+    private double budget = 50000.0;
+
+    private JPanel mainContentPanel;
+
+    private CardLayout contentLayout;
+
+    public Gestion() {
+
         this.theme = Params.theme;
+
         initializeColors();
+
         initializeDemoData();
+
         setLayout(new BorderLayout());
+
         setBackground(bgColor);
+
+        contentLayout = new CardLayout();
+
+        mainContentPanel = new JPanel(contentLayout);
+
+        mainContentPanel.setBackground(bgColor);
+
         JPanel mainPanel = createMainPanel();
-        add(mainPanel, BorderLayout.CENTER);
+
+        mainContentPanel.add(mainPanel, "main");
+
+        add(mainContentPanel, BorderLayout.CENTER);
+
+        contentLayout.show(mainContentPanel, "main");
+
     }
+
     private void initializeColors() {
+
         if (theme == 0) {
+
             bgColor = new Color(245, 247, 250);
+
             cardBgColor = Color.WHITE;
+
             textPrimary = new Color(30, 30, 30);
+
             textSecondary = new Color(100, 100, 100);
+
             accentColor = new Color(59, 130, 246);
-            progressBg = new Color(229, 231, 235);
-            progressFill = new Color(34, 197, 94);
-            successColor = new Color(16, 185, 129);
+
+            successColor = new Color(34, 197, 94);
+
             warningColor = new Color(245, 158, 11);
+
             dangerColor = new Color(239, 68, 68);
+
         } else {
+
             bgColor = new Color(0, 0, 0);
+
             cardBgColor = new Color(20, 20, 20);
+
             textPrimary = new Color(230, 230, 230);
+
             textSecondary = new Color(100, 100, 100);
+
             accentColor = new Color(0, 120, 215);
-            progressBg = new Color(30, 30, 30);
-            progressFill = new Color(0, 200, 100);
+
             successColor = new Color(0, 200, 100);
-            warningColor = new Color(255, 165, 0);
-            dangerColor = new Color(220, 38, 38);
+
+            warningColor = new Color(255, 180, 0);
+
+            dangerColor = new Color(255, 80, 80);
+
         }
+
     }
+
     private void initializeDemoData() {
-        taskData = new TaskData(
-                "Intégration API Backend",
-                "Développer et intégrer l'API REST pour la gestion des utilisateurs, incluant l'authentification, les permissions et la validation des données.",
-                LocalDate.of(2024, 12, 15),
-                LocalDate.of(2024, 11, 20));
-        subTasks = new ArrayList<>();
-        subTasks.add(new SubTask("Configurer les routes API", true));
-        subTasks.add(new SubTask("Implémenter l'authentification JWT", true));
-        subTasks.add(new SubTask("Créer les modèles de données", true));
-        subTasks.add(new SubTask("Développer les contrôleurs", false));
-        subTasks.add(new SubTask("Ajouter la validation des données", false));
-        subTasks.add(new SubTask("Écrire les tests unitaires", false));
+
+        historyEvents = new ArrayList<>();
+
+        expenses = new ArrayList<>();
+
         documents = new ArrayList<>();
-        documents.add(new Document("api-specification.pdf", 245, "application/pdf"));
-        documents.add(new Document("architecture-diagram.png", 128, "image/png"));
-        documents.add(new Document("user-stories.docx", 89, "application/docx"));
-        comments = new ArrayList<>();
-        comments.add(new Comment(
-                "Alice Martin",
-                "Excellent progrès ! L'authentification JWT fonctionne parfaitement.",
-                LocalDate.of(2024, 11, 25),
-                new Color(99, 102, 241)));
-        comments.add(new Comment(
-                "Bob Durant",
-                "J'ai ajouté la documentation Swagger pour faciliter les tests.",
-                LocalDate.of(2024, 11, 26),
-                new Color(16, 185, 129)));
+
+        Calendar cal = Calendar.getInstance();
+
+        cal.set(2024, Calendar.JANUARY, 15);
+
+        historyEvents.add(new HistoryEvent(cal.getTime(), "Création du projet", "Alice", "Martin"));
+
+        cal.set(2024, Calendar.JANUARY, 20);
+
+        historyEvents.add(new HistoryEvent(cal.getTime(), "Finalisation des maquettes UI/UX", "Alice", "Martin"));
+
+        cal.set(2024, Calendar.FEBRUARY, 5);
+
+        historyEvents.add(new HistoryEvent(cal.getTime(), "Démarrage du développement Backend", "Bob", "Durant"));
+
+        cal.set(2024, Calendar.FEBRUARY, 18);
+
+        historyEvents.add(new HistoryEvent(cal.getTime(), "Mise en place de l'API REST", "Bob", "Durant"));
+
+        cal.set(2024, Calendar.MARCH, 2);
+
+        historyEvents.add(new HistoryEvent(cal.getTime(), "Intégration Frontend démarrée", "Charlie", "Dubois"));
+
+        cal.set(2024, Calendar.MARCH, 15);
+
+        historyEvents.add(new HistoryEvent(cal.getTime(), "Tests unitaires en cours", "Diana", "Rousseau"));
+
+        cal.set(2024, Calendar.MARCH, 25);
+
+        historyEvents.add(new HistoryEvent(cal.getTime(), "Revue de code effectuée", "Alice", "Martin"));
+
+        cal.set(2024, Calendar.APRIL, 1);
+
+        historyEvents.add(new HistoryEvent(cal.getTime(), "Documentation technique complétée", "Alice", "Martin"));
+
+        expenses.add(new Expense("Conception UI/UX", 12000));
+
+        expenses.add(new Expense("Développement Backend", 18500));
+
+        expenses.add(new Expense("Développement Frontend", 15000));
+
+        expenses.add(new Expense("Tests et QA", 8000));
+
+        expenses.add(new Expense("Infrastructure Cloud", 4500));
+
+        expenses.add(new Expense("Licences logicielles", 3200));
+
+        cal.set(2024, Calendar.JANUARY, 10);
+
+        documents.add(new Document("Cahier des charges.pdf", cal.getTime(), 2450000, "dGVzdCBjb250ZW50"));
+
+        cal.set(2024, Calendar.JANUARY, 25);
+
+        documents.add(new Document("Maquettes UI.fig", cal.getTime(), 15600000, "ZmlnbWEgZmlsZQ=="));
+
+        cal.set(2024, Calendar.FEBRUARY, 12);
+
+        documents.add(new Document("Architecture technique.docx", cal.getTime(), 1850000, "ZG9jdW1lbnQgY29udGVudA=="));
+
+        cal.set(2024, Calendar.MARCH, 5);
+
+        documents.add(new Document("Guide utilisateur.pdf", cal.getTime(), 3200000, "dXNlciBndWlkZQ=="));
+
+        cal.set(2024, Calendar.MARCH, 20);
+
+        documents.add(new Document("Rapport de tests.xlsx", cal.getTime(), 980000, "dGVzdCByZXBvcnQ="));
+
     }
+
     private JPanel createMainPanel() {
+
         JPanel panel = new JPanel(new BorderLayout(20, 20));
+
         panel.setBackground(bgColor);
+
         panel.setBorder(BorderFactory.createEmptyBorder(25, 25, 25, 25));
+
         JPanel contentWrapper = new JPanel();
+
         contentWrapper.setLayout(new BoxLayout(contentWrapper, BoxLayout.Y_AXIS));
+
         contentWrapper.setBackground(bgColor);
-        contentWrapper.add(createHeaderSection());
+
+        JLabel titleLabel = new JLabel("Gestion du projet");
+
+        titleLabel.setFont(new Font("Segoe UI", Font.BOLD, 28));
+
+        titleLabel.setForeground(textPrimary);
+
+        titleLabel.setAlignmentX(Component.LEFT_ALIGNMENT);
+
+        contentWrapper.add(titleLabel);
+
         contentWrapper.add(Box.createRigidArea(new Dimension(0, 25)));
-        contentWrapper.add(createOverviewSection());
-        contentWrapper.add(Box.createRigidArea(new Dimension(0, 25)));
-        contentWrapper.add(createSubTasksSection());
-        contentWrapper.add(Box.createRigidArea(new Dimension(0, 25)));
-        contentWrapper.add(createDocumentsSection());
-        contentWrapper.add(Box.createRigidArea(new Dimension(0, 25)));
-        contentWrapper.add(createCommentsSection());
-        contentWrapper.add(Box.createRigidArea(new Dimension(0, 25)));
-        contentWrapper.add(createActionsSection());
-        contentWrapper.add(Box.createRigidArea(new Dimension(0, 20)));
+
+        JPanel sectionsPanel = new JPanel(new GridLayout(1, 3, 20, 0));
+
+        sectionsPanel.setBackground(bgColor);
+
+        sectionsPanel.setMaximumSize(new Dimension(Integer.MAX_VALUE, Integer.MAX_VALUE));
+
+        sectionsPanel.setAlignmentX(Component.LEFT_ALIGNMENT);
+
+        sectionsPanel.add(createHistorySection());
+
+        sectionsPanel.add(createBillingSection());
+
+        sectionsPanel.add(createDocumentsSection());
+
+        contentWrapper.add(sectionsPanel);
+
         Scrollbar scroll = new Scrollbar(theme);
+
         JScrollPane scrollPane = scroll.create(contentWrapper);
+
         scrollPane.setBorder(null);
+
         scrollPane.getVerticalScrollBar().setUnitIncrement(16);
+
         scrollPane.setBackground(bgColor);
+
         scrollPane.getViewport().setBackground(bgColor);
+
+        scrollPane.setHorizontalScrollBarPolicy(JScrollPane.HORIZONTAL_SCROLLBAR_NEVER);
+
         panel.add(scrollPane, BorderLayout.CENTER);
+
         return panel;
+
     }
-    private JPanel createHeaderSection() {
+
+    private JPanel createHistorySection() {
+
         JPanel section = new JPanel();
+
         section.setLayout(new BoxLayout(section, BoxLayout.Y_AXIS));
+
         section.setBackground(bgColor);
-        section.setAlignmentX(Component.LEFT_ALIGNMENT);
-        JLabel titleLabel = new JLabel(taskData.name);
-        titleLabel.setFont(new Font("Segoe UI", Font.BOLD, 32));
-        titleLabel.setForeground(textPrimary);
-        titleLabel.setAlignmentX(Component.LEFT_ALIGNMENT);
-        JLabel descLabel = new JLabel("<html><body style='width: 100%;'>" + taskData.description + "</body></html>");
-        descLabel.setFont(new Font("Segoe UI", Font.PLAIN, 15));
-        descLabel.setForeground(textSecondary);
-        descLabel.setAlignmentX(Component.LEFT_ALIGNMENT);
-        descLabel.setBorder(BorderFactory.createEmptyBorder(10, 0, 0, 0));
-        section.add(titleLabel);
+
+        JLabel sectionTitle = new JLabel("Historique");
+
+        sectionTitle.setFont(new Font("Segoe UI", Font.BOLD, 18));
+
+        sectionTitle.setForeground(textPrimary);
+
+        sectionTitle.setAlignmentX(Component.LEFT_ALIGNMENT);
+
+        section.add(sectionTitle);
+
         section.add(Box.createRigidArea(new Dimension(0, 15)));
-        section.add(descLabel);
-        return section;
-    }
-    private JPanel createOverviewSection() {
-        JPanel section = new JPanel();
-        section.setLayout(new BoxLayout(section, BoxLayout.Y_AXIS));
-        section.setBackground(bgColor);
-        section.setAlignmentX(Component.LEFT_ALIGNMENT);
-        JPanel card = new JPanel();
-        card.setLayout(new BoxLayout(card, BoxLayout.Y_AXIS));
-        card.setOpaque(false);
-        card.setBorder(BorderFactory.createEmptyBorder(30, 30, 30, 30));
-        card.setAlignmentX(Component.LEFT_ALIGNMENT);
-        card.setMaximumSize(new Dimension(Integer.MAX_VALUE, 320));
-        // En-tête avec icône
-        JPanel headerPanel = new JPanel();
-        headerPanel.setLayout(new BoxLayout(headerPanel, BoxLayout.X_AXIS));
-        headerPanel.setOpaque(false);
-        headerPanel.setAlignmentX(Component.LEFT_ALIGNMENT);
-        headerPanel.setMaximumSize(new Dimension(Integer.MAX_VALUE, 30));
-        int progress = calculateProgress();
-        JLabel progressTitle = new JLabel("Progrès global");
-        progressTitle.setFont(new Font("Segoe UI", Font.BOLD, 20));
-        progressTitle.setForeground(theme == 0 ? Color.BLACK : Color.WHITE);
-        progressTitle.setBorder(BorderFactory.createEmptyBorder(0, 10, 0, 0));
-        headerPanel.add(progressTitle);
-        headerPanel.add(Box.createHorizontalGlue());
-        card.add(headerPanel);
-        card.add(Box.createRigidArea(new Dimension(0, 18)));
-        // Barre de progression moderne
-        JPanel progressBar = createProgressBar(progress, true);
-        progressBar.setAlignmentX(Component.LEFT_ALIGNMENT);
-        card.add(progressBar);
-        card.add(Box.createRigidArea(new Dimension(0, 30)));
-        // Panneau des dates avec effet glassmorphism
-        JPanel datesPanel = new JPanel(new GridLayout(1, 2, 20, 0));
-        datesPanel.setOpaque(false);
-        datesPanel.setMaximumSize(new Dimension(Integer.MAX_VALUE, 110));
-        datesPanel.setAlignmentX(Component.LEFT_ALIGNMENT);
-        datesPanel.add(createDateCard("Date de création", taskData.dateCreation, "📅",
-                new Color(139, 92, 246), new Color(167, 139, 250)));
-        datesPanel.add(createDateCard("Date limite", taskData.dateEcheance, "⏰",
-                new Color(236, 72, 153), new Color(244, 114, 182)));
-        card.add(datesPanel);
-        section.add(card);
-        return section;
-    }
-    private JPanel createDateCard(String label, LocalDate date, String emoji, Color primaryColor,
-            Color secondaryColor) {
+
         JPanel card = new JPanel() {
+
             @Override
+
             protected void paintComponent(Graphics g) {
+
                 super.paintComponent(g);
+
                 Graphics2D g2 = (Graphics2D) g.create();
+
                 g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
-                // Gradient moderne et vibrant (les cartes colorées restent identiques dans les
-                // deux modes)
-                GradientPaint gradient = new GradientPaint(
-                        0, 0, primaryColor,
-                        getWidth(), getHeight(), secondaryColor);
-                g2.setPaint(gradient);
-                g2.fillRoundRect(0, 0, getWidth(), getHeight(), 18, 18);
-                // Effet de brillance subtil
-                g2.setComposite(AlphaComposite.getInstance(AlphaComposite.SRC_OVER, 0.1f));
-                g2.setColor(Color.WHITE);
-                g2.fillRoundRect(0, 0, getWidth(), getHeight() / 2, 18, 18);
-                g2.dispose();
-            }
-        };
-        card.setLayout(new BorderLayout(12, 0));
-        card.setOpaque(false);
-        card.setBorder(BorderFactory.createEmptyBorder(18, 20, 18, 20));
-        // Icône avec fond circulaire
-        JPanel iconPanel = new JPanel() {
-            @Override
-            protected void paintComponent(Graphics g) {
-                super.paintComponent(g);
-                Graphics2D g2 = (Graphics2D) g.create();
-                g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
-                g2.setColor(new Color(255, 255, 255, 60));
-                g2.fillOval(0, 0, 48, 48);
-                g2.dispose();
-            }
-        };
-        iconPanel.setOpaque(false);
-        iconPanel.setPreferredSize(new Dimension(48, 48));
-        iconPanel.setLayout(new GridBagLayout());
-        JLabel iconLabel = new JLabel(emoji);
-        iconLabel.setFont(new Font("Segoe UI Emoji", Font.PLAIN, 24));
-        iconPanel.add(iconLabel);
-        card.add(iconPanel, BorderLayout.WEST);
-        // Texte
-        JPanel textPanel = new JPanel();
-        textPanel.setLayout(new BoxLayout(textPanel, BoxLayout.Y_AXIS));
-        textPanel.setOpaque(false);
-        JLabel labelText = new JLabel(label);
-        labelText.setFont(new Font("Segoe UI", Font.PLAIN, 12));
-        labelText.setForeground(new Color(255, 255, 255, 200));
-        labelText.setAlignmentX(Component.LEFT_ALIGNMENT);
-        DateTimeFormatter formatter = DateTimeFormatter.ofPattern("dd MMMM yyyy", Locale.FRENCH);
-        JLabel dateLabel = new JLabel(date.format(formatter));
-        dateLabel.setFont(new Font("Segoe UI", Font.BOLD, 17));
-        dateLabel.setForeground(Color.WHITE);
-        dateLabel.setAlignmentX(Component.LEFT_ALIGNMENT);
-        textPanel.add(labelText);
-        textPanel.add(Box.createRigidArea(new Dimension(0, 4)));
-        textPanel.add(dateLabel);
-        card.add(textPanel, BorderLayout.CENTER);
-        return card;
-    }
-    private JPanel createSubTasksSection() {
-        JPanel section = new JPanel();
-        section.setLayout(new BoxLayout(section, BoxLayout.Y_AXIS));
-        section.setOpaque(false);
-        section.setAlignmentX(Component.LEFT_ALIGNMENT);
-        // En-tête moderne avec icône
-        JPanel headerPanel = new JPanel(new BorderLayout());
-        headerPanel.setOpaque(false);
-        headerPanel.setMaximumSize(new Dimension(Integer.MAX_VALUE, 45));
-        headerPanel.setAlignmentX(Component.LEFT_ALIGNMENT);
-        JPanel titlePanel = new JPanel();
-        titlePanel.setLayout(new BoxLayout(titlePanel, BoxLayout.X_AXIS));
-        titlePanel.setOpaque(false);
-        JLabel sectionTitle = new JLabel("Sous-tâches");
-        sectionTitle.setFont(new Font("Segoe UI", Font.BOLD, 20));
-        sectionTitle.setForeground(theme == 0 ? Color.BLACK : Color.WHITE);
-        sectionTitle.setBorder(BorderFactory.createEmptyBorder(0, 10, 0, 0));
-        JLabel countLabel = new JLabel(getCompletedSubTasks() + "/" + subTasks.size());
-        countLabel.setFont(new Font("Segoe UI", Font.BOLD, 16));
-        countLabel.setForeground(new Color(139, 92, 246));
-        countLabel.setBorder(BorderFactory.createCompoundBorder(
-                BorderFactory.createLineBorder(new Color(139, 92, 246, 100), 2, true),
-                BorderFactory.createEmptyBorder(4, 12, 4, 12)));
-        countLabel.setOpaque(false);
-        titlePanel.add(sectionTitle);
-        titlePanel.add(Box.createRigidArea(new Dimension(10, 0)));
-        titlePanel.add(countLabel);
-        JButton addButton = createModernButton("+ Ajouter", new Color(139, 92, 246), new Color(167, 139, 250));
-        addButton.addActionListener(e -> addNewSubTask());
-        headerPanel.add(titlePanel, BorderLayout.WEST);
-        headerPanel.add(addButton, BorderLayout.EAST);
-        section.add(headerPanel);
-        section.add(Box.createRigidArea(new Dimension(0, 18)));
-        // Card avec design moderne
-        JPanel card = new JPanel();
-        card.setLayout(new BoxLayout(card, BoxLayout.Y_AXIS));
-        card.setOpaque(false);
-        card.setBorder(BorderFactory.createEmptyBorder(25, 25, 25, 25));
-        card.setAlignmentX(Component.LEFT_ALIGNMENT);
-        card.setMaximumSize(new Dimension(Integer.MAX_VALUE, 600));
-        if (subTasks.isEmpty()) {
-            JLabel emptyLabel = new JLabel("Aucune sous-tâche pour le moment");
-            emptyLabel.setFont(new Font("Segoe UI", Font.ITALIC, 15));
-            emptyLabel.setForeground(new Color(148, 163, 184));
-            emptyLabel.setAlignmentX(Component.CENTER_ALIGNMENT);
-            card.add(Box.createVerticalGlue());
-            card.add(emptyLabel);
-            card.add(Box.createVerticalGlue());
-        } else {
-            for (int i = 0; i < subTasks.size(); i++) {
-                card.add(createSubTaskRow(subTasks.get(i)));
-                if (i < subTasks.size() - 1) {
-                    card.add(Box.createRigidArea(new Dimension(0, 8)));
-                    // Séparateur subtil
-                    card.add(createDivider());
-                    card.add(Box.createRigidArea(new Dimension(0, 8)));
-                }
-            }
-        }
-        section.add(card);
-        return section;
-    }
-    private JPanel createSubTaskRow(SubTask subTask) {
-        JPanel row = new JPanel();
-        row.setLayout(new BorderLayout(15, 0));
-        row.setOpaque(false);
-        row.setMaximumSize(new Dimension(Integer.MAX_VALUE, 50));
-        row.setAlignmentX(Component.LEFT_ALIGNMENT);
-        row.setBorder(BorderFactory.createEmptyBorder(8, 12, 8, 12));
-        row.setCursor(new Cursor(Cursor.HAND_CURSOR));
-        // Effet hover
-        row.addMouseListener(new java.awt.event.MouseAdapter() {
-            public void mouseEntered(java.awt.event.MouseEvent evt) {
-                row.repaint();
-            }
-            public void mouseExited(java.awt.event.MouseEvent evt) {
-                row.repaint();
-            }
-        });
-        // Checkbox moderne personnalisé
-        JCheckBox checkbox = new JCheckBox() {
-            @Override
-            protected void paintComponent(Graphics g) {
-                Graphics2D g2 = (Graphics2D) g.create();
-                g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
-                int size = 22;
-                int x = (getWidth() - size) / 2;
-                int y = (getHeight() - size) / 2;
-                // Fond du checkbox
-                if (isSelected()) {
-                    GradientPaint gradient = new GradientPaint(
-                            x, y, new Color(139, 92, 246),
-                            x + size, y + size, new Color(167, 139, 250));
-                    g2.setPaint(gradient);
-                } else {
-                    g2.setColor(Color.WHITE);
-                }
-                g2.fillRoundRect(x, y, size, size, 8, 8);
-                // Bordure
-                g2.setColor(isSelected() ? new Color(139, 92, 246) : new Color(203, 213, 225));
-                g2.setStroke(new BasicStroke(2f));
-                g2.drawRoundRect(x, y, size, size, 8, 8);
-                // Coche
-                if (isSelected()) {
-                    g2.setColor(Color.WHITE);
-                    g2.setStroke(new BasicStroke(2.5f, BasicStroke.CAP_ROUND, BasicStroke.JOIN_ROUND));
-                    int[] xPoints = { x + 5, x + 9, x + 17 };
-                    int[] yPoints = { y + 11, y + 15, y + 7 };
-                    for (int i = 0; i < xPoints.length - 1; i++) {
-                        g2.drawLine(xPoints[i], yPoints[i], xPoints[i + 1], yPoints[i + 1]);
-                    }
-                }
-                g2.dispose();
-            }
-        };
-        checkbox.setSelected(subTask.completed);
-        checkbox.setOpaque(false);
-        checkbox.setFocusPainted(false);
-        checkbox.setPreferredSize(new Dimension(26, 26));
-        checkbox.setCursor(new Cursor(Cursor.HAND_CURSOR));
-        checkbox.addActionListener(e -> {
-            subTask.completed = checkbox.isSelected();
-            refreshUI();
-        });
-        // Texte de la sous-tâche
-        JLabel nameLabel = new JLabel(subTask.name);
-        nameLabel.setFont(new Font("Segoe UI", Font.PLAIN, 16));
-        nameLabel
-                .setForeground(subTask.completed ? new Color(148, 163, 184) : (theme == 0 ? Color.BLACK : Color.WHITE));
-        if (subTask.completed) {
-            nameLabel.setText("<html><strike>" + subTask.name + "</strike></html>");
-        }
-        row.add(checkbox, BorderLayout.WEST);
-        row.add(nameLabel, BorderLayout.CENTER);
-        return row;
-    }
-    private JButton createModernButton(String text, Color color1, Color color2) {
-        JButton button = new JButton(text) {
-            @Override
-            protected void paintComponent(Graphics g) {
-                Graphics2D g2 = (Graphics2D) g.create();
-                g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
-                GradientPaint gradient = new GradientPaint(
-                        0, 0, getModel().isPressed() ? color2 : color1,
-                        0, getHeight(), getModel().isPressed() ? color1 : color2);
-                g2.setPaint(gradient);
-                g2.fillRoundRect(0, 0, getWidth(), getHeight(), 12, 12);
-                // Texte
-                g2.setColor(Color.WHITE);
-                g2.setFont(getFont());
-                FontMetrics fm = g2.getFontMetrics();
-                int textX = (getWidth() - fm.stringWidth(getText())) / 2;
-                int textY = (getHeight() + fm.getAscent() - fm.getDescent()) / 2;
-                g2.drawString(getText(), textX, textY);
-                g2.dispose();
-            }
-        };
-        button.setFont(new Font("Segoe UI", Font.BOLD, 14));
-        button.setForeground(Color.WHITE);
-        button.setPreferredSize(new Dimension(120, 38));
-        button.setBorderPainted(false);
-        button.setContentAreaFilled(false);
-        button.setFocusPainted(false);
-        button.setCursor(new Cursor(Cursor.HAND_CURSOR));
-        return button;
-    }
-    private JPanel createDivider() {
-        JPanel divider = new JPanel() {
-            @Override
-            protected void paintComponent(Graphics g) {
-                super.paintComponent(g);
-                Graphics2D g2 = (Graphics2D) g.create();
-                g2.setColor(new Color(226, 232, 240));
-                g2.fillRoundRect(0, 0, getWidth(), 1, 1, 1);
-                g2.dispose();
-            }
-        };
-        divider.setOpaque(false);
-        divider.setMaximumSize(new Dimension(Integer.MAX_VALUE, 1));
-        divider.setAlignmentX(Component.LEFT_ALIGNMENT);
-        return divider;
-    }
-    private JPanel createDocumentsSection() {
-        JPanel section = new JPanel();
-        section.setLayout(new BoxLayout(section, BoxLayout.Y_AXIS));
-        section.setBackground(bgColor);
-        section.setAlignmentX(Component.LEFT_ALIGNMENT);
-        JPanel headerPanel = new JPanel(new BorderLayout());
-        headerPanel.setOpaque(false);
-        headerPanel.setMaximumSize(new Dimension(Integer.MAX_VALUE, 50));
-        headerPanel.setAlignmentX(Component.LEFT_ALIGNMENT);
-        JLabel sectionTitle = new JLabel("Documents attachés (" + documents.size() + ")");
-        sectionTitle.setFont(new Font("Segoe UI", Font.BOLD, 24));
-        sectionTitle.setForeground(textPrimary);
-        JButton addButton = createStyledButton("+ Ajouter", accentColor);
-        addButton.setFont(new Font("Segoe UI", Font.BOLD, 14));
-        addButton.setPreferredSize(new Dimension(130, 42));
-        addButton.addActionListener(e -> addNewDocument());
-        headerPanel.add(sectionTitle, BorderLayout.WEST);
-        headerPanel.add(addButton, BorderLayout.EAST);
-        section.add(headerPanel);
-        section.add(Box.createRigidArea(new Dimension(0, 20)));
-        JPanel card = new JPanel(new GridLayout(0, 2, 20, 20));
-        card.setOpaque(false);
-        card.setMaximumSize(new Dimension(Integer.MAX_VALUE, 500));
-        for (Document doc : documents) {
-            card.add(createDocumentCard(doc, getRandomColor()));
-        }
-        section.add(card);
-        return section;
-    }
-    private JPanel createDocumentCard(Document doc, Color color) {
-        JPanel card = new JPanel() {
-            @Override
-            protected void paintComponent(Graphics g) {
-                super.paintComponent(g);
-                Graphics2D g2 = (Graphics2D) g.create();
-                g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
-                // Gradient background
-                GradientPaint gradient = new GradientPaint(
-                        0, 0, color,
-                        getWidth(), getHeight(), new Color(
-                                Math.min(255, color.getRed() + 30),
-                                Math.min(255, color.getGreen() + 30),
-                                Math.min(255, color.getBlue() + 30)));
-                g2.setPaint(gradient);
+
+                g2.setColor(cardBgColor);
+
                 g2.fillRoundRect(0, 0, getWidth(), getHeight(), 20, 20);
-                // Subtle shadow effect
-                g2.setColor(new Color(0, 0, 0, 10));
-                g2.fillRoundRect(2, 2, getWidth() - 4, getHeight() - 4, 20, 20);
+
                 g2.dispose();
+
             }
+
         };
-        card.setLayout(new BorderLayout(15, 10));
+
+        card.setLayout(new BoxLayout(card, BoxLayout.Y_AXIS));
+
         card.setOpaque(false);
+
         card.setBorder(BorderFactory.createEmptyBorder(20, 20, 20, 20));
-        card.setCursor(new Cursor(Cursor.HAND_CURSOR));
-        card.setPreferredSize(new Dimension(250, 110));
-        // Icon with modern styling
-        String icon = getFileIcon(doc.type);
-        JLabel iconLabel = new JLabel(icon);
-        iconLabel.setFont(new Font("Segoe UI Emoji", Font.PLAIN, 40));
-        iconLabel.setForeground(new Color(255, 255, 255, 230));
-        card.add(iconLabel, BorderLayout.WEST);
-        JPanel infoPanel = new JPanel();
-        infoPanel.setLayout(new BoxLayout(infoPanel, BoxLayout.Y_AXIS));
-        infoPanel.setOpaque(false);
-        JLabel nameLabel = new JLabel(doc.name);
-        nameLabel.setFont(new Font("Segoe UI", Font.BOLD, 15));
-        nameLabel.setForeground(Color.WHITE);
-        nameLabel.setAlignmentX(Component.LEFT_ALIGNMENT);
-        JLabel sizeLabel = new JLabel(doc.size + " KB");
-        sizeLabel.setFont(new Font("Segoe UI", Font.PLAIN, 13));
-        sizeLabel.setForeground(new Color(255, 255, 255, 200));
-        sizeLabel.setAlignmentX(Component.LEFT_ALIGNMENT);
-        infoPanel.add(nameLabel);
-        infoPanel.add(Box.createRigidArea(new Dimension(0, 5)));
-        infoPanel.add(sizeLabel);
-        card.add(infoPanel, BorderLayout.CENTER);
-        card.addMouseListener(new java.awt.event.MouseAdapter() {
-            private Color originalColor = color;
-            @Override
-            public void mouseClicked(java.awt.event.MouseEvent e) {
-                downloadDocument(doc);
-            }
-            @Override
-            public void mouseEntered(java.awt.event.MouseEvent e) {
-                card.setBorder(BorderFactory.createCompoundBorder(
-                        BorderFactory.createLineBorder(new Color(255, 255, 255, 150), 3, true),
-                        BorderFactory.createEmptyBorder(17, 17, 17, 17)));
-            }
-            @Override
-            public void mouseExited(java.awt.event.MouseEvent e) {
-                card.setBorder(BorderFactory.createEmptyBorder(20, 20, 20, 20));
-            }
-        });
-        return card;
-    }
-    private JPanel createCommentsSection() {
-        JPanel section = new JPanel();
-        section.setLayout(new BoxLayout(section, BoxLayout.Y_AXIS));
-        section.setBackground(bgColor);
-        section.setAlignmentX(Component.LEFT_ALIGNMENT);
-        JLabel sectionTitle = new JLabel("Commentaires");
-        sectionTitle.setFont(new Font("Segoe UI", Font.BOLD, 24));
-        sectionTitle.setForeground(textPrimary);
-        sectionTitle.setAlignmentX(Component.LEFT_ALIGNMENT);
-        section.add(sectionTitle);
-        section.add(Box.createRigidArea(new Dimension(0, 20)));
-        JPanel card = new JPanel() {
-            @Override
-            protected void paintComponent(Graphics g) {
-                super.paintComponent(g);
-                Graphics2D g2 = (Graphics2D) g.create();
-                g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
-                // Modern card with subtle gradient
-                GradientPaint gradient = new GradientPaint(
-                        0, 0, cardBgColor,
-                        0, getHeight(), new Color(
-                                cardBgColor.getRed(),
-                                cardBgColor.getGreen(),
-                                Math.max(0, cardBgColor.getBlue() - 5)));
-                g2.setPaint(gradient);
-                g2.fillRoundRect(0, 0, getWidth(), getHeight(), 24, 24);
-                g2.dispose();
-            }
-        };
-        card.setLayout(new BoxLayout(card, BoxLayout.Y_AXIS));
-        card.setOpaque(false);
-        card.setBorder(BorderFactory.createEmptyBorder(25, 25, 25, 25));
+
         card.setAlignmentX(Component.LEFT_ALIGNMENT);
-        card.setMaximumSize(new Dimension(Integer.MAX_VALUE, 600));
-        for (Comment comment : comments) {
-            card.add(createCommentCard(comment));
-            card.add(Box.createRigidArea(new Dimension(0, 18)));
+
+        JPanel timelineWrapper = new JPanel();
+
+        timelineWrapper.setLayout(new BoxLayout(timelineWrapper, BoxLayout.Y_AXIS));
+
+        timelineWrapper.setOpaque(false);
+
+        SimpleDateFormat dateFormat = new SimpleDateFormat("dd MMM yyyy", Locale.FRENCH);
+
+        for (int i = 0; i < historyEvents.size(); i++) {
+
+            HistoryEvent event = historyEvents.get(i);
+
+            boolean isLast = (i == historyEvents.size() - 1);
+
+            JPanel eventPanel = createTimelineEvent(event, dateFormat, isLast);
+
+            eventPanel.setAlignmentX(Component.LEFT_ALIGNMENT);
+
+            timelineWrapper.add(eventPanel);
+
+            if (!isLast) {
+
+                timelineWrapper.add(Box.createRigidArea(new Dimension(0, 5)));
+
+            }
+
         }
-        card.add(createCommentInput());
+
+        Scrollbar scroll = new Scrollbar(theme);
+
+        JScrollPane scrollPane = scroll.create(timelineWrapper);
+
+        scrollPane.setBorder(null);
+
+        scrollPane.setVerticalScrollBarPolicy(JScrollPane.VERTICAL_SCROLLBAR_AS_NEEDED);
+
+        scrollPane.setHorizontalScrollBarPolicy(JScrollPane.HORIZONTAL_SCROLLBAR_NEVER);
+
+        scrollPane.getVerticalScrollBar().setUnitIncrement(12);
+
+        scrollPane.setBackground(cardBgColor);
+
+        scrollPane.getViewport().setBackground(cardBgColor);
+
+        scrollPane.setPreferredSize(new Dimension(0, 0));
+
+        scrollPane.setMaximumSize(new Dimension(Integer.MAX_VALUE, Integer.MAX_VALUE));
+
+        card.add(scrollPane);
+
         section.add(card);
+
         return section;
+
     }
-    private JPanel createCommentCard(Comment comment) {
-        JPanel commentPanel = new JPanel();
-        commentPanel.setLayout(new BoxLayout(commentPanel, BoxLayout.Y_AXIS));
-        commentPanel.setOpaque(false);
-        commentPanel.setAlignmentX(Component.LEFT_ALIGNMENT);
-        commentPanel.setMaximumSize(new Dimension(Integer.MAX_VALUE, 120));
-        // Date header with modern styling
-        JPanel datePanel = new JPanel(new FlowLayout(FlowLayout.LEFT, 0, 0));
-        datePanel.setOpaque(false);
-        datePanel.setMaximumSize(new Dimension(Integer.MAX_VALUE, 25));
-        DateTimeFormatter formatter = DateTimeFormatter.ofPattern("dd MMM yyyy", Locale.FRENCH);
-        JLabel dateLabel = new JLabel("📅 " + comment.date.format(formatter));
-        dateLabel.setFont(new Font("Segoe UI", Font.PLAIN, 12));
-        dateLabel.setForeground(textSecondary);
-        datePanel.add(dateLabel);
-        commentPanel.add(datePanel);
-        commentPanel.add(Box.createRigidArea(new Dimension(0, 8)));
-        // Comment content with modern bubble design
-        JPanel contentBubble = new JPanel() {
+
+    private JPanel createTimelineEvent(HistoryEvent event, SimpleDateFormat dateFormat, boolean isLast) {
+
+        JPanel eventPanel = new JPanel(new BorderLayout(12, 0));
+
+        eventPanel.setOpaque(false);
+
+        eventPanel.setMaximumSize(new Dimension(Integer.MAX_VALUE, 100));
+
+        JPanel timelineIndicator = new JPanel() {
+
             @Override
+
             protected void paintComponent(Graphics g) {
+
                 super.paintComponent(g);
+
                 Graphics2D g2 = (Graphics2D) g.create();
+
                 g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
-                // Accent color background with transparency
-                g2.setColor(new Color(accentColor.getRed(), accentColor.getGreen(), accentColor.getBlue(), 15));
-                g2.fillRoundRect(0, 0, getWidth(), getHeight(), 16, 16);
-                // Left accent border
+
+                int centerX = getWidth() / 2;
+
                 g2.setColor(accentColor);
-                g2.fillRoundRect(0, 0, 4, getHeight(), 8, 8);
+
+                g2.fillOval(centerX - 6, 5, 12, 12);
+
+                if (!isLast) {
+
+                    g2.setStroke(new BasicStroke(2));
+
+                    g2.setColor(new Color(accentColor.getRed(), accentColor.getGreen(), accentColor.getBlue(), 80));
+
+                    g2.drawLine(centerX, 17, centerX, getHeight());
+
+                }
+
                 g2.dispose();
+
             }
+
         };
-        contentBubble.setLayout(new BorderLayout());
-        contentBubble.setOpaque(false);
-        contentBubble.setBorder(BorderFactory.createEmptyBorder(15, 20, 15, 20));
-        JLabel contentLabel = new JLabel("<html><body style='width: 100%;'>" + comment.content + "</body></html>");
-        contentLabel.setFont(new Font("Segoe UI", Font.PLAIN, 14));
-        contentLabel.setForeground(textPrimary);
-        contentBubble.add(contentLabel, BorderLayout.CENTER);
-        commentPanel.add(contentBubble);
-        commentPanel.add(Box.createRigidArea(new Dimension(0, 5)));
-        // Subtle separator
-        JPanel separator = new JPanel();
-        separator.setBackground(new Color(progressBg.getRed(), progressBg.getGreen(), progressBg.getBlue(), 50));
-        separator.setMaximumSize(new Dimension(Integer.MAX_VALUE, 1));
-        separator.setBorder(BorderFactory.createEmptyBorder(10, 0, 0, 0));
-        commentPanel.add(separator);
-        return commentPanel;
+
+        timelineIndicator.setPreferredSize(new Dimension(30, 100));
+
+        timelineIndicator.setOpaque(false);
+
+        eventPanel.add(timelineIndicator, BorderLayout.WEST);
+
+        JPanel contentPanel = new JPanel();
+
+        contentPanel.setLayout(new BoxLayout(contentPanel, BoxLayout.Y_AXIS));
+
+        contentPanel.setOpaque(false);
+
+        contentPanel.setBorder(BorderFactory.createEmptyBorder(0, 0, 15, 0));
+
+        JLabel dateLabel = new JLabel(dateFormat.format(event.date));
+
+        dateLabel.setFont(new Font("Segoe UI", Font.BOLD, 12));
+
+        dateLabel.setForeground(accentColor);
+
+        dateLabel.setAlignmentX(Component.LEFT_ALIGNMENT);
+
+        JLabel eventLabel = new JLabel(event.description);
+
+        eventLabel.setFont(new Font("Segoe UI", Font.PLAIN, 14));
+
+        eventLabel.setForeground(textPrimary);
+
+        eventLabel.setAlignmentX(Component.LEFT_ALIGNMENT);
+
+        JLabel memberLabel = new JLabel(event.firstName + " " + event.lastName);
+
+        memberLabel.setFont(new Font("Segoe UI", Font.PLAIN, 12));
+
+        memberLabel.setForeground(textSecondary);
+
+        memberLabel.setAlignmentX(Component.LEFT_ALIGNMENT);
+
+        contentPanel.add(dateLabel);
+
+        contentPanel.add(Box.createRigidArea(new Dimension(0, 4)));
+
+        contentPanel.add(eventLabel);
+
+        contentPanel.add(Box.createRigidArea(new Dimension(0, 4)));
+
+        contentPanel.add(memberLabel);
+
+        eventPanel.add(contentPanel, BorderLayout.CENTER);
+
+        return eventPanel;
+
     }
-    private JPanel createCommentInput() {
-        JPanel inputPanel = new JPanel();
-        inputPanel.setLayout(new BoxLayout(inputPanel, BoxLayout.Y_AXIS));
-        inputPanel.setOpaque(false);
-        inputPanel.setAlignmentX(Component.LEFT_ALIGNMENT);
-        inputPanel.setMaximumSize(new Dimension(Integer.MAX_VALUE, 140));
-        JLabel inputLabel = new JLabel("💬 Nouveau commentaire");
-        inputLabel.setFont(new Font("Segoe UI", Font.BOLD, 15));
-        inputLabel.setForeground(textPrimary);
-        inputLabel.setAlignmentX(Component.LEFT_ALIGNMENT);
-        inputPanel.add(inputLabel);
-        inputPanel.add(Box.createRigidArea(new Dimension(0, 12)));
-        JPanel inputRow = new JPanel(new BorderLayout(12, 0));
-        inputRow.setOpaque(false);
-        inputRow.setMaximumSize(new Dimension(Integer.MAX_VALUE, 50));
-        JTextArea commentField = new JTextArea(2, 20);
-        commentField.setFont(new Font("Segoe UI", Font.PLAIN, 14));
-        commentField.setForeground(textPrimary);
-        commentField.setBackground(theme == 0 ? new Color(249, 250, 251) : new Color(30, 30, 30));
-        commentField.setBorder(BorderFactory.createCompoundBorder(
-                BorderFactory.createLineBorder(
-                        new Color(progressBg.getRed(), progressBg.getGreen(), progressBg.getBlue(), 100), 1, true),
-                BorderFactory.createEmptyBorder(12, 15, 12, 15)));
-        commentField.setLineWrap(true);
-        commentField.setWrapStyleWord(true);
-        JButton sendButton = createStyledButton("Envoyer", accentColor);
-        sendButton.setPreferredSize(new Dimension(110, 50));
-        sendButton.setFont(new Font("Segoe UI", Font.BOLD, 14));
-        sendButton.addActionListener(e -> {
-            String text = commentField.getText().trim();
-            if (!text.isEmpty()) {
-                addComment(text);
-                commentField.setText("");
-            }
-        });
-        inputRow.add(commentField, BorderLayout.CENTER);
-        inputRow.add(sendButton, BorderLayout.EAST);
-        inputPanel.add(inputRow);
-        return inputPanel;
-    }
-    private JPanel createActionsSection() {
+
+    private JPanel createBillingSection() {
+
         JPanel section = new JPanel();
+
         section.setLayout(new BoxLayout(section, BoxLayout.Y_AXIS));
+
         section.setBackground(bgColor);
-        section.setAlignmentX(Component.LEFT_ALIGNMENT);
-        JLabel sectionTitle = new JLabel("Actions rapides");
-        sectionTitle.setFont(new Font("Segoe UI", Font.BOLD, 24));
+
+        JLabel sectionTitle = new JLabel("Facturation");
+
+        sectionTitle.setFont(new Font("Segoe UI", Font.BOLD, 18));
+
         sectionTitle.setForeground(textPrimary);
+
         sectionTitle.setAlignmentX(Component.LEFT_ALIGNMENT);
+
         section.add(sectionTitle);
-        section.add(Box.createRigidArea(new Dimension(0, 20)));
-        JPanel cardsContainer = new JPanel(new GridLayout(1, 2, 20, 0));
-        cardsContainer.setOpaque(false);
-        cardsContainer.setAlignmentX(Component.LEFT_ALIGNMENT);
-        cardsContainer.setMaximumSize(new Dimension(Integer.MAX_VALUE, 140));
-        cardsContainer.add(createActionCard("🚨 Signaler un bloquage", "Informer l'équipe d'un obstacle", dangerColor));
-        cardsContainer.add(createActionCard("💰 Préciser une dépense", "Ajouter une dépense au projet", warningColor));
-        section.add(cardsContainer);
-        return section;
-    }
-    private JPanel createActionCard(String title, String description, Color color) {
+
+        section.add(Box.createRigidArea(new Dimension(0, 15)));
+
         JPanel card = new JPanel() {
-            private boolean isHovered = false;
+
             @Override
+
             protected void paintComponent(Graphics g) {
+
                 super.paintComponent(g);
+
                 Graphics2D g2 = (Graphics2D) g.create();
+
                 g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
-                // Modern gradient background
-                int alpha = isHovered ? 35 : 20;
-                GradientPaint gradient = new GradientPaint(
-                        0, 0, new Color(color.getRed(), color.getGreen(), color.getBlue(), alpha),
-                        getWidth(), getHeight(), new Color(
-                                Math.min(255, color.getRed() + 20),
-                                Math.min(255, color.getGreen() + 20),
-                                Math.min(255, color.getBlue() + 20),
-                                alpha));
-                g2.setPaint(gradient);
+
+                g2.setColor(cardBgColor);
+
                 g2.fillRoundRect(0, 0, getWidth(), getHeight(), 20, 20);
-                // Border on hover
-                if (isHovered) {
-                    g2.setStroke(new BasicStroke(2.5f));
-                    g2.setColor(new Color(color.getRed(), color.getGreen(), color.getBlue(), 150));
-                    g2.drawRoundRect(1, 1, getWidth() - 3, getHeight() - 3, 20, 20);
-                }
+
                 g2.dispose();
+
             }
+
         };
+
         card.setLayout(new BoxLayout(card, BoxLayout.Y_AXIS));
+
         card.setOpaque(false);
-        card.setBorder(BorderFactory.createEmptyBorder(25, 25, 25, 25));
-        card.setCursor(new Cursor(Cursor.HAND_CURSOR));
-        JLabel titleLabel = new JLabel(title);
-        titleLabel.setFont(new Font("Segoe UI", Font.BOLD, 17));
-        titleLabel.setForeground(textPrimary);
-        titleLabel.setAlignmentX(Component.LEFT_ALIGNMENT);
-        JLabel descLabel = new JLabel(description);
-        descLabel.setFont(new Font("Segoe UI", Font.PLAIN, 13));
-        descLabel.setForeground(textSecondary);
-        descLabel.setAlignmentX(Component.LEFT_ALIGNMENT);
-        card.add(titleLabel);
-        card.add(Box.createRigidArea(new Dimension(0, 8)));
-        card.add(descLabel);
-        card.addMouseListener(new java.awt.event.MouseAdapter() {
-            @Override
-            public void mouseClicked(java.awt.event.MouseEvent e) {
-                if (title.contains("bloquage")) {
-                    signalBlockage();
-                } else {
-                    addExpense();
+
+        card.setBorder(BorderFactory.createEmptyBorder(20, 20, 20, 20));
+
+        card.setAlignmentX(Component.LEFT_ALIGNMENT);
+
+        JPanel expensesWrapper = new JPanel();
+
+        expensesWrapper.setLayout(new BoxLayout(expensesWrapper, BoxLayout.Y_AXIS));
+
+        expensesWrapper.setOpaque(false);
+
+        double total = 0;
+
+        for (Expense expense : expenses) {
+
+            total += expense.amount;
+
+            JPanel expenseRow = createExpenseRow(expense);
+
+            expenseRow.setAlignmentX(Component.LEFT_ALIGNMENT);
+
+            expensesWrapper.add(expenseRow);
+
+            expensesWrapper.add(Box.createRigidArea(new Dimension(0, 10)));
+
+        }
+
+        Scrollbar scroll = new Scrollbar(theme);
+
+        JScrollPane scrollPane = scroll.create(expensesWrapper);
+
+        scrollPane.setBorder(null);
+
+        scrollPane.setVerticalScrollBarPolicy(JScrollPane.VERTICAL_SCROLLBAR_AS_NEEDED);
+
+        scrollPane.setHorizontalScrollBarPolicy(JScrollPane.HORIZONTAL_SCROLLBAR_NEVER);
+
+        scrollPane.getVerticalScrollBar().setUnitIncrement(12);
+
+        scrollPane.setBackground(cardBgColor);
+
+        scrollPane.getViewport().setBackground(cardBgColor);
+
+        scrollPane.setPreferredSize(new Dimension(0, 0));
+
+        scrollPane.setMaximumSize(new Dimension(Integer.MAX_VALUE, Integer.MAX_VALUE));
+
+        card.add(scrollPane);
+
+        card.add(Box.createRigidArea(new Dimension(0, 15)));
+
+        JSeparator separator = new JSeparator();
+
+        separator.setForeground(
+
+                new Color(textSecondary.getRed(), textSecondary.getGreen(), textSecondary.getBlue(), 30));
+
+        separator.setMaximumSize(new Dimension(Integer.MAX_VALUE, 1));
+
+        card.add(separator);
+
+        card.add(Box.createRigidArea(new Dimension(0, 15)));
+
+        JPanel summaryPanel = createBillingSummary(total, budget);
+
+        summaryPanel.setAlignmentX(Component.LEFT_ALIGNMENT);
+
+        card.add(summaryPanel);
+
+        section.add(card);
+
+        return section;
+
+    }
+
+    private JPanel createExpenseRow(Expense expense) {
+
+        JPanel row = new JPanel(new BorderLayout(15, 0));
+
+        row.setOpaque(false);
+
+        row.setMaximumSize(new Dimension(Integer.MAX_VALUE, 35));
+
+        JLabel taskLabel = new JLabel(expense.taskName);
+
+        taskLabel.setFont(new Font("Segoe UI", Font.PLAIN, 14));
+
+        taskLabel.setForeground(textPrimary);
+
+        row.add(taskLabel, BorderLayout.CENTER);
+
+        JLabel amountLabel = new JLabel(String.format("%.2f DHS", expense.amount));
+
+        amountLabel.setFont(new Font("Segoe UI", Font.BOLD, 14));
+
+        amountLabel.setForeground(textPrimary);
+
+        row.add(amountLabel, BorderLayout.EAST);
+
+        return row;
+
+    }
+
+    private JPanel createBillingSummary(double total, double budget) {
+
+        JPanel summary = new JPanel();
+
+        summary.setLayout(new BoxLayout(summary, BoxLayout.Y_AXIS));
+
+        summary.setOpaque(false);
+
+        JPanel totalRow = new JPanel(new BorderLayout());
+
+        totalRow.setOpaque(false);
+
+        totalRow.setMaximumSize(new Dimension(Integer.MAX_VALUE, 30));
+
+        JLabel totalLabel = new JLabel("Total:");
+
+        totalLabel.setFont(new Font("Segoe UI", Font.BOLD, 16));
+
+        totalLabel.setForeground(textPrimary);
+
+        totalRow.add(totalLabel, BorderLayout.WEST);
+
+        JLabel totalAmount = new JLabel(String.format("%.2f DHS", total));
+
+        totalAmount.setFont(new Font("Segoe UI", Font.BOLD, 16));
+
+        totalAmount.setForeground(textPrimary);
+
+        totalRow.add(totalAmount, BorderLayout.EAST);
+
+        summary.add(totalRow);
+
+        summary.add(Box.createRigidArea(new Dimension(0, 8)));
+
+        JPanel budgetRow = new JPanel(new BorderLayout());
+
+        budgetRow.setOpaque(false);
+
+        budgetRow.setMaximumSize(new Dimension(Integer.MAX_VALUE, 30));
+
+        JLabel budgetLabel = new JLabel("Budget:");
+
+        budgetLabel.setFont(new Font("Segoe UI", Font.PLAIN, 14));
+
+        budgetLabel.setForeground(textSecondary);
+
+        budgetRow.add(budgetLabel, BorderLayout.WEST);
+
+        JLabel budgetAmount = new JLabel(String.format("%.2f DHS", budget));
+
+        budgetAmount.setFont(new Font("Segoe UI", Font.PLAIN, 14));
+
+        budgetAmount.setForeground(textSecondary);
+
+        budgetRow.add(budgetAmount, BorderLayout.EAST);
+
+        summary.add(budgetRow);
+
+        if (total > budget) {
+
+            summary.add(Box.createRigidArea(new Dimension(0, 12)));
+
+            JPanel alertPanel = new JPanel() {
+
+                @Override
+
+                protected void paintComponent(Graphics g) {
+
+                    super.paintComponent(g);
+
+                    Graphics2D g2 = (Graphics2D) g.create();
+
+                    g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
+
+                    g2.setColor(new Color(dangerColor.getRed(), dangerColor.getGreen(), dangerColor.getBlue(), 20));
+
+                    g2.fillRoundRect(0, 0, getWidth(), getHeight(), 10, 10);
+
+                    g2.setColor(dangerColor);
+
+                    g2.setStroke(new BasicStroke(2));
+
+                    g2.drawRoundRect(0, 0, getWidth() - 1, getHeight() - 1, 10, 10);
+
+                    g2.dispose();
+
                 }
-            }
-            @Override
-            public void mouseEntered(java.awt.event.MouseEvent e) {
-                ((JPanel) e.getSource()).putClientProperty("isHovered", true);
-                e.getComponent().repaint();
-            }
-            @Override
-            public void mouseExited(java.awt.event.MouseEvent e) {
-                ((JPanel) e.getSource()).putClientProperty("isHovered", false);
-                e.getComponent().repaint();
-            }
-        });
-        return card;
+
+            };
+
+            alertPanel.setLayout(new BorderLayout(10, 0));
+
+            alertPanel.setOpaque(false);
+
+            alertPanel.setBorder(BorderFactory.createEmptyBorder(12, 15, 12, 15));
+
+            alertPanel.setMaximumSize(new Dimension(Integer.MAX_VALUE, 60));
+
+            JLabel alertIcon = new JLabel("⚠");
+
+            alertIcon.setFont(new Font("Segoe UI Emoji", Font.PLAIN, 20));
+
+            alertIcon.setForeground(dangerColor);
+
+            alertPanel.add(alertIcon, BorderLayout.WEST);
+
+            JPanel alertText = new JPanel();
+
+            alertText.setLayout(new BoxLayout(alertText, BoxLayout.Y_AXIS));
+
+            alertText.setOpaque(false);
+
+            JLabel alertTitle = new JLabel("Budget dépassé!");
+
+            alertTitle.setFont(new Font("Segoe UI", Font.BOLD, 13));
+
+            alertTitle.setForeground(dangerColor);
+
+            alertTitle.setAlignmentX(Component.LEFT_ALIGNMENT);
+
+            JLabel alertAmount = new JLabel(String.format("Dépassement: %.2f DHS", total - budget));
+
+            alertAmount.setFont(new Font("Segoe UI", Font.PLAIN, 12));
+
+            alertAmount.setForeground(dangerColor);
+
+            alertAmount.setAlignmentX(Component.LEFT_ALIGNMENT);
+
+            alertText.add(alertTitle);
+
+            alertText.add(Box.createRigidArea(new Dimension(0, 2)));
+
+            alertText.add(alertAmount);
+
+            alertPanel.add(alertText, BorderLayout.CENTER);
+
+            summary.add(alertPanel);
+
+        }
+
+        return summary;
+
     }
-    private JPanel createProgressBar(int progress, boolean large) {
-        JPanel wrapper = new JPanel(new BorderLayout(10, 0));
-        wrapper.setOpaque(false);
-        wrapper.setMaximumSize(new Dimension(Integer.MAX_VALUE, large ? 50 : 30));
-        JPanel bar = new JPanel() {
+
+    private JPanel createDocumentsSection() {
+
+        JPanel section = new JPanel();
+
+        section.setLayout(new BoxLayout(section, BoxLayout.Y_AXIS));
+
+        section.setBackground(bgColor);
+
+        JLabel sectionTitle = new JLabel("Documents");
+
+        sectionTitle.setFont(new Font("Segoe UI", Font.BOLD, 18));
+
+        sectionTitle.setForeground(textPrimary);
+
+        sectionTitle.setAlignmentX(Component.LEFT_ALIGNMENT);
+
+        section.add(sectionTitle);
+
+        section.add(Box.createRigidArea(new Dimension(0, 15)));
+
+        JPanel card = new JPanel() {
+
             @Override
+
             protected void paintComponent(Graphics g) {
+
                 super.paintComponent(g);
+
                 Graphics2D g2 = (Graphics2D) g.create();
+
                 g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
-                int height = large ? 14 : 10;
-                int y = (getHeight() - height) / 2;
-                g2.setColor(progressBg);
-                g2.fillRoundRect(0, y, getWidth(), height, height, height);
-                int fillWidth = (int) (getWidth() * progress / 100.0);
-                g2.setColor(progressFill);
-                g2.fillRoundRect(0, y, fillWidth, height, height, height);
+
+                g2.setColor(cardBgColor);
+
+                g2.fillRoundRect(0, 0, getWidth(), getHeight(), 20, 20);
+
                 g2.dispose();
+
             }
+
         };
-        bar.setOpaque(false);
-        bar.setPreferredSize(new Dimension(0, large ? 14 : 10));
-        wrapper.add(bar, BorderLayout.CENTER);
-        JLabel percentLabel = new JLabel(progress + "%");
-        percentLabel.setFont(new Font("Segoe UI", Font.BOLD, large ? 18 : 14));
-        percentLabel.setForeground(textPrimary);
-        wrapper.add(percentLabel, BorderLayout.EAST);
-        return wrapper;
+
+        card.setLayout(new BoxLayout(card, BoxLayout.Y_AXIS));
+
+        card.setOpaque(false);
+
+        card.setBorder(BorderFactory.createEmptyBorder(20, 20, 20, 20));
+
+        card.setAlignmentX(Component.LEFT_ALIGNMENT);
+
+        JPanel documentsWrapper = new JPanel();
+
+        documentsWrapper.setLayout(new BoxLayout(documentsWrapper, BoxLayout.Y_AXIS));
+
+        documentsWrapper.setOpaque(false);
+
+        SimpleDateFormat dateFormat = new SimpleDateFormat("dd/MM/yyyy", Locale.FRENCH);
+
+        for (Document doc : documents) {
+
+            JPanel docCard = createDocumentCard(doc, dateFormat);
+
+            docCard.setAlignmentX(Component.LEFT_ALIGNMENT);
+
+            documentsWrapper.add(docCard);
+
+            documentsWrapper.add(Box.createRigidArea(new Dimension(0, 10)));
+
+        }
+
+        Scrollbar scroll = new Scrollbar(theme);
+
+        JScrollPane scrollPane = scroll.create(documentsWrapper);
+
+        scrollPane.setBorder(null);
+
+        scrollPane.setVerticalScrollBarPolicy(JScrollPane.VERTICAL_SCROLLBAR_AS_NEEDED);
+
+        scrollPane.setHorizontalScrollBarPolicy(JScrollPane.HORIZONTAL_SCROLLBAR_NEVER);
+
+        scrollPane.getVerticalScrollBar().setUnitIncrement(12);
+
+        scrollPane.setBackground(cardBgColor);
+
+        scrollPane.getViewport().setBackground(cardBgColor);
+
+        scrollPane.setPreferredSize(new Dimension(0, 0));
+
+        scrollPane.setMaximumSize(new Dimension(Integer.MAX_VALUE, Integer.MAX_VALUE));
+
+        card.add(scrollPane);
+
+        section.add(card);
+
+        return section;
+
     }
-    private JButton createStyledButton(String text, Color color) {
-        JButton button = new JButton(text) {
+
+    private JPanel createDocumentCard(Document doc, SimpleDateFormat dateFormat) {
+
+        JPanel card = new JPanel() {
+
             @Override
+
             protected void paintComponent(Graphics g) {
+
+                super.paintComponent(g);
+
                 Graphics2D g2 = (Graphics2D) g.create();
+
                 g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
+
                 if (getModel().isPressed()) {
-                    g2.setColor(color.darker());
+
+                    g2.setColor(new Color(accentColor.getRed(), accentColor.getGreen(), accentColor.getBlue(), 20));
+
                 } else if (getModel().isRollover()) {
-                    g2.setColor(color.brighter());
+
+                    g2.setColor(new Color(accentColor.getRed(), accentColor.getGreen(), accentColor.getBlue(), 10));
+
                 } else {
-                    g2.setColor(color);
+
+                    g2.setColor(theme == 0 ? new Color(249, 250, 251) : new Color(30, 30, 30));
+
                 }
-                g2.fillRoundRect(0, 0, getWidth(), getHeight(), 10, 10);
+
+                g2.fillRoundRect(0, 0, getWidth(), getHeight(), 12, 12);
+
                 g2.dispose();
-                super.paintComponent(g);
+
             }
+
+            private ButtonModel getModel() {
+
+                Component[] comps = getComponents();
+
+                for (Component c : comps) {
+
+                    if (c instanceof AbstractButton) {
+
+                        return ((AbstractButton) c).getModel();
+
+                    }
+
+                }
+
+                return new DefaultButtonModel();
+
+            }
+
         };
-        button.setFont(new Font("Segoe UI", Font.BOLD, 14));
-        button.setForeground(Color.WHITE);
-        button.setOpaque(false);
-        button.setContentAreaFilled(false);
-        button.setBorderPainted(false);
-        button.setFocusPainted(false);
-        button.setCursor(new Cursor(Cursor.HAND_CURSOR));
-        button.setBorder(BorderFactory.createEmptyBorder(10, 20, 10, 20));
-        return button;
+
+        card.setLayout(new BorderLayout(12, 0));
+
+        card.setOpaque(false);
+
+        card.setBorder(BorderFactory.createEmptyBorder(15, 15, 15, 15));
+
+        card.setMaximumSize(new Dimension(Integer.MAX_VALUE, 85));
+
+        card.setCursor(new Cursor(Cursor.HAND_CURSOR));
+
+        String extension = doc.name.substring(doc.name.lastIndexOf('.') + 1).toLowerCase();
+
+        Color docColor = getDocumentColor(extension);
+
+        JPanel iconPanel = new JPanel() {
+
+            @Override
+
+            protected void paintComponent(Graphics g) {
+
+                super.paintComponent(g);
+
+                Graphics2D g2 = (Graphics2D) g.create();
+
+                g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
+
+                g2.setColor(new Color(docColor.getRed(), docColor.getGreen(), docColor.getBlue(), 20));
+
+                g2.fillRoundRect(0, 0, getWidth(), getHeight(), 8, 8);
+
+                g2.dispose();
+
+            }
+
+        };
+
+        iconPanel.setPreferredSize(new Dimension(50, 50));
+
+        iconPanel.setOpaque(false);
+
+        iconPanel.setLayout(new GridBagLayout());
+
+        JLabel iconLabel = new JLabel(getDocumentIcon(extension));
+
+        iconLabel.setFont(new Font("Segoe UI Emoji", Font.PLAIN, 24));
+
+        iconLabel.setForeground(docColor);
+
+        iconPanel.add(iconLabel);
+
+        card.add(iconPanel, BorderLayout.WEST);
+
+        JPanel infoPanel = new JPanel();
+
+        infoPanel.setLayout(new BoxLayout(infoPanel, BoxLayout.Y_AXIS));
+
+        infoPanel.setOpaque(false);
+
+        JLabel nameLabel = new JLabel(doc.name);
+
+        nameLabel.setFont(new Font("Segoe UI", Font.BOLD, 14));
+
+        nameLabel.setForeground(textPrimary);
+
+        nameLabel.setAlignmentX(Component.LEFT_ALIGNMENT);
+
+        JPanel metaPanel = new JPanel(new FlowLayout(FlowLayout.LEFT, 15, 0));
+
+        metaPanel.setOpaque(false);
+
+        metaPanel.setAlignmentX(Component.LEFT_ALIGNMENT);
+
+        JLabel dateLabel = new JLabel("📅 " + dateFormat.format(doc.dateCreation));
+
+        dateLabel.setFont(new Font("Segoe UI", Font.PLAIN, 11));
+
+        dateLabel.setForeground(textSecondary);
+
+        JLabel sizeLabel = new JLabel("📦 " + formatFileSize(doc.size));
+
+        sizeLabel.setFont(new Font("Segoe UI", Font.PLAIN, 11));
+
+        sizeLabel.setForeground(textSecondary);
+
+        metaPanel.add(dateLabel);
+
+        metaPanel.add(sizeLabel);
+
+        infoPanel.add(nameLabel);
+
+        infoPanel.add(Box.createRigidArea(new Dimension(0, 5)));
+
+        infoPanel.add(metaPanel);
+
+        card.add(infoPanel, BorderLayout.CENTER);
+
+        JLabel downloadIcon = new JLabel("⬇");
+
+        downloadIcon.setFont(new Font("Segoe UI Emoji", Font.PLAIN, 20));
+
+        downloadIcon.setForeground(accentColor);
+
+        card.add(downloadIcon, BorderLayout.EAST);
+
+        card.addMouseListener(new java.awt.event.MouseAdapter() {
+
+            public void mouseClicked(java.awt.event.MouseEvent evt) {
+
+                downloadDocument(doc);
+
+            }
+
+            public void mouseEntered(java.awt.event.MouseEvent evt) {
+
+                card.repaint();
+
+            }
+
+            public void mouseExited(java.awt.event.MouseEvent evt) {
+
+                card.repaint();
+
+            }
+
+        });
+
+        return card;
+
     }
-    private int calculateProgress() {
-        if (subTasks.isEmpty())
-            return 0;
-        int completed = getCompletedSubTasks();
-        return (completed * 100) / subTasks.size();
-    }
-    private int getCompletedSubTasks() {
-        return (int) subTasks.stream().filter(st -> st.completed).count();
-    }
-    private String getFileIcon(String type) {
-        if (type.contains("pdf"))
-            return "📄";
-        if (type.contains("image"))
-            return "🖼️";
-        if (type.contains("docx") || type.contains("doc"))
-            return "📝";
-        if (type.contains("xlsx") || type.contains("xls"))
-            return "📊";
-        return "📎";
-    }
-    private void refreshUI() {
-        revalidate();
-        repaint();
-    }
-    private void addNewSubTask() {
-        String name = JOptionPane.showInputDialog(this, "Nom de la sous-tâche:", "Nouvelle sous-tâche",
-                JOptionPane.PLAIN_MESSAGE);
-        if (name != null && !name.trim().isEmpty()) {
-            subTasks.add(new SubTask(name.trim(), false));
-            JOptionPane.showMessageDialog(this, "Sous-tâche ajoutée avec succès!", "Succès",
-                    JOptionPane.INFORMATION_MESSAGE);
-            refreshUI();
-        }
-    }
-    private void addNewDocument() {
-        JFileChooser fileChooser = new JFileChooser();
-        int result = fileChooser.showOpenDialog(this);
-        if (result == JFileChooser.APPROVE_OPTION) {
-            File file = fileChooser.getSelectedFile();
-            long sizeKB = file.length() / 1024;
-            String type = getFileType(file.getName());
-            documents.add(new Document(file.getName(), (int) sizeKB, type));
-            JOptionPane.showMessageDialog(this, "Document ajouté avec succès!", "Succès",
-                    JOptionPane.INFORMATION_MESSAGE);
-            refreshUI();
-        }
-    }
-    private String getFileType(String fileName) {
-        String ext = fileName.substring(fileName.lastIndexOf(".") + 1).toLowerCase();
-        switch (ext) {
+
+    private String getDocumentIcon(String extension) {
+
+        switch (extension) {
+
             case "pdf":
-                return "application/pdf";
-            case "png":
-            case "jpg":
-            case "jpeg":
-                return "image/" + ext;
-            case "doc":
+
+                return "📄";
+
             case "docx":
-                return "application/docx";
+
+            case "doc":
+
+                return "📝";
+
+            case "xlsx":
+
+            case "xls":
+
+                return "📊";
+
+            case "fig":
+
+                return "🎨";
+
+            case "zip":
+
+            case "rar":
+
+                return "🗜";
+
             default:
-                return "application/octet-stream";
+
+                return "📎";
+
         }
+
     }
+
+    private Color getDocumentColor(String extension) {
+
+        switch (extension) {
+
+            case "pdf":
+
+                return new Color(239, 68, 68);
+
+            case "docx":
+
+            case "doc":
+
+                return new Color(59, 130, 246);
+
+            case "xlsx":
+
+            case "xls":
+
+                return new Color(34, 197, 94);
+
+            case "fig":
+
+                return new Color(139, 92, 246);
+
+            default:
+
+                return new Color(100, 100, 100);
+
+        }
+
+    }
+
+    private String formatFileSize(long size) {
+
+        if (size < 1024) {
+
+            return size + " B";
+
+        } else if (size < 1024 * 1024) {
+
+            return String.format("%.1f KB", size / 1024.0);
+
+        } else {
+
+            return String.format("%.1f MB", size / (1024.0 * 1024.0));
+
+        }
+
+    }
+
     private void downloadDocument(Document doc) {
-        JOptionPane.showMessageDialog(this, "Téléchargement de: " + doc.name, "Téléchargement",
-                JOptionPane.INFORMATION_MESSAGE);
-    }
-    private void addComment(String content) {
-        Comment newComment = new Comment(
-                "Utilisateur actuel",
-                content,
-                LocalDate.now(),
-                getRandomColor());
-        comments.add(newComment);
-        JOptionPane.showMessageDialog(this, "Commentaire ajouté!", "Succès", JOptionPane.INFORMATION_MESSAGE);
-        refreshUI();
-    }
-    private void signalBlockage() {
-        String message = JOptionPane.showInputDialog(this, "Décrivez le bloquage:", "Signaler un bloquage",
-                JOptionPane.WARNING_MESSAGE);
-        if (message != null && !message.trim().isEmpty()) {
-            JOptionPane.showMessageDialog(this, "Bloquage signalé à l'équipe!", "Succès",
-                    JOptionPane.INFORMATION_MESSAGE);
+
+        try {
+
+            JFileChooser fileChooser = new JFileChooser();
+
+            fileChooser.setSelectedFile(new File(doc.name));
+
+            fileChooser.setDialogTitle("Enregistrer le document");
+
+            int result = fileChooser.showSaveDialog(this);
+
+            if (result == JFileChooser.APPROVE_OPTION) {
+
+                File fileToSave = fileChooser.getSelectedFile();
+
+                byte[] decodedContent = Base64.getDecoder().decode(doc.content);
+
+                Files.write(Paths.get(fileToSave.getAbsolutePath()), decodedContent);
+
+                JOptionPane.showMessageDialog(this, "Document téléchargé avec succès!", "Téléchargement réussi",
+
+                        JOptionPane.INFORMATION_MESSAGE);
+
+            }
+
+        } catch (Exception e) {
+
+            JOptionPane.showMessageDialog(this, "Erreur lors du téléchargement: " + e.getMessage(), "Erreur",
+
+                    JOptionPane.ERROR_MESSAGE);
+
         }
+
     }
-    private void addExpense() {
-        JPanel panel = new JPanel(new GridLayout(2, 2, 10, 10));
-        JTextField amountField = new JTextField();
-        JTextField descField = new JTextField();
-        panel.add(new JLabel("Montant (€):"));
-        panel.add(amountField);
-        panel.add(new JLabel("Description:"));
-        panel.add(descField);
-        int result = JOptionPane.showConfirmDialog(this, panel, "Ajouter une dépense", JOptionPane.OK_CANCEL_OPTION);
-        if (result == JOptionPane.OK_OPTION) {
-            JOptionPane.showMessageDialog(this, "Dépense ajoutée avec succès!", "Succès",
-                    JOptionPane.INFORMATION_MESSAGE);
-        }
-    }
-    private Color getRandomColor() {
-        Color[] colors = {
-                new Color(150, 100, 250), // violet
-                new Color(255, 165, 0), // orange
-                new Color(0, 120, 255), // bleu
-                new Color(255, 105, 180), // rose
-        };
-        if (colorCounter == colors.length)
-            colorCounter = 0;
-        return colors[colorCounter++];
-    }
-    private static class TaskData {
-        String name;
+
+    private static class HistoryEvent {
+
+        Date date;
+
         String description;
-        LocalDate dateEcheance;
-        LocalDate dateCreation;
-        public TaskData(String name, String description, LocalDate dateEcheance, LocalDate dateCreation) {
-            this.name = name;
-            this.description = description;
-            this.dateEcheance = dateEcheance;
-            this.dateCreation = dateCreation;
-        }
-    }
-    private static class SubTask {
-        String name;
-        boolean completed;
-        public SubTask(String name, boolean completed) {
-            this.name = name;
-            this.completed = completed;
-        }
-    }
-    private static class Document {
-        String name;
-        int size;
-        String type;
-        public Document(String name, int size, String type) {
-            this.name = name;
-            this.size = size;
-            this.type = type;
-        }
-    }
-    private static class Comment {
-        String author;
-        String content;
-        LocalDate date;
-        Color color;
-        public Comment(String author, String content, LocalDate date, Color color) {
-            this.author = author;
-            this.content = content;
+
+        String firstName;
+
+        String lastName;
+
+        public HistoryEvent(Date date, String description, String firstName, String lastName) {
+
             this.date = date;
-            this.color = color;
+
+            this.description = description;
+
+            this.firstName = firstName;
+
+            this.lastName = lastName;
+
         }
+
     }
+
+    private static class Expense {
+
+        String taskName;
+
+        double amount;
+
+        public Expense(String taskName, double amount) {
+
+            this.taskName = taskName;
+
+            this.amount = amount;
+
+        }
+
+    }
+
+    private static class Document {
+
+        String name;
+
+        Date dateCreation;
+
+        long size;
+
+        String content;
+
+        public Document(String name, Date dateCreation, long size, String content) {
+
+            this.name = name;
+
+            this.dateCreation = dateCreation;
+
+            this.size = size;
+
+            this.content = content;
+
+        }
+
+    }
+
 }
 
-*** et voici les modèles qui sont dans le dossier models :
+voici le models/Document.java :
 
 package com.example.demo.models;
+
 import jakarta.persistence.*;
-import java.util.Date;
-import java.sql.Time;
+
 import java.time.LocalDate;
-import java.time.LocalTime;
+
 @Entity
-@Table(name = "Appel")
-public class Appel {
-    @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private int id;
 
-    private LocalDate dateAppel;
-    private Time heureDebut;
-    private Time heureFin;
-    private int duree;
-
-    @ManyToOne
-    @JoinColumn(name = "projetID")
-    private Projet projet;
-
-    @ManyToOne
-    @JoinColumn(name = "initiateurID")
-    private Membre initiateur;
-
-    // Getters et Setters
-    public int getId() { return id; }
-    public void setId(int id) { this.id = id; }
-    public LocalDate getDateAppel() { return dateAppel; }
-    public void setDateAppel(LocalDate dateAppel) { this.dateAppel = dateAppel; }
-    public Time getHeureDebut() { return heureDebut; }
-    public void setHeureDebut(Time heureDebut) { this.heureDebut = heureDebut; }
-    public Time getHeureFin() { return heureFin; }
-    public void setHeureFin(Time heureFin) { this.heureFin = heureFin; }
-    public int getDuree() { return duree; }
-    public void setDuree(int duree) { this.duree = duree; }
-    public Projet getProjet() { return projet; }
-    public void setProjet(Projet projet) { this.projet = projet; }
-    public Membre getInitiateur() { return initiateur; }
-    public void setInitiateur(Membre initiateur) { this.initiateur = initiateur; }
-}
-
-package com.example.demo.models;
-import jakarta.persistence.*;
-import java.time.LocalDate;
-@Entity
-@Table(name = "Blocage")
-public class Blocage {
-    @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private int id;
-
-    private String description;
-    private LocalDate dateSignalement;
-    private String statut;
-    private LocalDate dateResolution;
-
-    @ManyToOne
-    @JoinColumn(name = "tacheID")
-    private Tache tache;
-
-    // Getters et Setters
-    public int getId() { return id; }
-    public void setId(int id) { this.id = id; }
-    public String getDescription() { return description; }
-    public void setDescription(String description) { this.description = description; }
-    public LocalDate getDateSignalement() { return dateSignalement; }
-    public void setDateSignalement(LocalDate dateSignalement) { this.dateSignalement = dateSignalement; }
-    public String getStatut() { return statut; }
-    public void setStatut(String statut) { this.statut = statut; }
-    public LocalDate getDateResolution() { return dateResolution; }
-    public void setDateResolution(LocalDate dateResolution) { this.dateResolution = dateResolution; }
-    public Tache getTache() { return tache; }
-    public void setTache(Tache tache) { this.tache = tache; }
-}
-
-package com.example.demo.models;
-import java.time.LocalDate;
-import jakarta.persistence.*;
-@Entity
-@Table(name = "Commentaire")
-public class Commentaire {
-    @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private int id;
-
-    private String contenu;
-    private LocalDate dateCreation;
-
-    @ManyToOne
-    @JoinColumn(name = "tacheID")
-    private Tache tache;
-
-    @ManyToOne
-    @JoinColumn(name = "membreID")
-    private Membre membre;
-
-    // Getters et Setters
-    public int getId() { return id; }
-    public void setId(int id) { this.id = id; }
-    public String getContenu() { return contenu; }
-    public void setContenu(String contenu) { this.contenu = contenu; }
-    public LocalDate getDateCreation() { return dateCreation; }
-    public void setDateCreation(LocalDate dateCreation) { this.dateCreation = dateCreation; }
-    public Tache getTache() { return tache; }
-    public void setTache(Tache tache) { this.tache = tache; }
-    public Membre getMembre() { return membre; }
-    public void setMembre(Membre membre) { this.membre = membre; }
-}
-
-package com.example.demo.models;
-import jakarta.persistence.*;
-import java.time.LocalDate;
-@Entity
 @Table(name = "Document")
+
 public class Document {
+
     @Id
+
     @GeneratedValue(strategy = GenerationType.IDENTITY)
+
     private int id;
 
     private String nom;
+
     private String description;
+
     private LocalDate dateCreation;
+
+    @Lob
+
     private byte[] contenu;
 
     @ManyToOne
+
     @JoinColumn(name = "tacheID")
+
     private Tache tache;
 
+    public Document(){}
+
+    public Document(String nom,String description,byte[] contenu){
+
+        this.contenu=contenu;
+
+        this.nom=nom;
+
+        this.description=description;
+
+        this.dateCreation=LocalDate.now();
+
+    }
+
     // Getters et Setters
+
     public int getId() { return id; }
+
     public void setId(int id) { this.id = id; }
+
     public String getNom() { return nom; }
+
     public void setNom(String nom) { this.nom = nom; }
+
     public String getDescription() { return description; }
+
     public void setDescription(String description) { this.description = description; }
+
     public LocalDate getDateCreation() { return dateCreation; }
+
     public void setDateCreation(LocalDate dateCreation) { this.dateCreation = dateCreation; }
+
     public byte[] getContenu() { return contenu; }
+
     public void setContenu(byte[] contenu) { this.contenu = contenu; }
+
     public Tache getTache() { return tache; }
+
     public void setTache(Tache tache) { this.tache = tache; }
+
 }
 
-package com.example.demo.models;
-import jakarta.persistence.*;
-import java.util.Date;
-import java.util.List;
-@Entity
-@Table(name = "Membre")
-public class Membre {
-    @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private int id;
-
-    private String description;
-    private Date dateRejointe;
-    private String role;
-    private String type;
-
-    @ManyToOne
-    @JoinColumn(name = "userID")
-    private User user;
-
-    @ManyToOne
-    @JoinColumn(name = "projetID")
-    private Projet projet;
-
-    @OneToMany(mappedBy = "membre")
-    private List<Commentaire> commentaires;
-
-    @OneToMany(mappedBy = "membre")
-    private List<Message> messages;
-
-    @OneToMany(mappedBy = "membre")
-    private List<Notification> notifications;
-
-    @ManyToMany
-    @JoinTable(
-        name = "TacheMembre",
-        joinColumns = @JoinColumn(name = "membreID"),
-        inverseJoinColumns = @JoinColumn(name = "tacheID")
-    )
-    private List<Tache> taches;
-
-    // Getters et Setters
-    public int getId() { return id; }
-    public void setId(int id) { this.id = id; }
-    public String getDescription() { return description; }
-    public void setDescription(String description) { this.description = description; }
-    public Date getDateRejointe() { return dateRejointe; }
-    public void setDateRejointe(Date dateRejointe) { this.dateRejointe = dateRejointe; }
-    public String getRole() { return role; }
-    public void setRole(String role) { this.role = role; }
-    public String getType() { return type; }
-    public void setType(String type) { this.type = type; }
-    public User getUser() { return user; }
-    public void setUser(User user) { this.user = user; }
-    public Projet getProjet() { return projet; }
-    public void setProjet(Projet projet) { this.projet = projet; }
-    public List<Commentaire> getCommentaires() { return commentaires; }
-    public void setCommentaires(List<Commentaire> commentaires) { this.commentaires = commentaires; }
-    public List<Message> getMessages() { return messages; }
-    public void setMessages(List<Message> messages) { this.messages = messages; }
-    public List<Notification> getNotifications() { return notifications; }
-    public void setNotifications(List<Notification> notifications) { this.notifications = notifications; }
-    public List<Tache> getTaches() { return taches; }
-    public void setTaches(List<Tache> taches) { this.taches = taches; }
-}
+voici le models/Notification.java :
 
 package com.example.demo.models;
+
 import jakarta.persistence.*;
 import java.util.Date;
-@Entity
-@Table(name = "Message")
-public class Message {
-    @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private int id;
 
-    private String contenu;
-    private Date dateEnvoi;
-    private boolean estLu;
-
-    @ManyToOne
-    @JoinColumn(name = "membreID")
-    private Membre membre;
-
-    @ManyToOne
-    @JoinColumn(name = "projetID")
-    private Projet projet;
-
-    // Getters et Setters
-    public int getId() { return id; }
-    public void setId(int id) { this.id = id; }
-    public String getContenu() { return contenu; }
-    public void setContenu(String contenu) { this.contenu = contenu; }
-    public Date getDateEnvoi() { return dateEnvoi; }
-    public void setDateEnvoi(Date dateEnvoi) { this.dateEnvoi = dateEnvoi; }
-    public boolean isEstLu() { return estLu; }
-    public void setEstLu(boolean estLu) { this.estLu = estLu; }
-    public Membre getMembre() { return membre; }
-    public void setMembre(Membre membre) { this.membre = membre; }
-    public Projet getProjet() { return projet; }
-    public void setProjet(Projet projet) { this.projet = projet; }
-}
-
-package com.example.demo.models;
-import jakarta.persistence.*;
-import java.util.Date;
 @Entity
 @Table(name = "Notification")
 public class Notification {
@@ -1368,6 +1324,16 @@ public class Notification {
     @JoinColumn(name = "membreID")
     private Membre membre;
 
+    @ManyToOne
+    @JoinColumn(name = "projetID")
+    private Projet projet;
+
+    public Notification() {}
+    public Notification(String contenu ,boolean estLue) {
+        this.contenu = contenu;
+        this.dateEnvoie = new Date();
+        this.estLue = estLue;
+    }
     // Getters et Setters
     public int getId() { return id; }
     public void setId(int id) { this.id = id; }
@@ -1379,289 +1345,676 @@ public class Notification {
     public void setEstLue(boolean estLue) { this.estLue = estLue; }
     public Membre getMembre() { return membre; }
     public void setMembre(Membre membre) { this.membre = membre; }
-}
-
-package com.example.demo.models;
-import jakarta.persistence.*;
-import java.util.Date;
-import java.util.List;
-@Entity
-@Table(name = "Projet")
-public class Projet {
-    @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private int id;
-
-    private String nom;
-    private String description;
-    private Date dateDebut;
-    private Date dateFin;
-    private Date deadline;
-    private float budget;
-    private float budgetConsomme;
-    private String statut;
-    private String code;
-
-    @OneToMany(mappedBy = "projet")
-    private List<Membre> membres;
-
-    @OneToMany(mappedBy = "projet")
-    private List<Tache> taches;
-
-    @OneToMany(mappedBy = "projet")
-    private List<Rapport> rapports;
-
-    @OneToMany(mappedBy = "projet")
-    private List<Message> messages;
-
-    @OneToMany(mappedBy = "projet")
-    private List<Appel> appels;
-
-    // Getters et Setters
-    public int getId() { return id; }
-    public void setId(int id) { this.id = id; }
-    public String getNom() { return nom; }
-    public void setNom(String nom) { this.nom = nom; }
-    public String getDescription() { return description; }
-    public void setDescription(String description) { this.description = description; }
-    public Date getDateDebut() { return dateDebut; }
-    public void setDateDebut(Date dateDebut) { this.dateDebut = dateDebut; }
-    public Date getDateFin() { return dateFin; }
-    public void setDateFin(Date dateFin) { this.dateFin = dateFin; }
-    public Date getDeadline() { return deadline; }
-    public void setDeadline(Date deadline) { this.deadline = deadline; }
-    public float getBudget() { return budget; }
-    public void setBudget(float budget) { this.budget = budget; }
-    public float getBudgetConsomme() { return budgetConsomme; }
-    public void setBudgetConsomme(float budgetConsomme) { this.budgetConsomme = budgetConsomme; }
-    public String getStatut() { return statut; }
-    public void setStatut(String statut) { this.statut = statut; }
-    public String getCode() { return code; }
-    public void setCode(String code) { this.code = code; }
-    public List<Membre> getMembres() { return membres; }
-    public void setMembres(List<Membre> membres) { this.membres = membres; }
-    public List<Tache> getTaches() { return taches; }
-    public void setTaches(List<Tache> taches) { this.taches = taches; }
-    public List<Rapport> getRapports() { return rapports; }
-    public void setRapports(List<Rapport> rapports) { this.rapports = rapports; }
-    public List<Message> getMessages() { return messages; }
-    public void setMessages(List<Message> messages) { this.messages = messages; }
-    public List<Appel> getAppels() { return appels; }
-    public void setAppels(List<Appel> appels) { this.appels = appels; }
-}
-
-package com.example.demo.models;
-import jakarta.persistence.*;
-import java.util.Date;
-@Entity
-@Table(name = "Rapport")
-public class Rapport {
-    @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private int id;
-
-    private Date dateGeneration;
-    private String nom;
-
-    @ManyToOne
-    @JoinColumn(name = "projetID")
-    private Projet projet;
-
-    // Getters et Setters
-    public int getId() { return id; }
-    public void setId(int id) { this.id = id; }
-    public Date getDateGeneration() { return dateGeneration; }
-    public void setDateGeneration(Date dateGeneration) { this.dateGeneration = dateGeneration; }
-    public String getNom() { return nom; }
-    public void setNom(String nom) { this.nom = nom; }
     public Projet getProjet() { return projet; }
     public void setProjet(Projet projet) { this.projet = projet; }
 }
 
-package com.example.demo.models;
-import jakarta.persistence.*;
-import java.time.LocalDate;
-@Entity
-@Table(name = "SousTache")
-public class SousTache {
-    @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private int id;
-
-    private String titre;
-    private LocalDate dateCreation;
-    private LocalDate dateFin;
-    private boolean termine;
-
-    @ManyToOne
-    @JoinColumn(name = "tacheID")
-    private Tache tache;
-
-    // Getters et Setters
-    public int getId() { return id; }
-    public void setId(int id) { this.id = id; }
-    public String getTitre() { return titre; }
-    public void setTitre(String titre) { this.titre = titre; }
-    public LocalDate getDateCreation() { return dateCreation; }
-    public void setDateCreation(LocalDate  dateCreation) { this.dateCreation = dateCreation; }
-    public LocalDate getDateFin() { return dateFin; }
-    public void setDateFin(LocalDate  dateFin) { this.dateFin = dateFin; }
-    public boolean isTermine() { return termine; }
-    public void setTermine(boolean termine) { this.termine = termine; }
-    public Tache getTache() { return tache; }
-    public void setTache(Tache tache) { this.tache = tache; }
-}
+voici models/Tache.java :
 
 package com.example.demo.models;
+
 import jakarta.persistence.*;
+
 import java.time.LocalDate;
+
 import java.util.List;
+
 @Entity
+
 @Table(name = "Tache")
+
 public class Tache {
+
     @Id
+
     @GeneratedValue(strategy = GenerationType.IDENTITY)
+
     private int id;
 
     private String titre;
+
     private String description;
+
     private LocalDate dateLimite;
+
     private String etat;
+
     private LocalDate dateCreation;
+
     private LocalDate dateFin;
+
     private int depense;
 
     @ManyToOne
+
     @JoinColumn(name = "projetID")
+
     private Projet projet;
 
     @OneToMany(mappedBy = "tache")
+
     private List<SousTache> sousTaches;
 
     @OneToMany(mappedBy = "tache")
+
     private List<Commentaire> commentaires;
 
     @OneToMany(mappedBy = "tache")
+
     private List<Document> documents;
 
     @OneToMany(mappedBy = "tache")
+
     private List<Blocage> blocages;
 
     @ManyToMany(mappedBy = "taches")
+
     private List<Membre> membres;
 
+    public Tache() {}
+
+    public Tache(String titre,String description,LocalDate dateLimite,Projet projet,List<Membre> membres) {
+
+        this.titre=titre;
+
+        this.description=description;
+
+        this.dateLimite=dateLimite;
+
+        this.projet=projet;
+
+        this.membres=membres;
+
+        this.dateCreation=LocalDate.now();
+
+    }
+
     // Getters et Setters
+
     public int getId() { return id; }
+
     public void setId(int id) { this.id = id; }
+
     public String getTitre() { return titre; }
+
     public void setTitre(String titre) { this.titre = titre; }
+
     public String getDescription() { return description; }
+
     public void setDescription(String description) { this.description = description; }
+
     public LocalDate getDateLimite() { return dateLimite; }
+
     public void setDateLimite(LocalDate dateLimite) { this.dateLimite = dateLimite; }
+
     public String getEtat() { return etat; }
-    public void setEtat(String etat) { this.etat = etat; }
-    public int getDepense() { return depense; }
-    public void setDepense(int depense) { this.depense = depense; }
+
+    public void setEtat(String etat) { this.etat = etat; 
+
+    if(etat.equals("terminée")){
+
+        this.dateFin=LocalDate.now();
+
+    }}
+
     public LocalDate getDateCreation() { return dateCreation; }
+
     public void setDateCreation(LocalDate dateCreation) { this.dateCreation = dateCreation; }
+
     public LocalDate getDateFin() { return dateFin; }
+
     public void setDateFin(LocalDate dateFin) { this.dateFin = dateFin; }
+
+    public int getDepense() { return depense; }
+
+    public void setDepense(int depense) { this.depense = depense; }
+
     public Projet getProjet() { return projet; }
+
     public void setProjet(Projet projet) { this.projet = projet; }
+
     public List<SousTache> getSousTaches() { return sousTaches; }
+
     public void setSousTaches(List<SousTache> sousTaches) { this.sousTaches = sousTaches; }
+
     public List<Commentaire> getCommentaires() { return commentaires; }
+
     public void setCommentaires(List<Commentaire> commentaires) { this.commentaires = commentaires; }
+
     public List<Document> getDocuments() { return documents; }
+
     public void setDocuments(List<Document> documents) { this.documents = documents; }
+
     public List<Blocage> getBlocages() { return blocages; }
+
     public void setBlocages(List<Blocage> blocages) { this.blocages = blocages; }
+
     public List<Membre> getMembres() { return membres; }
+
     public void setMembres(List<Membre> membres) { this.membres = membres; }
+
 }
 
-package com.example.demo.models;
-import jakarta.persistence.*;
-@Embeddable
-public class TacheMembre {
-    @ManyToOne
-    @JoinColumn(name = "tacheID")
-    private Tache tache;
-
-    @ManyToOne
-    @JoinColumn(name = "membreID")
-    private Membre membre;
-
-    // Getters et Setters
-    public Tache getTache() { return tache; }
-    public void setTache(Tache tache) { this.tache = tache; }
-    public Membre getMembre() { return membre; }
-    public void setMembre(Membre membre) { this.membre = membre; }
-}
+voici models/Membre.java :
 
 package com.example.demo.models;
+
 import jakarta.persistence.*;
+
 import java.util.Date;
+
 import java.util.List;
+
 @Entity
-@Table(name = "User")
-public class User {
+
+@Table(name = "Membre")
+
+public class Membre {
+
     @Id
+
     @GeneratedValue(strategy = GenerationType.IDENTITY)
+
     private int id;
 
     private String nom;
-    private String prenom;
-    private String email;
-    private String password;
-    private String competance;
-    private String telephone;
-    private boolean disponibilite;
-    private Date dateCreation;
-    private String verifCode;
 
-    @OneToMany(mappedBy = "user")
-    private List<Membre> membres;
+    private String email;
+
+    private String description;
+
+    private Date dateRejointe;
+
+    private String role;
+
+    private String type;
+
+    private String password;
+
+    @ManyToOne
+
+    @JoinColumn(name = "userID")
+
+    private User user;
+
+    @ManyToOne
+
+    @JoinColumn(name = "projetID")
+
+    private Projet projet;
+
+    @OneToMany(mappedBy = "membre")
+
+    private List<Commentaire> commentaires;
+
+    @OneToMany(mappedBy = "membre")
+
+    private List<Message> messages;
+
+    @OneToMany(mappedBy = "membre")
+
+    private List<Notification> notifications;
+
+    @ManyToMany
+
+    @JoinTable(
+
+        name = "TacheMembre",
+
+        joinColumns = @JoinColumn(name = "membreID"),
+
+        inverseJoinColumns = @JoinColumn(name = "tacheID")
+
+    )
+
+    private List<Tache> taches;
+
+    public Membre(){}
+
+    public Membre(String nom,String email,String description,String role,String type,String password) {
+
+        this.nom=nom;
+
+        this.email=email;
+
+        this.description=description;
+
+        this.role=role;
+
+        this.type=type;
+
+        this.password=password;
+
+        this.dateRejointe=new Date();
+
+    }
+
+    
 
     // Getters et Setters
+
     public int getId() { return id; }
+
     public void setId(int id) { this.id = id; }
+
+    public String getDescription() { return description; }
+
+    public void setDescription(String description) { this.description = description; }
+
+    public Date getDateRejointe() { return dateRejointe; }
+
+    public void setDateRejointe(Date dateRejointe) { this.dateRejointe = dateRejointe; }
+
+    public String getRole() { return role; }
+
+    public void setRole(String role) { this.role = role; }
+
+    public String getType() { return type; }
+
+    public void setType(String type) { this.type = type; }
+
+    public User getUser() { return user; }
+
+    public void setUser(User user) { this.user = user; }
+
+    public Projet getProjet() { return projet; }
+
+    public void setProjet(Projet projet) { this.projet = projet; }
+
+    public List<Commentaire> getCommentaires() { return commentaires; }
+
+    public void setCommentaires(List<Commentaire> commentaires) { this.commentaires = commentaires; }
+
+    public List<Message> getMessages() { return messages; }
+
+    public void setMessages(List<Message> messages) { this.messages = messages; }
+
+    public List<Notification> getNotifications() { return notifications; }
+
+    public void setNotifications(List<Notification> notifications) { this.notifications = notifications; }
+
+    public List<Tache> getTaches() { return taches; }
+
+    public void setTaches(List<Tache> taches) { this.taches = taches; }
+
     public String getNom() { return nom; }
+
     public void setNom(String nom) { this.nom = nom; }
-    public String getPrenom() { return prenom; }
-    public void setPrenom(String prenom) { this.prenom = prenom; }
+
     public String getEmail() { return email; }
+
     public void setEmail(String email) { this.email = email; }
-    public String getPassword() { return password; }
-    public void setPassword(String password) { this.password = password; }
-    public String getCompetance() { return competance; }
-    public void setCompetance(String competance) { this.competance = competance; }
-    public String getTelephone() { return telephone; }
-    public void setTelephone(String telephone) { this.telephone = telephone; }
-    public boolean isDisponibilite() { return disponibilite; }
-    public void setDisponibilite(boolean disponibilite) { this.disponibilite = disponibilite; }
-    public Date getDateCreation() { return dateCreation; }
-    public void setDateCreation(Date dateCreation) { this.dateCreation = dateCreation; }
-    public String getVerifCode() { return verifCode; }
-    public void setVerifCode(String verifCode) { this.verifCode = verifCode; }
-    public List<Membre> getMembres() { return membres; }
-    public void setMembres(List<Membre> membres) { this.membres = membres; }
+
+    public void setPassword(String pass){
+
+        this.password=pass;
+
+    }
+
+    public String getPassword(){
+
+        return password;
+
+    }
+
 }
 
-*** BESOIN ***
+voici hooks/DocumentDTO.java :
 
-donne moi controllers/TacheController.java qui contient l'api "/api/tache" contenant toutes les méthodes nécessaires pour le frontend :
-- ajouter sous-tâche
-- cocher/décocher sous-tâche
-- ajouter document
-- ajouter commentaire
-- ajouter bloquage
-- ajouter dépense
-- récupérer toutes données de la tâche actuelle (titre, description, date de création, deadline, sous taches, documents, et commentaires)
+package com.example.demo.hooks;
 
-n'oublie pas de mon donner les repositories qu'on aura besoin pour ce controller (dossier repositories)
+import java.time.LocalDate;
 
-et enfin montre moi comment connecter entre le backend et frontend
+public class DocumentDTO {
 
-remarque : on peut obtenir l'id de la tâche actuelle avec Params.tacheID
+    public int id;
+
+    public String nom;
+
+    public String description;
+
+    public String contenuBase64;
+
+    public LocalDate dateCreation;
+
+    public int size;
+
+    public String type;
+
+    public DocumentDTO() {
+
+    }
+
+    public DocumentDTO(int id, String nom, String description, String contenuBase64, LocalDate dateCreation, int size,
+
+            String type) {
+
+        this.id = id;
+
+        this.nom = nom;
+
+        this.description = description;
+
+        this.contenuBase64 = contenuBase64;
+
+        this.dateCreation = dateCreation;
+
+        this.size = size;
+
+        this.type = type;
+
+    }
+
+    public static String getFileType(String fileName) {
+
+        String ext = fileName.substring(fileName.lastIndexOf(".") + 1).toLowerCase();
+
+        switch (ext) {
+
+            case "pdf":
+
+                return "application/pdf";
+
+            case "png":
+
+            case "jpg":
+
+            case "jpeg":
+
+                return "image/" + ext;
+
+            case "doc":
+
+            case "docx":
+
+                return "application/msword";
+
+            default:
+
+                return "application/octet-stream";
+
+        }
+
+    }
+
+}
+
+voici hooks/TacheDTO.java :
+
+package com.example.demo.hooks;
+
+import java.time.LocalDate;
+
+public class TacheDTO {
+
+    public int id;
+
+    public String titre;
+
+    public String description;
+
+    public LocalDate dateLimite;
+
+    public String etat;
+
+    public LocalDate dateCreation;
+
+    public LocalDate dateFin;
+
+    public TacheDTO() {}
+
+    public TacheDTO(int id, String titre, String description, LocalDate dateLimite, String etat,
+
+            LocalDate dateCreation, LocalDate dateFin) {
+
+        this.id = id;
+
+        this.titre = titre;
+
+        this.description = description;
+
+        this.dateLimite = dateLimite;
+
+        this.etat = etat;
+
+        this.dateCreation = dateCreation;
+
+        this.dateFin = dateFin;
+
+    }
+
+}
+
+voici hooks/NotificationDTO.java :
+
+package com.example.demo.hooks;
+
+import java.util.Date;
+
+public class NotificationDTO {
+
+    public int id;
+
+    public String contenu;
+
+    public Date dateEnvoie;
+
+    public boolean estLue;
+
+    public NotificationDTO(int id,String contenu ,Date dateE,boolean estLue) {
+
+        this.contenu = contenu;
+
+        this.dateEnvoie = dateE;
+
+        this.estLue = estLue;
+
+        this.id=id;
+
+    }
+
+}
+
+voici hooks/MembreDTO.java :
+
+package com.example.demo.hooks;
+
+import java.util.Date;
+
+public class MembreDTO {
+
+    public int id;
+
+    public String nom;
+
+    public String email;
+
+    public String description;
+
+    public Date dateRejointe;
+
+    public String role;
+
+    public String type;
+
+    public String password;
+
+   public MembreDTO(){}
+
+     public MembreDTO(String nom,String email,String description,String role,String type,String password,Date dateR) {
+
+        this.nom=nom;
+
+        this.email=email;
+
+        this.description=description;
+
+        this.role=role;
+
+        this.type=type;
+
+        this.password=password;
+
+        this.dateRejointe=dateR;
+
+    }
+
+    
+
+}
+
+et finalement voici Queries.java :
+
+package com.example.demo;
+
+import java.net.URI;
+
+import java.net.http.HttpClient;
+
+import java.net.http.HttpRequest;
+
+import java.net.http.HttpResponse;
+
+import java.net.http.HttpRequest.BodyPublishers;
+
+import java.net.http.HttpResponse.BodyHandlers;
+
+import java.util.Map;
+
+import com.fasterxml.jackson.databind.ObjectMapper;
+
+import com.fasterxml.jackson.core.type.TypeReference;
+
+import java.util.concurrent.CompletableFuture;
+
+public class Queries {
+
+    private static final HttpClient httpClient = HttpClient.newHttpClient();
+
+    private static final ObjectMapper objectMapper = new ObjectMapper();
+
+    private static final String BASE_URL = "http://localhost:8080";
+
+    public static CompletableFuture<Map<String, Object>> get(String endpoint) {
+
+        HttpRequest request = HttpRequest.newBuilder()
+
+                .uri(URI.create(BASE_URL + endpoint))
+
+                .GET()
+
+                .build();
+
+        return sendRequest(request);
+
+    }
+
+    public static CompletableFuture<Map<String, Object>> post(String endpoint, Map<String, ?> body) {
+
+        String requestBody = mapToJson(body);
+
+        HttpRequest request = HttpRequest.newBuilder()
+
+                .uri(URI.create(BASE_URL + endpoint))
+
+                .header("Content-Type", "application/json")
+
+                .POST(BodyPublishers.ofString(requestBody))
+
+                .build();
+
+        return sendRequest(request);
+
+    }
+
+    public static CompletableFuture<Map<String, Object>> put(String endpoint, Map<String, ?> body) {
+
+        String requestBody = mapToJson(body);
+
+        HttpRequest request = HttpRequest.newBuilder()
+
+                .uri(URI.create(BASE_URL + endpoint))
+
+                .header("Content-Type", "application/json")
+
+                .PUT(BodyPublishers.ofString(requestBody))
+
+                .build();
+
+        return sendRequest(request);
+
+    }
+
+    public static CompletableFuture<Map<String, Object>> delete(String endpoint) {
+
+        HttpRequest request = HttpRequest.newBuilder()
+
+                .uri(URI.create(BASE_URL + endpoint))
+
+                .DELETE()
+
+                .build();
+
+        return sendRequest(request);
+
+    }
+
+    private static CompletableFuture<Map<String, Object>> sendRequest(HttpRequest request) {
+
+        return httpClient.sendAsync(request, BodyHandlers.ofString())
+
+                .thenApply(HttpResponse::body)
+
+                .thenApply(Queries::parseResponse)
+
+                .exceptionally(e -> {
+
+                    System.err.println("Erreur lors de la requête: " + e.getMessage());
+
+                    return Map.of("error", e.getMessage());
+
+                });
+
+    }
+
+    private static String mapToJson(Map<String, ?> map) {
+
+        try {
+
+            return objectMapper.writeValueAsString(map);
+
+        } catch (Exception e) {
+
+            throw new RuntimeException("Erreur lors de la conversion de la Map en JSON", e);
+
+        }
+
+    }
+
+    private static Map<String, Object> parseResponse(String json) {
+
+        try {
+
+            return objectMapper.readValue(json, new TypeReference<Map<String, Object>>() {});
+
+        } catch (Exception e) {
+
+            throw new RuntimeException("Erreur lors du parsing de la réponse JSON", e);
+
+        }
+
+    }
+
+}
+
+donne moi controllers/GestionController.java qui permet de créer l'api "/api/gestion/" avec les méthodes nécessaires pour la GUI Gestion.java :
+
+- l'historique c'est tout simplement l'ensemble des notifications d'un projet
+
+- les éléments de la facturation sont les dépenses de chaque tâche d'un projet (si depense = 0 on n'affiche pas cette tâche)
+
+- Les documents ce sont l'ensemble des document attachés à toutes les tâches d'un projet
+
+on peut avoir l'id du projet actuel avec Params.projetID
+
+puis donne moi comment lier le frontend avec ce controller en utilisant les méthodes statiques de la classe Queries

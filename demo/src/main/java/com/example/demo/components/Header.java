@@ -15,7 +15,7 @@ public class Header extends JPanel {
     private int theme;
     private Color bgColor, cardBgColor, textPrimary, textSecondary, accentColor, hoverColor, borderColor, shadowColor;
     private JButton themeToggleBtn;
-    private String selectedElement = "Dashboard";
+    private String selectedElement = Params.headerSelectedElement;
 
     public Header(List<String> elements, Consumer<String> onClick) {
         this.theme = Params.theme;
@@ -119,6 +119,7 @@ public class Header extends JPanel {
         });
 
         btn.addActionListener(e -> {
+            Params.headerSelectedElement = text;
             selectedElement = text;
             onClick.accept(text);
             Container parent = btn.getParent();

@@ -12,6 +12,9 @@ public class Params {
     public static int membreID = 1;
     public static int tacheID = 1;
 
+    public static String headerSelectedElement = "Dashboard";
+    public static String sidebarSelectedElement = "Principale";
+
     public static void toggleTheme(Component comp) {
         Params.theme = Params.theme == 0 ? 1 : 0;
         JFrame currentFrame = (JFrame) SwingUtilities.getWindowAncestor(comp);

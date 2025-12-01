@@ -31,6 +31,10 @@ CREATE TABLE Projet (
 CREATE TABLE Membre (
     id INT PRIMARY KEY AUTO_INCREMENT,
     description VARCHAR(255),
+    nom VARCHAR(100),
+    prenom VARCHAR(100),
+    email VARCHAR(255),
+    telephone VARCHAR(50),
     dateRejointe DATE,
     role VARCHAR(100),
     type VARCHAR(100),
@@ -125,14 +129,16 @@ CREATE TABLE Appel (
     FOREIGN KEY (projetID) REFERENCES Projet(id),
     FOREIGN KEY (initiateurID) REFERENCES Membre(id)
 );
--- TABLE NOTIFICATION (CORRIGÉE)
+-- TABLE NOTIFICATION
 CREATE TABLE Notification (
     id INT PRIMARY KEY AUTO_INCREMENT,
     contenu VARCHAR(255),
     dateEnvoie DATE,
     estLue BOOLEAN,
     membreID INT,
-    FOREIGN KEY (membreID) REFERENCES Membre(id)
+    projetID INT,
+    FOREIGN KEY (membreID) REFERENCES Membre(id),
+    FOREIGN KEY (projetID) REFERENCES Projet(id)
 );
 -- TABLE DE LIAISON TACHE-MEMBRE
 CREATE TABLE TacheMembre (
