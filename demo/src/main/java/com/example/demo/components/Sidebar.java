@@ -44,6 +44,9 @@ public class Sidebar extends JPanel {
         this.userID = SessionManager.getInstance().getUserId();
         this.currentUserFirstName = SessionManager.getInstance().getNom();
         this.currentUserLastName = SessionManager.getInstance().getPrenom();
+        System.out.println("--------------------------------");
+        System.out.println(SessionManager.getInstance().getToken());
+        System.out.println("--------------------------------");
 
         initializeProjects();
         setLayout(new BorderLayout());
@@ -75,46 +78,6 @@ public class Sidebar extends JPanel {
         container.add(createProfileSection(), BorderLayout.SOUTH);
 
         add(container, BorderLayout.CENTER);
-    }
-
-    private void loadUserInfo() {
-        String token = com.example.demo.TokenManager.loadToken();
-        if (token == null || token.isEmpty()) {
-            System.out.println("⚠ Aucun token trouvé pour charger les infos utilisateur");
-            currentUserFirstName = "Invité";
-            currentUserLastName = "";
-            return;
-        }
-
-        try {
-            Queries.post("/user/info", Map.of("token", token))
-                    .thenAccept(response -> {
-                        SwingUtilities.invokeLater(() -> {
-                            if (response.containsKey("success")) {
-                                currentUserFirstName = (String) response.getOrDefault("prenom", "User");
-                                currentUserLastName = (String) response.getOrDefault("nom", "");
-                                System.out.println(
-                                        "Utilisateur chargé: " + currentUserFirstName + " " + currentUserLastName);
-                            } else {
-                                System.out.println("Erreur lors du chargement des infos utilisateur");
-                                currentUserFirstName = "Utilisateur";
-                                currentUserLastName = "";
-                            }
-                        });
-                    })
-                    .exceptionally(e -> {
-                        System.err.println("✗ Erreur lors du chargement des infos utilisateur: " + e.getMessage());
-                        SwingUtilities.invokeLater(() -> {
-                            currentUserFirstName = "Utilisateur";
-                            currentUserLastName = "";
-                        });
-                        return null;
-                    });
-        } catch (Exception e) {
-            System.err.println("✗ Erreur inattendue: " + e.getMessage());
-            currentUserFirstName = "Utilisateur";
-            currentUserLastName = "";
-        }
     }
 
     private void initializeColors() {
