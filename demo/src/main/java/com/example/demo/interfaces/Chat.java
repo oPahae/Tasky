@@ -2,6 +2,13 @@ package com.example.demo.interfaces;
 
 import com.example.demo.Params;
 import com.example.demo.components.Scrollbar;
+import com.example.demo.hooks.MessageDTO;
+
+import java.net.HttpURLConnection;
+import java.net.URL;
+import java.io.OutputStream;
+import com.google.gson.Gson; // si tu n’as pas Gson, tu peux l’ajouter via Maven
+
 
 import javax.swing.*;
 import javax.swing.border.*;
@@ -390,18 +397,52 @@ public class Chat extends JPanel {
         return button;
     }
 
-    private void sendMessage() {
-        String text = inputField.getText().trim();
-        if (!text.isEmpty()) {
-            ChatMessage newMessage = new ChatMessage(
-                    myId, "Vous", "", "NORMAL",
-                    text,
-                    new Date());
+   private void sendMessage() {
+    String text = inputField.getText().trim();
+    if (!text.isEmpty()) {
+        // Création du message local pour l'interface
+        ChatMessage newMessage = new ChatMessage(
+                myId, "Vous", "", "NORMAL",
+                text,
+                new Date());
+        addMessage(newMessage);
+        inputField.setText("");
 
-            addMessage(newMessage);
-            inputField.setText("");
-        }
+        // Création du DTO pour envoyer au backend
+        MessageDTO dto = new MessageDTO();
+        dto.contenu = text;
+        dto.dateEnvoi = new Date();
+        dto.estLu = false;
+        dto.membreId = myId;
+        dto.projetId = 1; // <-- remplace par l'ID réel de ton projet
+
+        // Envoi HTTP dans un thread séparé
+        new Thread(() -> {
+            try {
+                URL url = new URL("http://localhost:8080/messages");
+                HttpURLConnection conn = (HttpURLConnection) url.openConnection();
+                conn.setRequestMethod("POST");
+                conn.setRequestProperty("Content-Type", "application/json");
+                conn.setDoOutput(true);
+
+                String json = new Gson().toJson(dto);
+                OutputStream os = conn.getOutputStream();
+                os.write(json.getBytes());
+                os.flush();
+                os.close();
+
+                int responseCode = conn.getResponseCode();
+                if(responseCode != 200) {
+                    System.out.println("Erreur en envoyant le message: " + responseCode);
+                }
+
+                conn.disconnect();
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
+        }).start();
     }
+}
 
     private void addMessage(ChatMessage message) {
         messages.add(message);
