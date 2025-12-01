@@ -23,6 +23,7 @@ import javax.swing.plaf.basic.BasicComboBoxUI;
 
 import com.example.demo.Params;
 import com.example.demo.Queries;
+import com.example.demo.SessionManager;
 
 public class Sidebar extends JPanel {
     private int theme;
@@ -35,18 +36,14 @@ public class Sidebar extends JPanel {
     private Consumer<String> onClick;
     private int userID;
 
-    public Sidebar(List<String> elements, Consumer<String> onClick, int userID, String firstName, String lastName) {
+    public Sidebar(List<String> elements, Consumer<String> onClick) {
         this.theme = Params.theme;
         this.onClick = onClick;
         initializeColors();
 
-        if (userID > 0 && firstName != null && !firstName.isEmpty()) {
-            this.userID = userID;
-            this.currentUserFirstName = firstName;
-            this.currentUserLastName = lastName != null ? lastName : "";
-        } else {
-            loadUserInfo();
-        }
+        this.userID = SessionManager.getInstance().getUserId();
+        this.currentUserFirstName = SessionManager.getInstance().getNom();
+        this.currentUserLastName = SessionManager.getInstance().getPrenom();
 
         initializeProjects();
         setLayout(new BorderLayout());
