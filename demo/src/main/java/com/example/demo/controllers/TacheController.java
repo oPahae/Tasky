@@ -55,7 +55,8 @@ public class TacheController {
                                 tache.getDateLimite(),
                                 tache.getEtat(),
                                 tache.getDateCreation(),
-                                tache.getDateFin());
+                                tache.getDateFin(),
+                                0);
 
                 List<SousTacheDTO> sousTachesDTO = sousTaches.stream()
                                 .map(st -> new SousTacheDTO(st.getId(), st.getTitre(), st.isTermine()))
@@ -160,7 +161,8 @@ public class TacheController {
         public ResponseEntity<Commentaire> addCommentaire(@PathVariable int id,
                         @RequestBody Map<String, String> payload) {
                 Tache tache = tacheRepository.findById(id).orElseThrow(() -> new RuntimeException("Tâche non trouvée"));
-                Membre membre = membreRepository.findById(Integer.parseInt(payload.get("membreID"))).orElseThrow(() -> new RuntimeException("Membre non trouvée"));
+                Membre membre = membreRepository.findById(Integer.parseInt(payload.get("membreID")))
+                                .orElseThrow(() -> new RuntimeException("Membre non trouvée"));
                 Commentaire commentaire = new Commentaire();
                 commentaire.setMembre(membre);
                 commentaire.setContenu(payload.get("contenu"));

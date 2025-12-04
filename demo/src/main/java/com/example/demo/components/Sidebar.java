@@ -40,6 +40,7 @@ public class Sidebar extends JPanel {
         this.theme = Params.theme;
         this.onClick = onClick;
         initializeColors();
+        // Params.show();
 
         this.userID = SessionManager.getInstance().getUserId();
         this.currentUserFirstName = SessionManager.getInstance().getNom();
@@ -113,7 +114,7 @@ public class Sidebar extends JPanel {
             for (Map<String, Object> project : projects) {
                 int id = (int) project.get("id");
                 String nom = (String) project.get("nom");
-                projectSelector.addItem(nom);
+                projectSelector.addItem("[" + id + "] " + nom);
             }
         }
     }
@@ -544,8 +545,6 @@ public class Sidebar extends JPanel {
         card.add(userInfo, BorderLayout.CENTER);
 
         card.addMouseListener(new MouseAdapter() {
-            private Color originalBg = cardBgColor;
-
             @Override
             public void mouseEntered(MouseEvent e) {
                 card.repaint();
@@ -554,6 +553,13 @@ public class Sidebar extends JPanel {
             @Override
             public void mouseExited(MouseEvent e) {
                 card.repaint();
+            }
+
+            @Override
+            public void mouseClicked(MouseEvent e) {
+                if (onClick != null) {
+                    onClick.accept("Profile");
+                }
             }
         });
 

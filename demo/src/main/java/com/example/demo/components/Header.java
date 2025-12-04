@@ -55,6 +55,7 @@ public class Header extends JPanel {
         CompletableFuture<Map<String, Object>> future = Queries.get(
                 "/api/notif/membre/" + Params.membreID + "/projet/" + Params.projetID);
         future.thenAccept(response -> {
+            // System.out.println("/api/notif/membre/" + Params.membreID + "/projet/" + Params.projetID);
             if (response.containsKey("error")) {
                 System.err.println("Erreur lors de la récupération des notifications: " + response.get("error"));
                 return;
@@ -420,7 +421,7 @@ public class Header extends JPanel {
                 int size = 30;
                 int x = (getWidth() - size) / 2;
                 int y = (getHeight() - size) / 2;
-                Image image = theme == 0 ? sunImage : moonImage;
+                Image image = theme == 0 ? moonImage : sunImage;
                 if (image != null) {
                     g2.drawImage(image, x, y, size, size, null);
                 }

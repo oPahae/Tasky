@@ -55,6 +55,7 @@ public class Main extends JFrame {
         pageFactories.put("Rejoindre un projet", RejoindreProjet::new);
         pageFactories.put("Gestion", Gestion::new);
         pageFactories.put("Ajouter une Tâche", () -> new AjouterTache(this::navigateTo));
+        pageFactories.put("Profile", Profile::new);
 
         // Initialiser centerPanel AVANT d'appeler refreshSidebarAndHeader()
         centerPanel = new JPanel(new BorderLayout());
@@ -88,7 +89,7 @@ public class Main extends JFrame {
     private void navigateTo(String pageName) {
         Supplier<JPanel> factory = pageFactories.get(pageName);
         if (factory == null) {
-            System.err.println("Page inconnue : " + pageName);
+            System.out.println("Page inconnue : " + pageName);
             return;
         }
         refreshSidebarAndHeader();

@@ -11,6 +11,7 @@ public class Membre {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private int id;
     private String nom;
+    private String prenom;
     private String email;
     private String description;
     private Date dateRejointe;
@@ -77,6 +78,8 @@ public class Membre {
     public List<Tache> getTaches() { return taches; }
     public void setTaches(List<Tache> taches) { this.taches = taches; }
     public String getNom() { return nom; }
+    public void setPrenom(String prenom) { this.prenom = prenom; }
+    public String getPrenom() { return prenom; }
     public void setNom(String nom) { this.nom = nom; }
     public String getEmail() { return email; }
     public void setEmail(String email) { this.email = email; }

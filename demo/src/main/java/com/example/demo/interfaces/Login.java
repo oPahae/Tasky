@@ -503,14 +503,23 @@ public class Login extends JPanel {
 
                         showMessage(message, "Connexion réussie !", successColor);
 
-                        Timer timer = new Timer(1000, evt -> {
+                        Timer timer1 = new Timer(500, evt -> {
                             SwingUtilities.invokeLater(() -> {
                                 Main mainGUI = new Main();
                                 mainGUI.setVisible(true);
                             });
                         });
-                        timer.setRepeats(false);
-                        timer.start();
+                        Timer timer2 = new Timer(1500, evt -> {
+                            SwingUtilities.invokeLater(() -> {
+                                JFrame parentFrame = (JFrame) SwingUtilities.getWindowAncestor(Login.this);
+                                if (parentFrame != null)
+                                    parentFrame.dispose();
+                            });
+                        });
+                        timer1.setRepeats(false);
+                        timer1.start();
+                        timer2.setRepeats(false);
+                        timer2.start();
                     } else {
                         showMessage(message, "✗ " + extractErrorMessage(response), errorColor);
                         btnLogin.setEnabled(true);
