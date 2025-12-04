@@ -28,6 +28,11 @@ public class Profile extends JPanel {
     public Profile() {
         this.theme = Params.theme;
         this.userID = SessionManager.getInstance().getUserId();
+        
+        System.out.println("=== PROFILE INITIALIZATION ===");
+        System.out.println("User ID: " + userID);
+        System.out.println("Theme: " + theme);
+        
         initializeColors();
 
         setLayout(new BorderLayout());
@@ -298,11 +303,9 @@ public class Profile extends JPanel {
                 Graphics2D g2 = (Graphics2D) g.create();
                 g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
 
-                // Fond
                 g2.setColor(inputBg);
                 g2.fillRoundRect(0, 0, getWidth(), getHeight(), 16, 16);
 
-                // Bordure avec effet glow au focus
                 if (focused) {
                     g2.setColor(new Color(accentColor.getRed(), accentColor.getGreen(), accentColor.getBlue(), 30));
                     g2.setStroke(new BasicStroke(6f));
@@ -490,26 +493,51 @@ public class Profile extends JPanel {
     }
 
     private void loadUserData() {
+        System.out.println("=== LOADING USER DATA ===");
+        System.out.println("Requesting: /api/profile/" + userID);
+        
         Queries.get("/api/profile/" + userID).thenAccept(response -> {
             SwingUtilities.invokeLater(() -> {
-                if (!response.containsKey("error")) {
-                    nomField.setText((String) response.getOrDefault("nom", ""));
-                    prenomField.setText((String) response.getOrDefault("prenom", ""));
-                    emailField.setText((String) response.getOrDefault("email", ""));
-                    competanceField.setText((String) response.getOrDefault("competance", ""));
-                    telephoneField.setText((String) response.getOrDefault("telephone", ""));
+                System.out.println("Response received: " + response);
+                
+                if (response.containsKey("success") && Boolean.TRUE.equals(response.get("success"))) {
+                    // Conversion sécurisée des valeurs
+                    nomField.setText(String.valueOf(response.getOrDefault("nom", "")));
+                    prenomField.setText(String.valueOf(response.getOrDefault("prenom", "")));
+                    emailField.setText(String.valueOf(response.getOrDefault("email", "")));
+                    competanceField.setText(String.valueOf(response.getOrDefault("competance", "")));
+                    telephoneField.setText(String.valueOf(response.getOrDefault("telephone", "")));
+                    
+                    System.out.println("✓ Données chargées avec succès");
+                } else if (response.containsKey("error")) {
+                    String errorMsg = String.valueOf(response.get("error"));
+                    System.err.println("✗ Erreur: " + errorMsg);
+                    showMessage(profileMessage, "Erreur: " + errorMsg, danger);
                 } else {
-                    showMessage(profileMessage, "Erreur lors du chargement du profil", danger);
+                    System.err.println("✗ Réponse invalide du serveur");
+                    showMessage(profileMessage, "Erreur de chargement du profil", danger);
                 }
             });
+        }).exceptionally(ex -> {
+            SwingUtilities.invokeLater(() -> {
+                System.err.println("✗ Exception: " + ex.getMessage());
+                ex.printStackTrace();
+                showMessage(profileMessage, "Erreur de connexion au serveur", danger);
+            });
+            return null;
         });
     }
 
     private void handleUpdateProfile() {
+        System.out.println("=== UPDATE PROFILE ===");
+        
+        // Validation email
         if (!emailField.getText().matches("^[A-Za-z0-9+_.-]+@[A-Za-z0-9.-]+\\.[A-Za-z]{2,6}$")) {
             showMessage(profileMessage, "Email incorrect", danger);
             return;
         }
+        
+        // Validation champs obligatoires
         if (nomField.getText().trim().isEmpty() || prenomField.getText().trim().isEmpty()) {
             showMessage(profileMessage, "Veuillez remplir tous les champs obligatoires", danger);
             return;
@@ -518,32 +546,65 @@ public class Profile extends JPanel {
         btnUpdateProfile.setEnabled(false);
         btnUpdateProfile.setText("Mise à jour...");
 
-        Map<String, String> body = new HashMap<>();
-        body.put("nom", nomField.getText());
-        body.put("prenom", prenomField.getText());
-        body.put("email", emailField.getText());
-        body.put("competance", competanceField.getText());
-        body.put("telephone", telephoneField.getText());
+        Map<String, Object> body = new HashMap<>();
+        body.put("nom", nomField.getText().trim());
+        body.put("prenom", prenomField.getText().trim());
+        body.put("email", emailField.getText().trim());
+        body.put("competance", competanceField.getText().trim());
+        body.put("telephone", telephoneField.getText().trim());
+
+        System.out.println("Sending update to: /api/profile/modifier/" + userID);
+        System.out.println("Data: " + body);
 
         Queries.put("/api/profile/modifier/" + userID, body).thenAccept(response -> {
             SwingUtilities.invokeLater(() -> {
                 btnUpdateProfile.setEnabled(true);
                 btnUpdateProfile.setText("Mettre à jour le profil");
 
-                if (!response.containsKey("error")) {
+                System.out.println("Update response: " + response);
+
+                if (response.containsKey("success") && Boolean.TRUE.equals(response.get("success"))) {
                     showMessage(profileMessage, "Profil mis à jour avec succès !", sucess);
+                    
+                    // Mettre à jour le SessionManager
+                    SessionManager.getInstance().setUserInfo(
+                        prenomField.getText().trim(),
+                        nomField.getText().trim(),
+                        emailField.getText().trim()
+                    );
+                    
+                    System.out.println("✓ Profil mis à jour");
+                } else if (response.containsKey("error")) {
+                    String errorMsg = String.valueOf(response.get("error"));
+                    System.err.println("✗ Erreur: " + errorMsg);
+                    showMessage(profileMessage, "Erreur: " + errorMsg, danger);
                 } else {
+                    System.err.println("✗ Réponse invalide");
                     showMessage(profileMessage, "Erreur lors de la mise à jour", danger);
                 }
             });
+        }).exceptionally(ex -> {
+            SwingUtilities.invokeLater(() -> {
+                btnUpdateProfile.setEnabled(true);
+                btnUpdateProfile.setText("Mettre à jour le profil");
+                System.err.println("✗ Exception: " + ex.getMessage());
+                ex.printStackTrace();
+                showMessage(profileMessage, "Erreur de connexion", danger);
+            });
+            return null;
         });
     }
 
+    // Continuation de la méthode handleUpdatePassword() et handleDeleteAccount()
+
     private void handleUpdatePassword() {
+        System.out.println("=== UPDATE PASSWORD ===");
+        
         String currentPwd = new String(currentPasswordField.getPassword());
         String newPwd = new String(newPasswordField.getPassword());
         String confirmPwd = new String(confirmPasswordField.getPassword());
 
+        // Validations
         if (currentPwd.isEmpty() || newPwd.isEmpty() || confirmPwd.isEmpty()) {
             showMessage(passwordMessage, "Veuillez remplir tous les champs", danger);
             return;
@@ -562,28 +623,49 @@ public class Profile extends JPanel {
         btnUpdatePassword.setEnabled(false);
         btnUpdatePassword.setText("Modification...");
 
-        Map<String, String> body = new HashMap<>();
+        Map<String, Object> body = new HashMap<>();
         body.put("currentPassword", currentPwd);
         body.put("newPassword", newPwd);
+
+        System.out.println("Sending password update to: /api/profile/password/" + userID);
 
         Queries.put("/api/profile/password/" + userID, body).thenAccept(response -> {
             SwingUtilities.invokeLater(() -> {
                 btnUpdatePassword.setEnabled(true);
                 btnUpdatePassword.setText("Modifier le mot de passe");
 
-                if (!response.containsKey("error")) {
+                System.out.println("Password update response: " + response);
+
+                if (response.containsKey("success") && Boolean.TRUE.equals(response.get("success"))) {
                     showMessage(passwordMessage, "Mot de passe modifié avec succès !", sucess);
                     currentPasswordField.setText("");
                     newPasswordField.setText("");
                     confirmPasswordField.setText("");
+                    System.out.println("✓ Mot de passe modifié");
+                } else if (response.containsKey("error")) {
+                    String errorMsg = String.valueOf(response.get("error"));
+                    System.err.println("✗ Erreur: " + errorMsg);
+                    showMessage(passwordMessage, "Erreur: " + errorMsg, danger);
                 } else {
-                    showMessage(passwordMessage, "Erreur: " + response.get("error"), danger);
+                    System.err.println("✗ Réponse invalide");
+                    showMessage(passwordMessage, "Erreur lors de la modification", danger);
                 }
             });
+        }).exceptionally(ex -> {
+            SwingUtilities.invokeLater(() -> {
+                btnUpdatePassword.setEnabled(true);
+                btnUpdatePassword.setText("Modifier le mot de passe");
+                System.err.println("✗ Exception: " + ex.getMessage());
+                ex.printStackTrace();
+                showMessage(passwordMessage, "Erreur de connexion", danger);
+            });
+            return null;
         });
     }
 
     private void handleDeleteAccount() {
+        System.out.println("=== DELETE ACCOUNT ===");
+        
         int confirm = JOptionPane.showConfirmDialog(
                 this,
                 "Êtes-vous sûr de vouloir supprimer votre compte ?\nCette action est irréversible.",
@@ -592,28 +674,61 @@ public class Profile extends JPanel {
                 JOptionPane.WARNING_MESSAGE);
 
         if (confirm != JOptionPane.YES_OPTION) {
+            System.out.println("Suppression annulée par l'utilisateur");
             return;
         }
 
         btnDeleteAccount.setEnabled(false);
         btnDeleteAccount.setText("Suppression...");
 
+        System.out.println("Sending delete request to: /api/profile/delete/" + userID);
+
         Queries.delete("/api/profile/delete/" + userID).thenAccept(response -> {
             SwingUtilities.invokeLater(() -> {
-                if (!response.containsKey("error")) {
+                System.out.println("Delete response: " + response);
+                
+                if (response.containsKey("success") && Boolean.TRUE.equals(response.get("success"))) {
                     showMessage(deleteMessage, "Compte supprimé avec succès", sucess);
-                    Timer timer = new Timer(1500, evt -> {
+                    System.out.println("✓ Compte supprimé");
+                    
+                    // Déconnexion et redirection après 2 secondes
+                    Timer timer = new Timer(2000, evt -> {
+                        SessionManager.getInstance().logout();
+                        System.out.println("Session fermée, redirection vers login...");
+                        
                         // Rediriger vers la page de connexion
-                        // parent.switchCard("login");
+                        // Si vous avez une méthode pour changer de page, utilisez-la ici
+                        // Exemple: parent.switchCard("login");
+                        // Ou fermer la fenêtre actuelle
+                        Window window = SwingUtilities.getWindowAncestor(Profile.this);
+                        if (window != null) {
+                            window.dispose();
+                        }
                     });
                     timer.setRepeats(false);
                     timer.start();
+                } else if (response.containsKey("error")) {
+                    btnDeleteAccount.setEnabled(true);
+                    btnDeleteAccount.setText("Supprimer mon compte");
+                    String errorMsg = String.valueOf(response.get("error"));
+                    System.err.println("✗ Erreur: " + errorMsg);
+                    showMessage(deleteMessage, "Erreur: " + errorMsg, danger);
                 } else {
                     btnDeleteAccount.setEnabled(true);
                     btnDeleteAccount.setText("Supprimer mon compte");
+                    System.err.println("✗ Réponse invalide");
                     showMessage(deleteMessage, "Erreur lors de la suppression", danger);
                 }
             });
+        }).exceptionally(ex -> {
+            SwingUtilities.invokeLater(() -> {
+                btnDeleteAccount.setEnabled(true);
+                btnDeleteAccount.setText("Supprimer mon compte");
+                System.err.println("✗ Exception: " + ex.getMessage());
+                ex.printStackTrace();
+                showMessage(deleteMessage, "Erreur de connexion", danger);
+            });
+            return null;
         });
     }
 }
