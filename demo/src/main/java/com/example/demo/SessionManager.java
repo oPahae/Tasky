@@ -12,6 +12,7 @@ public class SessionManager {
 
     private SessionManager() {}
 
+    //sert à obtenir l'instance unique de SessionManager
     public static SessionManager getInstance() {
         if (instance == null) {
             instance = new SessionManager();

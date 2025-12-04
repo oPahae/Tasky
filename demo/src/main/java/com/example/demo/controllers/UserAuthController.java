@@ -18,7 +18,7 @@ public class UserAuthController {
     @Autowired
     private UserRepository userRepository;
 
-    // Stockage des tokens actifs (en mémoire)
+    // Stockage des sessions de cle  et id utilisateur
     private static final ConcurrentHashMap<String, Integer> activeTokens = new ConcurrentHashMap<>();
 
     // ---------------------- REGISTER -------------------------
@@ -77,6 +77,7 @@ public class UserAuthController {
 
             // Générer un token unique
             String token = UUID.randomUUID().toString();
+            // Stocker le token avec l'ID utilisateur
             activeTokens.put(token, user.getId());
             
             System.out.println("Token généré: " + token);
@@ -84,7 +85,7 @@ public class UserAuthController {
             System.out.println("Tokens actifs: " + activeTokens.size());
             System.out.println("=== CONNEXION REUSSIE ===");
 
-            // ⭐ MODIFICATION : Retourner TOUTES les informations utilisateur
+            // MRetourner TOUTES les informations utilisateur
             return "{"
                 + "\"success\": true, "
                 + "\"token\": \"" + token + "\", "
@@ -114,12 +115,12 @@ public class UserAuthController {
             System.out.println("Tokens actifs: " + activeTokens.size());
             
             if (token == null || token.isEmpty()) {
-                System.out.println("✗ Token vide");
+                System.out.println(" Token vide");
                 return "{\"error\": \"Token manquant\"}";
             }
             
             if (!activeTokens.containsKey(token)) {
-                System.out.println("✗ Token invalide ou expiré");
+                System.out.println(" Token invalide ou expiré");
                 return "{\"error\": \"Token invalide ou expiré\"}";
             }
             
@@ -127,9 +128,9 @@ public class UserAuthController {
             User user = userRepository.findById(userId).orElse(null);
             
             if (user != null) {
-                System.out.println("✓ Utilisateur trouvé: " + user.getEmail());
+                System.out.println(" Utilisateur trouvé: " + user.getEmail());
                 
-                // ⭐ MODIFICATION : Retourner toutes les infos
+                // MODIFICATION : Retourner toutes les infos
                 return "{"
                     + "\"success\": true, "
                     + "\"id\": " + user.getId() + ", "
@@ -141,7 +142,7 @@ public class UserAuthController {
                     + "}";
             }
             
-            System.out.println("✗ Utilisateur non trouvé en base");
+            System.out.println(" Utilisateur non trouvé en base");
             return "{\"error\": \"Utilisateur non trouvé\"}";
             
         } catch (Exception e) {
@@ -161,7 +162,7 @@ public class UserAuthController {
             
             if (token != null && activeTokens.containsKey(token)) {
                 activeTokens.remove(token);
-                System.out.println("✓ Token supprimé");
+                System.out.println(" Token supprimé");
                 System.out.println("Tokens restants: " + activeTokens.size());
             }
             
@@ -191,7 +192,7 @@ public class UserAuthController {
 
     public static void removeToken(String token) {
         activeTokens.remove(token);
-        System.out.println("✓ Token supprimé: " + token);
+        System.out.println("Token supprimé: " + token);
     }
 
     public static boolean isValidToken(String token) {

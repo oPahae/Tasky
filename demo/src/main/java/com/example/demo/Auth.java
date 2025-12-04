@@ -30,6 +30,7 @@ public class Auth extends JFrame {
         setLocationRelativeTo(null);
         getContentPane().setBackground(BG_COLOR);
 
+        // Create Tabs pour Login et Register
         tabs = new JTabbedPane();
         tabs.setFont(new Font("Segoe UI", Font.BOLD, 14));
         tabs.setBackground(CARD_COLOR);
@@ -123,7 +124,7 @@ public class Auth extends JFrame {
                     try {
                         String response = get();
                         
-                        // ⭐ AJOUTEZ CES LIGNES POUR DEBUG
+                        //  AJOUTEZ CES LIGNES POUR DEBUG
                         System.out.println("========================================");
                         System.out.println("RÉPONSE COMPLÈTE DE L'API:");
                         System.out.println(response);
@@ -163,6 +164,7 @@ public class Auth extends JFrame {
                                 TokenManager.saveToken(token);
                             }
                             
+                            // Mettre à jour SessionManager
                             SessionManager.getInstance().setUserSession(
                                 token, prenom, nom, email, competance, telephone, userId
                             );
@@ -346,6 +348,7 @@ public class Auth extends JFrame {
             btnRegister.setEnabled(false);
             btnRegister.setText("Création en cours...");
 
+            // Envoi de la requête d'inscription aux backend
             SwingWorker<String, Void> worker = new SwingWorker<>() {
                 @Override
                 protected String doInBackground() throws Exception {
@@ -584,6 +587,7 @@ public class Auth extends JFrame {
         con.setConnectTimeout(5000);
         con.setReadTimeout(5000);
 
+        //envoie du corps de la requête
         try (OutputStream os = con.getOutputStream()) {
             os.write(jsonInput.getBytes("UTF-8"));
             os.flush();
@@ -594,11 +598,12 @@ public class Auth extends JFrame {
 
         InputStreamReader streamReader;
         if (responseCode >= 200 && responseCode < 400) {
-            streamReader = new InputStreamReader(con.getInputStream(), "UTF-8");
+            streamReader = new InputStreamReader(con.getInputStream(), "UTF-8");//succès
         } else {
-            streamReader = new InputStreamReader(con.getErrorStream(), "UTF-8");
+            streamReader = new InputStreamReader(con.getErrorStream(), "UTF-8");//erreur
         }
 
+        //lecture de la réponse
         try (BufferedReader in = new BufferedReader(streamReader)) {
             String inputLine;
             StringBuilder response = new StringBuilder();
