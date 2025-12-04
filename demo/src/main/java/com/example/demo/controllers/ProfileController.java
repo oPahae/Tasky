@@ -1,52 +1,46 @@
 package com.example.demo.controllers;
 
+
 import java.util.Map;
 
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.web.bind.annotation.CrossOrigin;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.*;
 
 import com.example.demo.models.User;
 import com.example.demo.repositories.UserRepository;
 
 @RestController
-@RequestMapping("/user")
+@RequestMapping("/api/profile")
 @CrossOrigin(origins = "*")
 public class ProfileController {
 
     @Autowired
     private UserRepository userRepository;
 
-    @PostMapping("/info")
-    public String getUserInfo(@RequestBody Map<String, String> body) {
+    //Récupération du profil
+    @GetMapping("/{userId}")
+    public ResponseEntity<String> getUserProfile(@PathVariable Integer userId) {
         try {
-            String token = body.get("token");
+            System.out.println("=== GET USER PROFILE ===");
+            System.out.println("User ID: " + userId);
             
-            System.out.println("=== GET USER INFO ===");
-            System.out.println("Token: " + token);
-            
-            if (token == null || token.isEmpty()) {
-                return "{\"error\": \"Token manquant\"}";
-            }
-            
-            Integer userId = UserAuthController.getUserIdFromToken(token);
-            
-            if (userId == -1) {
-                return "{\"error\": \"Token invalide ou expiré\"}";
+            if (userId == null || userId <= 0) {
+                return ResponseEntity.badRequest()
+                    .body("{\"error\": \"ID utilisateur invalide\"}");
             }
             
             User user = userRepository.findById(userId).orElse(null);
             
             if (user == null) {
-                return "{\"error\": \"Utilisateur non trouvé\"}";
+                return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                    .body("{\"error\": \"Utilisateur non trouvé\"}");
             }
             
             System.out.println("✓ Utilisateur trouvé: " + user.getEmail());
             
-            return "{"
+            String response = "{"
                     + "\"success\": true, "
                     + "\"id\": " + user.getId() + ", "
                     + "\"nom\": \"" + escapeJson(user.getNom()) + "\", "
@@ -58,54 +52,58 @@ public class ProfileController {
                     + "\"dateCreation\": \"" + user.getDateCreation() + "\""
                     + "}";
             
+            return ResponseEntity.ok(response);
+            
         } catch (Exception e) {
             e.printStackTrace();
-            return "{\"error\": \"" + e.getMessage() + "\"}";
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                .body("{\"error\": \"" + escapeJson(e.getMessage()) + "\"}");
         }
     }
 
-    @PostMapping("/update")
-    public String updateUser(@RequestBody Map<String, Object> body) {
+    //Modification du profil
+    @PutMapping("/modifier/{userId}")
+    public ResponseEntity<String> updateUserProfile(
+            @PathVariable Integer userId,
+            @RequestBody Map<String, Object> body) {
         try {
-            String token = (String) body.get("token");
+            System.out.println("=== UPDATE USER PROFILE ===");
+            System.out.println("User ID: " + userId);
             
-            System.out.println("=== UPDATE USER INFO ===");
-            System.out.println("Token: " + token);
-            
-            if (token == null || token.isEmpty()) {
-                return "{\"error\": \"Token manquant\"}";
-            }
-            
-            Integer userId = UserAuthController.getUserIdFromToken(token);
-            
-            if (userId == -1) {
-                return "{\"error\": \"Token invalide ou expiré\"}";
+            if (userId == null || userId <= 0) {
+                return ResponseEntity.badRequest()
+                    .body("{\"error\": \"ID utilisateur invalide\"}");
             }
             
             User user = userRepository.findById(userId).orElse(null);
             
             if (user == null) {
-                return "{\"error\": \"Utilisateur non trouvé\"}";
+                return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                    .body("{\"error\": \"Utilisateur non trouvé\"}");
             }
             
-            if (body.containsKey("nom")) {
+            // Mise à jour des champs si présents
+            if (body.containsKey("nom") && body.get("nom") != null) {
                 user.setNom((String) body.get("nom"));
             }
-            if (body.containsKey("prenom")) {
+            if (body.containsKey("prenom") && body.get("prenom") != null) {
                 user.setPrenom((String) body.get("prenom"));
             }
-            if (body.containsKey("email")) {
+            if (body.containsKey("email") && body.get("email") != null) {
                 String newEmail = (String) body.get("email");
+                
+                // Vérifier si l'email est déjà utilisé par un autre utilisateur
                 User existingUser = userRepository.findByEmail(newEmail);
                 if (existingUser != null && existingUser.getId() != user.getId()) {
-                    return "{\"error\": \"Cet email est déjà utilisé\"}";
+                    return ResponseEntity.status(HttpStatus.CONFLICT)
+                        .body("{\"error\": \"Cet email est déjà utilisé\"}");
                 }
                 user.setEmail(newEmail);
             }
-            if (body.containsKey("competance")) {
+            if (body.containsKey("competance") && body.get("competance") != null) {
                 user.setCompetance((String) body.get("competance"));
             }
-            if (body.containsKey("telephone")) {
+            if (body.containsKey("telephone") && body.get("telephone") != null) {
                 user.setTelephone((String) body.get("telephone"));
             }
             if (body.containsKey("disponibilite")) {
@@ -114,66 +112,121 @@ public class ProfileController {
             
             userRepository.save(user);
             
-            System.out.println("✓ Utilisateur mis à jour: " + user.getEmail());
+            System.out.println("✓ Profil mis à jour: " + user.getEmail());
             
-            return "{\"success\": true, \"message\": \"Informations mises à jour avec succès\"}";
+            return ResponseEntity.ok(
+                "{\"success\": true, \"message\": \"Profil mis à jour avec succès\"}");
             
         } catch (Exception e) {
             e.printStackTrace();
-            return "{\"error\": \"" + e.getMessage() + "\"}";
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                .body("{\"error\": \"" + escapeJson(e.getMessage()) + "\"}");
         }
     }
 
-    @PostMapping("/change-password")
-    public String changePassword(@RequestBody Map<String, String> body) {
+    //Modification du mot de passe
+    @PutMapping("/password/{userId}")
+    public ResponseEntity<String> changePassword(
+            @PathVariable Integer userId,
+            @RequestBody Map<String, String> body) {
         try {
-            String token = body.get("token");
+            System.out.println("=== CHANGE PASSWORD ===");
+            System.out.println("User ID: " + userId);
+            
+            if (userId == null || userId <= 0) {
+                return ResponseEntity.badRequest()
+                    .body("{\"error\": \"ID utilisateur invalide\"}");
+            }
+            
             String currentPassword = body.get("currentPassword");
             String newPassword = body.get("newPassword");
             
-            System.out.println("=== CHANGE PASSWORD ===");
-            
-            if (token == null || token.isEmpty()) {
-                return "{\"error\": \"Token manquant\"}";
+            if (currentPassword == null || currentPassword.isEmpty()) {
+                return ResponseEntity.badRequest()
+                    .body("{\"error\": \"Mot de passe actuel manquant\"}");
             }
             
-            if (currentPassword == null || newPassword == null) {
-                return "{\"error\": \"Mots de passe manquants\"}";
+            if (newPassword == null || newPassword.isEmpty()) {
+                return ResponseEntity.badRequest()
+                    .body("{\"error\": \"Nouveau mot de passe manquant\"}");
             }
             
             if (newPassword.length() < 6) {
-                return "{\"error\": \"Le nouveau mot de passe doit contenir au moins 6 caractères\"}";
-            }
-            
-            Integer userId = UserAuthController.getUserIdFromToken(token);
-            
-            if (userId == -1) {
-                return "{\"error\": \"Token invalide ou expiré\"}";
+                return ResponseEntity.badRequest()
+                    .body("{\"error\": \"Le nouveau mot de passe doit contenir au moins 6 caractères\"}");
             }
             
             User user = userRepository.findById(userId).orElse(null);
             
             if (user == null) {
-                return "{\"error\": \"Utilisateur non trouvé\"}";
+                return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                    .body("{\"error\": \"Utilisateur non trouvé\"}");
             }
             
+            // Vérifier le mot de passe actuel
             if (!user.getPassword().equals(currentPassword)) {
-                return "{\"error\": \"Mot de passe actuel incorrect\"}";
+                return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+                    .body("{\"error\": \"Mot de passe actuel incorrect\"}");
             }
             
+            // Mettre à jour le mot de passe
             user.setPassword(newPassword);
             userRepository.save(user);
             
             System.out.println("✓ Mot de passe changé pour: " + user.getEmail());
             
-            return "{\"success\": true, \"message\": \"Mot de passe modifié avec succès\"}";
+            return ResponseEntity.ok(
+                "{\"success\": true, \"message\": \"Mot de passe modifié avec succès\"}");
             
         } catch (Exception e) {
             e.printStackTrace();
-            return "{\"error\": \"" + e.getMessage() + "\"}";
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                .body("{\"error\": \"" + escapeJson(e.getMessage()) + "\"}");
         }
     }
 
+    
+     //Suppression du compte
+     
+     
+    @DeleteMapping("/delete/{userId}")
+    public ResponseEntity<String> deleteUserAccount(@PathVariable Integer userId) {
+        try {
+            System.out.println("=== DELETE USER ACCOUNT ===");
+            System.out.println("User ID: " + userId);
+            
+            if (userId == null || userId <= 0) {
+                return ResponseEntity.badRequest()
+                    .body("{\"error\": \"ID utilisateur invalide\"}");
+            }
+            
+            User user = userRepository.findById(userId).orElse(null);
+            
+            if (user == null) {
+                return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                    .body("{\"error\": \"Utilisateur non trouvé\"}");
+            }
+            
+            String userEmail = user.getEmail();
+            
+            // Supprimer l'utilisateur
+            userRepository.delete(user);
+            
+            System.out.println("✓ Compte supprimé: " + userEmail);
+            
+            return ResponseEntity.ok(
+                "{\"success\": true, \"message\": \"Compte supprimé avec succès\"}");
+            
+        } catch (Exception e) {
+            e.printStackTrace();
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                .body("{\"error\": \"" + escapeJson(e.getMessage()) + "\"}");
+        }
+    }
+
+    
+      //Méthode utilitaire pour échapper les caractères spéciaux JSON
+     
     private String escapeJson(String value) {
         if (value == null) return "";
         return value.replace("\\", "\\\\")
