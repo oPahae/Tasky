@@ -40,7 +40,6 @@ public class TacheController {
         @Autowired
         private MembreRepository membreRepository;
 
-        // Récupérer toutes les données de la tâche actuelle
         @GetMapping("/{id}")
         public ResponseEntity<Map<String, Object>> getTacheData(@PathVariable int id) {
                 Tache tache = tacheRepository.findById(id)
@@ -49,7 +48,6 @@ public class TacheController {
                 List<Document> documents = documentRepository.findByTacheId(id);
                 List<Commentaire> commentaires = commentaireRepository.findByTacheId(id);
 
-                // DTO Tache
                 TacheDTO tacheDTO = new TacheDTO(
                                 tache.getId(),
                                 tache.getTitre(),
@@ -59,12 +57,10 @@ public class TacheController {
                                 tache.getDateCreation(),
                                 tache.getDateFin());
 
-                // DTO SousTache
                 List<SousTacheDTO> sousTachesDTO = sousTaches.stream()
                                 .map(st -> new SousTacheDTO(st.getId(), st.getTitre(), st.isTermine()))
                                 .toList();
 
-                // DTO Document (avec contenu en base64)
                 List<DocumentDTO> documentsDTO = documents.stream()
                                 .map(d -> {
                                         String contenuBase64 = Base64.getEncoder().encodeToString(d.getContenu());
@@ -81,7 +77,6 @@ public class TacheController {
                                 })
                                 .toList();
 
-                // DTO Commentaire
                 List<CommentaireDTO> commentairesDTO = commentaires.stream()
                                 .map(c -> new CommentaireDTO(
                                                 c.getId(),
@@ -90,7 +85,6 @@ public class TacheController {
                                                 c.getDateCreation()))
                                 .toList();
 
-                // Wrapper final comme attendu par le frontend
                 Map<String, Object> tacheWrapper = new HashMap<>();
                 tacheWrapper.put("tache", tacheDTO);
                 tacheWrapper.put("sousTaches", sousTachesDTO);
@@ -102,7 +96,6 @@ public class TacheController {
                 return ResponseEntity.ok(response);
         }
 
-        // Ajouter une sous-tâche
         @PostMapping("/{id}/sous-tache")
         public ResponseEntity<SousTache> addSousTache(@PathVariable int id, @RequestBody Map<String, String> payload) {
                 Tache tache = tacheRepository.findById(id).orElseThrow(() -> new RuntimeException("Tâche non trouvée"));
@@ -115,7 +108,6 @@ public class TacheController {
                 return ResponseEntity.ok(saved);
         }
 
-        // Cocher/décocher une sous-tâche
         @PutMapping("/sous-tache/{sousTacheId}")
         public ResponseEntity<SousTache> toggleSousTache(@PathVariable int sousTacheId) {
                 SousTache sousTache = sousTacheRepository.findById(sousTacheId)
@@ -125,7 +117,6 @@ public class TacheController {
                 return ResponseEntity.ok(updated);
         }
 
-        // ajouter doc
         @PostMapping("/{id}/document")
         public ResponseEntity<Map<String, Object>> addDocument(
                         @PathVariable int id,
@@ -165,7 +156,6 @@ public class TacheController {
                 return ResponseEntity.ok(response);
         }
 
-        // Ajouter un commentaire
         @PostMapping("/{id}/commentaire")
         public ResponseEntity<Commentaire> addCommentaire(@PathVariable int id,
                         @RequestBody Map<String, String> payload) {
@@ -180,7 +170,6 @@ public class TacheController {
                 return ResponseEntity.ok(saved);
         }
 
-        // Ajouter un bloquage
         @PostMapping("/{id}/blocage")
         public ResponseEntity<Blocage> addBlocage(@PathVariable int id, @RequestBody Map<String, String> payload) {
                 Tache tache = tacheRepository.findById(id).orElseThrow(() -> new RuntimeException("Tâche non trouvée"));
@@ -193,7 +182,6 @@ public class TacheController {
                 return ResponseEntity.ok(saved);
         }
 
-        // Ajouter une dépense
         @PostMapping("/{id}/depense")
         public ResponseEntity<Map<String, Object>> addDepense(@PathVariable int id,
                         @RequestBody Map<String, Integer> payload) {

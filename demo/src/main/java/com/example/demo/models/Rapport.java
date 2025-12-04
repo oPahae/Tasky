@@ -25,7 +25,6 @@ public class Rapport {
         this.nom = nom;
         this.projet = projet;
     }
-    // Getters et Setters
     public int getId() { return id; }
     public void setId(int id) { this.id = id; }
     public LocalDate getDateGeneration() { return dateGeneration; }

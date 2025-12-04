@@ -20,7 +20,6 @@ public class ProfileController {
     @Autowired
     private UserRepository userRepository;
 
-    // ---------------------- GET USER INFO (via Token) -------------------------
     @PostMapping("/info")
     public String getUserInfo(@RequestBody Map<String, String> body) {
         try {
@@ -33,7 +32,6 @@ public class ProfileController {
                 return "{\"error\": \"Token manquant\"}";
             }
             
-            // Récupérer l'ID utilisateur depuis le token
             Integer userId = UserAuthController.getUserIdFromToken(token);
             
             if (userId == -1) {
@@ -66,7 +64,6 @@ public class ProfileController {
         }
     }
 
-    // ---------------------- UPDATE USER INFO -------------------------
     @PostMapping("/update")
     public String updateUser(@RequestBody Map<String, Object> body) {
         try {
@@ -79,7 +76,6 @@ public class ProfileController {
                 return "{\"error\": \"Token manquant\"}";
             }
             
-            // Récupérer l'ID utilisateur depuis le token
             Integer userId = UserAuthController.getUserIdFromToken(token);
             
             if (userId == -1) {
@@ -92,7 +88,6 @@ public class ProfileController {
                 return "{\"error\": \"Utilisateur non trouvé\"}";
             }
             
-            // Mise à jour des champs (si fournis)
             if (body.containsKey("nom")) {
                 user.setNom((String) body.get("nom"));
             }
@@ -101,7 +96,6 @@ public class ProfileController {
             }
             if (body.containsKey("email")) {
                 String newEmail = (String) body.get("email");
-                // Vérifier si l'email est déjà utilisé par un autre utilisateur
                 User existingUser = userRepository.findByEmail(newEmail);
                 if (existingUser != null && existingUser.getId() != user.getId()) {
                     return "{\"error\": \"Cet email est déjà utilisé\"}";
@@ -118,7 +112,6 @@ public class ProfileController {
                 user.setDisponibilite((Boolean) body.get("disponibilite"));
             }
             
-            // Sauvegarder les modifications
             userRepository.save(user);
             
             System.out.println("✓ Utilisateur mis à jour: " + user.getEmail());
@@ -131,7 +124,6 @@ public class ProfileController {
         }
     }
 
-    // ---------------------- CHANGE PASSWORD -------------------------
     @PostMapping("/change-password")
     public String changePassword(@RequestBody Map<String, String> body) {
         try {
@@ -153,7 +145,6 @@ public class ProfileController {
                 return "{\"error\": \"Le nouveau mot de passe doit contenir au moins 6 caractères\"}";
             }
             
-            // Récupérer l'ID utilisateur depuis le token
             Integer userId = UserAuthController.getUserIdFromToken(token);
             
             if (userId == -1) {
@@ -166,12 +157,10 @@ public class ProfileController {
                 return "{\"error\": \"Utilisateur non trouvé\"}";
             }
             
-            // Vérifier l'ancien mot de passe
             if (!user.getPassword().equals(currentPassword)) {
                 return "{\"error\": \"Mot de passe actuel incorrect\"}";
             }
             
-            // Mettre à jour le mot de passe
             user.setPassword(newPassword);
             userRepository.save(user);
             
@@ -185,8 +174,6 @@ public class ProfileController {
         }
     }
 
-   
-    // ---------------------- HELPER METHOD -------------------------
     private String escapeJson(String value) {
         if (value == null) return "";
         return value.replace("\\", "\\\\")

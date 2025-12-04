@@ -49,7 +49,6 @@ public class Tache {
         this.dateCreation=LocalDate.now();
 
     }
-    // Getters et Setters
     public int getId() { return id; }
     public void setId(int id) { this.id = id; }
     public String getTitre() { return titre; }

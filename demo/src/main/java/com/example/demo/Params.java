@@ -8,8 +8,8 @@ public class Params {
     public static int theme = 0;
     public static String appName = "TASKY";
 
-    public static int projetID = 1;
-    public static int membreID = 1;
+    public static int projetID = 3;
+    public static int membreID = 5;
     public static int tacheID = 1;
     public static int verifCode = 0;
 

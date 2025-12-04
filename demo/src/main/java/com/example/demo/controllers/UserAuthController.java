@@ -18,14 +18,11 @@ public class UserAuthController {
     @Autowired
     private UserRepository userRepository;
 
-    // Stockage des tokens actifs (en mémoire)
     private static final ConcurrentHashMap<String, Integer> activeTokens = new ConcurrentHashMap<>();
 
-    // ---------------------- REGISTER -------------------------
     @PostMapping("/register")
     public String register(@RequestBody User user) {
         try {
-            // Validation
             if (user.getEmail() == null || user.getEmail().isEmpty()) {
                 return "{\"error\": \"Email requis\"}";
             }
@@ -33,18 +30,12 @@ public class UserAuthController {
                 return "{\"error\": \"Mot de passe requis\"}";
             }
 
-            // Vérifier si email existe déjà
             if (userRepository.findByEmail(user.getEmail()) != null) {
                 return "{\"error\": \"Email déjà utilisé\"}";
             }
 
-            // Définir la date
             user.setDateCreation(LocalDate.now());
-
-            // S'assurer que disponibilite est true
             user.setDisponibilite(true);
-
-            // Sauvegarder
             userRepository.save(user);
 
             return "{\"success\": true, \"message\": \"Utilisateur enregistré avec succès\"}";
@@ -75,7 +66,6 @@ public class UserAuthController {
                 return "{\"error\": \"Mot de passe incorrect\"}";
             }
 
-            // Générer un token unique
             String token = UUID.randomUUID().toString();
             activeTokens.put(token, user.getId());
 
@@ -84,7 +74,6 @@ public class UserAuthController {
             System.out.println("Tokens actifs: " + activeTokens.size());
             System.out.println("=== CONNEXION REUSSIE ===");
 
-            // ⭐ MODIFICATION : Retourner TOUTES les informations utilisateur
             return "{"
                     + "\"success\": true, "
                     + "\"token\": \"" + token + "\", "
@@ -103,7 +92,6 @@ public class UserAuthController {
         }
     }
 
-    // ---------------------- VERIFY TOKEN -------------------------
     @PostMapping("/verify")
     public String verifyToken(@RequestBody Map<String, String> body) {
         try {
@@ -129,7 +117,6 @@ public class UserAuthController {
             if (user != null) {
                 System.out.println("✓ Utilisateur trouvé: " + user.getEmail());
 
-                // ⭐ MODIFICATION : Retourner toutes les infos
                 return "{"
                         + "\"success\": true, "
                         + "\"id\": " + user.getId() + ", "
@@ -150,7 +137,6 @@ public class UserAuthController {
         }
     }
 
-    // ---------------------- LOGOUT -------------------------
     @PostMapping("/logout")
     public String logout(@RequestBody Map<String, String> body) {
         try {
@@ -173,7 +159,6 @@ public class UserAuthController {
         }
     }
 
-    // ⭐ NOUVELLE MÉTHODE : Échapper les caractères spéciaux JSON
     private String escapeJson(String value) {
         if (value == null)
             return "";
@@ -183,9 +168,6 @@ public class UserAuthController {
                 .replace("\r", "\\r")
                 .replace("\t", "\\t");
     }
-
-    // ---------------------- MÉTHODES PUBLIQUES POUR UserController
-    // -------------------------
 
     public static Integer getUserIdFromToken(String token) {
         return activeTokens.get(token);
@@ -200,7 +182,6 @@ public class UserAuthController {
         return activeTokens.containsKey(token);
     }
 
-    // ---------------------- DEBUG: AFFICHER TOKENS -------------------------
     @GetMapping("/tokens/debug")
     public String debugTokens() {
         System.out.println("=== TOKENS ACTIFS ===");
@@ -210,7 +191,6 @@ public class UserAuthController {
         return "{\"activeTokens\": " + activeTokens.size() + "}";
     }
 
-    // ---------------------- RESET PASSWORD -------------------------
     @PostMapping("/reset-password")
     public String resetPassword(@RequestBody Map<String, String> body) {
         try {
