@@ -28,7 +28,6 @@ public class Notification {
         this.dateEnvoie = new Date();
         this.estLue = estLue;
     }
-    // Getters et Setters
     public int getId() { return id; }
     public void setId(int id) { this.id = id; }
     public String getContenu() { return contenu; }

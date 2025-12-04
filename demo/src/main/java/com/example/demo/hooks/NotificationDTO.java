@@ -8,11 +8,10 @@ public class NotificationDTO {
     public Date dateEnvoie;
     public boolean estLue;
 
-    public NotificationDTO(int id,String contenu ,Date dateE,boolean estLue) {
+    public NotificationDTO(int id, String contenu, Date dateEnvoie, boolean estLue) {
+        this.id = id;
         this.contenu = contenu;
-        this.dateEnvoie = dateE;
+        this.dateEnvoie = dateEnvoie;
         this.estLue = estLue;
-        this.id=id;
     }
-
 }

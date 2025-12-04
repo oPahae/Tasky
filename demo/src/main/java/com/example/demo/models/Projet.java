@@ -50,7 +50,6 @@ public class Projet {
         this.statut = "en cours";
         this.code = code;
     }
-    // Getters et Setters
     public int getId() { return id; }
     public void setId(int id) { this.id = id; }
     public String getNom() { return nom; }

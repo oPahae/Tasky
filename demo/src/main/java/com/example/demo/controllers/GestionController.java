@@ -34,16 +34,14 @@ public class GestionController {
         try {
             Map<String, Object> response = new HashMap<>();
 
-            // 1. Récupérer l'historique (notifications du projet)
             List<Notification> notifications = notificationRepository.findByProjetId(projetId);
             List<Map<String, Object>> historiqueDTO = notifications.stream()
                     .map(n -> {
                         Map<String, Object> notifMap = new HashMap<>();
                         notifMap.put("id", n.getId());
                         notifMap.put("contenu", n.getContenu());
-                        notifMap.put("dateEnvoie", n.getDateEnvoie().getTime()); // Timestamp en Long
+                        notifMap.put("dateEnvoie", n.getDateEnvoie().getTime());
                         notifMap.put("estLue", n.isEstLue());
-                        // Ajouter le nom du membre si disponible
                         if (n.getMembre() != null) {
                             notifMap.put("membreNom", n.getMembre().getNom());
                         }
@@ -52,7 +50,6 @@ public class GestionController {
                     .sorted((n1, n2) -> ((Long) n2.get("dateEnvoie")).compareTo((Long) n1.get("dateEnvoie")))
                     .collect(Collectors.toList());
 
-            // 2. Récupérer la facturation (tâches avec dépense > 0)
             List<Tache> taches = tacheRepository.findByProjetId(projetId);
             List<Map<String, Object>> facturation = taches.stream()
                     .filter(t -> t.getDepense() > 0)
@@ -65,12 +62,10 @@ public class GestionController {
                     })
                     .collect(Collectors.toList());
 
-            // Calculer le total des dépenses
             double totalDepenses = taches.stream()
                     .mapToDouble(Tache::getDepense)
                     .sum();
 
-            // 3. Récupérer les documents
             List<Document> documents = documentRepository.findAllByProjetId(projetId);
             List<Map<String, Object>> documentsDTO = documents.stream()
                     .map(d -> {
@@ -80,7 +75,6 @@ public class GestionController {
                         docMap.put("description", d.getDescription());
                         docMap.put("contenuBase64", d.getContenu() != null ? 
                                 Base64.getEncoder().encodeToString(d.getContenu()) : "");
-                        // Convertir LocalDate en timestamp
                         if (d.getDateCreation() != null) {
                             docMap.put("dateCreation", 
                                     d.getDateCreation().atStartOfDay()
@@ -95,7 +89,6 @@ public class GestionController {
                     .sorted((d1, d2) -> ((Long) d2.get("dateCreation")).compareTo((Long) d1.get("dateCreation")))
                     .collect(Collectors.toList());
 
-            // Construire la réponse
             response.put("historique", historiqueDTO);
             response.put("facturation", facturation);
             response.put("totalDepenses", totalDepenses);
@@ -105,7 +98,7 @@ public class GestionController {
             return ResponseEntity.ok(response);
 
         } catch (Exception e) {
-            e.printStackTrace(); // Pour debug
+            e.printStackTrace();
             Map<String, Object> errorResponse = new HashMap<>();
             errorResponse.put("success", false);
             errorResponse.put("error", e.getMessage());

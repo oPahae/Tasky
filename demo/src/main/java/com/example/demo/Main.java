@@ -14,28 +14,16 @@ import javax.swing.SwingUtilities;
 
 import com.example.demo.components.Header;
 import com.example.demo.components.Sidebar;
-import com.example.demo.interfaces.Chat;
-import com.example.demo.interfaces.CreerProjet;
-import com.example.demo.interfaces.Dashboard;
-import com.example.demo.interfaces.Gestion;
-import com.example.demo.interfaces.Membre;
-import com.example.demo.interfaces.RejoindreProjet;
-import com.example.demo.interfaces.Tache;
-import com.example.demo.interfaces.Taches;
+import com.example.demo.interfaces.*;
 
 public class Main extends JFrame {
     private JPanel centerPanel;
     private JPanel currentPage;
-    private int userID;
-    private String prenom;
-    private String nom;
     private Map<String, Supplier<JPanel>> pageFactories;
     private Supplier<Header> headerFactory;
     private Supplier<Sidebar> sidebarFactory;
 
     public Main() {
-        this.prenom = "Utilisateur";
-        this.nom = "";
         initializeUI();
     }
 
@@ -66,6 +54,7 @@ public class Main extends JFrame {
         pageFactories.put("Créer un projet", CreerProjet::new);
         pageFactories.put("Rejoindre un projet", RejoindreProjet::new);
         pageFactories.put("Gestion", Gestion::new);
+        pageFactories.put("Ajouter une Tâche", () -> new AjouterTache(this::navigateTo));
 
         // Initialiser centerPanel AVANT d'appeler refreshSidebarAndHeader()
         centerPanel = new JPanel(new BorderLayout());

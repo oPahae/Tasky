@@ -14,7 +14,6 @@ public class TacheMembre {
 
     public TacheMembre() {}
 
-    // Getters et Setters
     public Tache getTache() { return tache; }
     public void setTache(Tache tache) { this.tache = tache; }
     public Membre getMembre() { return membre; }

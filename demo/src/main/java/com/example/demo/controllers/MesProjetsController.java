@@ -161,7 +161,6 @@ public class MesProjetsController {
 
     @PostMapping("projet/creer/{userId}")
     public ProjetDTO createProjet(@PathVariable int userId, @RequestBody ProjetDTO dto) {
-        // Création du projet
         Projet p = new Projet();
         p.setNom(dto.nom);
         p.setCode(dto.code);
@@ -173,10 +172,8 @@ public class MesProjetsController {
         p.setDateFin(dto.dateFin);
         projetRepository.save(p);
 
-        // Récupération de l'utilisateur
         User user = userRepository.findById(userId).orElse(null);
         if (user != null) {
-            // Création du membre
             Membre membre = new Membre();
             membre.setNom(user.getNom() + " " + user.getPrenom());
             membre.setEmail(user.getEmail());
