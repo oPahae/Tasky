@@ -2,6 +2,7 @@ package com.example.demo.interfaces;
 
 import com.example.demo.Params;
 import com.example.demo.Queries;
+import com.example.demo.SessionManager;
 import com.example.demo.components.Scrollbar;
 
 import javax.swing.*;
@@ -22,9 +23,11 @@ public class RejoindreProjet extends JPanel {
     private JButton verifyButton;
     private JPanel messagePanel;
     private ArrayList<String> validCodes;
+    private int userID;
 
     public RejoindreProjet() {
         this.theme = Params.theme;
+        this.userID = SessionManager.getInstance().getUserId();
         initializeColors();
         initializeValidCodes();
         setLayout(new BorderLayout());
@@ -144,7 +147,7 @@ public class RejoindreProjet extends JPanel {
         card.setAlignmentX(Component.CENTER_ALIGNMENT);
         card.setMaximumSize(new Dimension(500, 250));
 
-        JLabel codeLabel = new JLabel("🔐 Code d'accès");
+        JLabel codeLabel = new JLabel("Code d'accès");
         codeLabel.setFont(new Font("Segoe UI", Font.BOLD, 16));
         codeLabel.setForeground(textPrimary);
         codeLabel.setAlignmentX(Component.CENTER_ALIGNMENT);
@@ -169,8 +172,8 @@ public class RejoindreProjet extends JPanel {
         card.add(codeField);
         card.add(Box.createRigidArea(new Dimension(0, 25)));
 
-        verifyButton = createModernButton("✓ Vérifier le code",
-                new Color(16, 185, 129), new Color(52, 211, 153));
+        verifyButton = createModernButton("Vérifier le code",
+                new Color(25, 200, 25), new Color(75, 200, 75));
         verifyButton.setPreferredSize(new Dimension(300, 54));
         verifyButton.setFont(new Font("Segoe UI", Font.BOLD, 16));
         verifyButton.setMaximumSize(new Dimension(300, 54));
@@ -204,7 +207,7 @@ public class RejoindreProjet extends JPanel {
             return;
         }
 
-        Queries.get("/api/projet/join/" + code + "/" + 4)
+        Queries.get("/api/projet/join/" + code + "/" + userID)
                 .thenAccept(response -> {
                     SwingUtilities.invokeLater(() -> {
                         if (response.containsKey("error")) {
@@ -235,81 +238,59 @@ public class RejoindreProjet extends JPanel {
     private void showMessage(String message, boolean success, boolean warning) {
         messagePanel.removeAll();
 
-        JPanel messageContent = new JPanel() {
-            @Override
-            protected void paintComponent(Graphics g) {
-                super.paintComponent(g);
-                Graphics2D g2 = (Graphics2D) g.create();
-                g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
-
-                Color bgColor = success
-                        ? new Color(successColor.getRed(), successColor.getGreen(), successColor.getBlue(), 20)
-                        : warning
-                                ? new Color(warningColor.getRed(), warningColor.getGreen(), warningColor.getBlue(), 20)
-                                : new Color(dangerColor.getRed(), dangerColor.getGreen(), dangerColor.getBlue(), 20);
-
-                g2.setColor(bgColor);
-                g2.fillRoundRect(0, 0, getWidth(), getHeight(), 16, 16);
-
-                Color borderColor = success ? successColor : warning ? warningColor : dangerColor;
-                g2.setColor(new Color(borderColor.getRed(), borderColor.getGreen(), borderColor.getBlue(), 150));
-                g2.setStroke(new BasicStroke(2.5f));
-                g2.drawRoundRect(1, 1, getWidth() - 3, getHeight() - 3, 16, 16);
-
-                g2.dispose();
-            }
-        };
-
-        messageContent.setLayout(new BoxLayout(messageContent, BoxLayout.X_AXIS));
+        JPanel messageContent = new JPanel(new BorderLayout(20, 20));
         messageContent.setOpaque(false);
-        messageContent.setBorder(BorderFactory.createEmptyBorder(20, 25, 20, 25));
+        messageContent.setBorder(BorderFactory.createEmptyBorder(15, 20, 15, 20));
         messageContent.setMaximumSize(new Dimension(Integer.MAX_VALUE, 80));
-        messageContent.setAlignmentX(Component.CENTER_ALIGNMENT);
 
-        String icon = success ? "✅" : warning ? "⚠️" : "❌";
+        Color borderColor = success ? successColor : warning ? warningColor : dangerColor;
+        String icon = success ? "✓" : warning ? "!" : "X";
+
         JLabel iconLabel = new JLabel(icon);
-        iconLabel.setFont(new Font("Segoe UI Emoji", Font.PLAIN, 32));
-        iconLabel.setBorder(BorderFactory.createEmptyBorder(0, 0, 0, 20));
+        iconLabel.setFont(new Font("Dialog", Font.BOLD, 24));
+        iconLabel.setForeground(borderColor);
+        iconLabel.setBorder(BorderFactory.createEmptyBorder(0, 0, 0, 15));
 
-        JPanel textPanel = new JPanel();
-        textPanel.setLayout(new BoxLayout(textPanel, BoxLayout.Y_AXIS));
+        JPanel textPanel = new JPanel(new GridLayout(2, 1, 0, 5));
         textPanel.setOpaque(false);
 
-        JLabel titleLabel = new JLabel(success ? "Succès !" : warning ? "Attention" : "Erreur");
-        titleLabel.setFont(new Font("Segoe UI", Font.BOLD, 16));
-        titleLabel.setForeground(success ? successColor : warning ? warningColor : dangerColor);
-        titleLabel.setAlignmentX(Component.LEFT_ALIGNMENT);
+        JLabel titleLabel = new JLabel(success ? "Succès" : warning ? "Attention" : "Erreur");
+        titleLabel.setFont(new Font("Dialog", Font.BOLD, 14));
+        titleLabel.setForeground(borderColor);
 
         JLabel messageLabel = new JLabel("<html>" + message + "</html>");
-        messageLabel.setFont(new Font("Segoe UI", Font.PLAIN, 14));
+        messageLabel.setFont(new Font("Dialog", Font.PLAIN, 13));
         messageLabel.setForeground(textPrimary);
-        messageLabel.setAlignmentX(Component.LEFT_ALIGNMENT);
 
         textPanel.add(titleLabel);
-        textPanel.add(Box.createRigidArea(new Dimension(0, 6)));
         textPanel.add(messageLabel);
 
-        messageContent.add(iconLabel);
-        messageContent.add(textPanel);
-        messageContent.add(Box.createHorizontalGlue());
+        messageContent.add(iconLabel, BorderLayout.WEST);
+        messageContent.add(textPanel, BorderLayout.CENTER);
+
+        messageContent.setBorder(BorderFactory.createCompoundBorder(
+                BorderFactory.createLineBorder(borderColor, 1),
+                BorderFactory.createEmptyBorder(5, 10, 5, 10)));
 
         messagePanel.add(messageContent);
-        messagePanel.add(Box.createRigidArea(new Dimension(0, 15)));
+        messagePanel.add(Box.createRigidArea(new Dimension(0, 10)));
 
         if (success) {
             JPanel detailsPanel = createSuccessDetails();
             messagePanel.add(detailsPanel);
-            messagePanel.add(Box.createRigidArea(new Dimension(0, 15)));
+            messagePanel.add(Box.createRigidArea(new Dimension(0, 10)));
 
-            JButton actionButton = createModernButton("→ Accéder au projet",
-                    primaryGradient1, primaryGradient2);
-            actionButton.setPreferredSize(new Dimension(280, 48));
-            actionButton.setFont(new Font("Segoe UI", Font.BOLD, 15));
-            actionButton.setMaximumSize(new Dimension(280, 48));
-            actionButton.setAlignmentX(Component.CENTER_ALIGNMENT);
+            JButton actionButton = new JButton("Accéder au projet");
+            actionButton.setFont(new Font("Dialog", Font.BOLD, 13));
+            actionButton.setPreferredSize(new Dimension(200, 40));
+            actionButton.setBackground(primaryGradient1);
+            actionButton.setForeground(Color.WHITE);
+            actionButton.setFocusPainted(false);
+            actionButton.setBorder(BorderFactory.createEmptyBorder(5, 15, 5, 15));
+
             actionButton.addActionListener(e -> {
                 JOptionPane.showMessageDialog(this,
-                        createMessageComponent("Redirection vers le projet..."),
+                        new JLabel("Redirection vers le projet..."),
                         "Accès", JOptionPane.PLAIN_MESSAGE);
             });
 

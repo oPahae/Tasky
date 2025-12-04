@@ -2,6 +2,7 @@ package com.example.demo.interfaces;
 
 import com.example.demo.Params;
 import com.example.demo.Queries;
+import com.example.demo.SessionManager;
 import com.example.demo.components.Scrollbar;
 import com.example.demo.hooks.ProjetDTO;
 
@@ -17,7 +18,6 @@ import java.net.URL;
 import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
 import java.util.*;
-import java.util.Timer;
 
 import javax.imageio.ImageIO;
 
@@ -35,15 +35,14 @@ public class CreerProjet extends JPanel {
     private JPanel formPanel;
     private JPanel successPanel;
 
-    private Timer animationTimer;
-    private float animationProgress = 0f;
+    private int userID;
 
     public CreerProjet() {
         this.theme = Params.theme;
+        this.userID = SessionManager.getInstance().getUserId();
         initializeColors();
         setLayout(new BorderLayout());
         setBackground(bgColor);
-
         formPanel = createFormPanel();
         add(formPanel, BorderLayout.CENTER);
     }
@@ -479,6 +478,11 @@ public class CreerProjet extends JPanel {
             return;
         }
 
+        if (!selectedDate.isAfter(LocalDate.now())) {
+            showModernError("La date limite doit être supérieure à la date actuelle");
+            return;
+        }
+
         try {
             double budget = Double.parseDouble(budgetStr);
             if (budget <= 0) {
@@ -499,7 +503,7 @@ public class CreerProjet extends JPanel {
         projetDTO.budgetConsomme = 0;
         projetDTO.code = projectCode;
         projetDTO.deadline = java.sql.Date.valueOf(selectedDate);
-        projetDTO.dateDebut = new java.sql.Date(System.currentTimeMillis()); 
+        projetDTO.dateDebut = new java.sql.Date(System.currentTimeMillis());
         projetDTO.statut = "En cours";
 
         Map<String, Object> requestBody = new java.util.HashMap<>();
@@ -512,7 +516,7 @@ public class CreerProjet extends JPanel {
         requestBody.put("dateDebut", projetDTO.dateDebut);
         requestBody.put("statut", projetDTO.statut);
 
-        Queries.post("/api/projet/creer/4", requestBody)
+        Queries.post("/api/projet/creer/" + userID, requestBody)
                 .thenAccept(response -> {
                     SwingUtilities.invokeLater(() -> {
                         if (response.containsKey("error")) {
@@ -565,8 +569,6 @@ public class CreerProjet extends JPanel {
     }
 
     private void showSuccessPanel(String projectName, String projectCode) {
-        animationProgress = 0f;
-
         removeAll();
 
         successPanel = new JPanel(new BorderLayout(0, 0));

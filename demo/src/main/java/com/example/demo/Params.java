@@ -25,4 +25,12 @@ public class Params {
             mainGUI.setVisible(true);
         });
     }
+
+    public static void show() {
+        System.out.println("------------------");
+        System.out.println("projetID = " + Params.projetID);
+        System.out.println("membreID = " + Params.membreID);
+        System.out.println("tacheID = " + Params.tacheID);
+        System.out.println("------------------");
+    }
 }
