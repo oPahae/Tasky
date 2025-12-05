@@ -36,7 +36,7 @@ public class Main extends JFrame {
 
         // components
         headerFactory = () -> new Header(
-            new ArrayList<>(Arrays.asList("Dashboard", "Tâches", "Chat", "Gestion")),
+            new ArrayList<>(Arrays.asList("Dashboard", "Tâches", "Chat", "Gestion", "Graphes")),
             this::navigateTo
         );
         sidebarFactory = () -> new Sidebar(
@@ -56,6 +56,7 @@ public class Main extends JFrame {
         pageFactories.put("Gestion", Gestion::new);
         pageFactories.put("Ajouter une Tâche", () -> new AjouterTache(this::navigateTo));
         pageFactories.put("Profile", Profile::new);
+        pageFactories.put("Graphes", Graphes::new);
 
         // Initialiser centerPanel AVANT d'appeler refreshSidebarAndHeader()
         centerPanel = new JPanel(new BorderLayout());
