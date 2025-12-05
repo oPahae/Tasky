@@ -315,12 +315,12 @@ public class Gestion extends JPanel {
         dateLabel.setForeground(accentColor);
         dateLabel.setAlignmentX(Component.LEFT_ALIGNMENT);
 
-        JLabel eventLabel1 = new JLabel((event.description.split(":")[0] + " :").trim());
+        JLabel eventLabel1 = new JLabel((event.description.length() > 0 ? event.description.split(":")[0] + " :" : "").trim());
         eventLabel1.setFont(new Font("Segoe UI", Font.PLAIN, 14));
         eventLabel1.setForeground(textPrimary);
         eventLabel1.setAlignmentX(Component.LEFT_ALIGNMENT);
 
-        JLabel eventLabel2 = new JLabel((event.description.split(":")[1]).trim());
+        JLabel eventLabel2 = new JLabel((event.description.length() > 1 ? event.description.split(":")[1] : "").trim());
         eventLabel2.setFont(new Font("Segoe UI", Font.BOLD, 14));
         eventLabel2.setForeground(textPrimary);
         eventLabel2.setAlignmentX(Component.LEFT_ALIGNMENT);
