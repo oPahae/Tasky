@@ -1,8 +1,9 @@
 package com.example.demo.components;
 
+import com.example.demo.*;
+
 import java.awt.*;
-import java.awt.event.MouseAdapter;
-import java.awt.event.MouseEvent;
+import java.awt.event.*;
 import java.awt.image.BufferedImage;
 import java.util.ArrayList;
 import java.util.List;
@@ -20,10 +21,6 @@ import javax.imageio.ImageIO;
 import javax.swing.*;
 import javax.swing.border.EmptyBorder;
 import javax.swing.plaf.basic.BasicComboBoxUI;
-
-import com.example.demo.Params;
-import com.example.demo.Queries;
-import com.example.demo.SessionManager;
 
 public class Sidebar extends JPanel {
     private int theme;
@@ -76,6 +73,24 @@ public class Sidebar extends JPanel {
         container.add(createProfileSection(), BorderLayout.SOUTH);
 
         add(container, BorderLayout.CENTER);
+
+        addKeyListener(new KeyAdapter() {
+            @Override
+            public void keyPressed(KeyEvent e) {
+                if (e.isControlDown() && e.getKeyCode() == KeyEvent.VK_T) {
+                    SwingUtilities.invokeLater(() -> {
+                        JFrame terminalFrame = new JFrame("Terminal");
+                        terminalFrame.setDefaultCloseOperation(JFrame.DISPOSE_ON_CLOSE);
+                        terminalFrame.setSize(1200, 600);
+                        terminalFrame.setContentPane(new Terminal(onClick));
+                        terminalFrame.setLocationRelativeTo(null);
+                        terminalFrame.setVisible(true);
+                    });
+                }
+            }
+        });
+        setFocusable(true);
+        requestFocusInWindow();
     }
 
     private void initializeColors() {

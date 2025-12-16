@@ -20,9 +20,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.ExecutionException;
 import java.util.function.Consumer;
-import com.example.demo.hooks.MainDTO;
 
 public class Header extends JPanel {
     private int theme;
@@ -40,11 +38,11 @@ public class Header extends JPanel {
         setLayout(new BorderLayout());
         setBackground(bgColor);
         setBorder(new EmptyBorder(16, 24, 16, 24));
-        loadNotificationsFromBackend();
+        fetchNotifs();
         JPanel leftSection = new JPanel(new FlowLayout(FlowLayout.LEFT, 6, 0));
         leftSection.setBackground(bgColor);
         for (String element : elements) {
-            JButton btn = createModernNavButton(element, onClick);
+            JButton btn = createNavButton(element, onClick);
             leftSection.add(btn);
         }
         add(leftSection, BorderLayout.WEST);
@@ -59,14 +57,14 @@ public class Header extends JPanel {
         add(rightSection, BorderLayout.EAST);
     }
 
-    private void loadNotificationsFromBackend() {
+    private void fetchNotifs() {
         CompletableFuture<Map<String, Object>> future = Queries.get(
                 "/api/notif/membre/" + Params.membreID + "/projet/" + Params.projetID);
         future.thenAccept(response -> {
             // System.out.println("/api/notif/membre/" + Params.membreID + "/projet/" +
             // Params.projetID);
             if (response.containsKey("error")) {
-                System.err.println("Erreur lors de la récupération des notifications: " + response.get("error"));
+                System.err.println("Erreur récup : " + response.get("error"));
                 return;
             }
             try {
@@ -92,7 +90,7 @@ public class Header extends JPanel {
     }
 
     private void initializeColors() {
-        if (theme == 0) { // Light mode
+        if (theme == 0) {
             bgColor = new Color(250, 251, 252);
             cardBgColor = Color.WHITE;
             textPrimary = new Color(15, 23, 42);
@@ -101,7 +99,7 @@ public class Header extends JPanel {
             hoverColor = new Color(241, 245, 249);
             borderColor = new Color(226, 232, 240);
             shadowColor = new Color(0, 0, 0, 8);
-        } else { // Dark mode
+        } else {
             bgColor = new Color(0, 0, 0);
             cardBgColor = new Color(20, 20, 20);
             textPrimary = new Color(230, 230, 230);
@@ -113,7 +111,7 @@ public class Header extends JPanel {
         }
     }
 
-    private JButton createModernNavButton(String text, Consumer<String> onClick) {
+    private JButton createNavButton(String text, Consumer<String> onClick) {
         JButton btn = new JButton() {
             @Override
             protected void paintComponent(Graphics g) {
@@ -139,8 +137,8 @@ public class Header extends JPanel {
         btn.setFont(new Font("Segoe UI", Font.PLAIN, 14));
         btn.setBorder(BorderFactory.createEmptyBorder(10, 16, 10, 16));
         btn.setOpaque(false);
-        btn.setContentAreaFilled(false);
-        btn.setFocusPainted(false);
+        btn.setContentAreaFilled(false); // dik bg l3adia dial java
+        btn.setFocusPainted(false); // dak porder l3adi dial java
         btn.setCursor(new Cursor(Cursor.HAND_CURSOR));
         Runnable updateColors = () -> {
             boolean isSelected = text.equals(selectedElement);
@@ -191,9 +189,9 @@ public class Header extends JPanel {
                     return;
 
                 Graphics2D g2 = (Graphics2D) g.create();
-                g2.setRenderingHint(RenderingHints.KEY_INTERPOLATION, RenderingHints.VALUE_INTERPOLATION_BICUBIC);
-                g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
-                g2.setRenderingHint(RenderingHints.KEY_RENDERING, RenderingHints.VALUE_RENDER_QUALITY);
+                g2.setRenderingHint(RenderingHints.KEY_INTERPOLATION, RenderingHints.VALUE_INTERPOLATION_BICUBIC); // redimension
+                g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON); // radius
+                g2.setRenderingHint(RenderingHints.KEY_RENDERING, RenderingHints.VALUE_RENDER_QUALITY); //améliore
 
                 int size = 34;
                 int x = (getWidth() - size) / 2;
@@ -228,7 +226,7 @@ public class Header extends JPanel {
             }
         };
         aiPopup.setBackground(cardBgColor);
-        aiPopup.setBorder(BorderFactory.createCompoundBorder(
+        aiPopup.setBorder(BorderFactory.createCompoundBorder( // wahd f exter wlakhor f inter
                 BorderFactory.createLineBorder(borderColor, 1),
                 BorderFactory.createEmptyBorder(0, 0, 0, 0)));
 
@@ -247,7 +245,7 @@ public class Header extends JPanel {
         headerPanel.add(titleLabel, BorderLayout.WEST);
         mainPanel.add(headerPanel, BorderLayout.NORTH);
 
-        // Chat Panel
+        // Chat
         JPanel chatPanel = new JPanel();
         chatPanel.setLayout(new BoxLayout(chatPanel, BoxLayout.Y_AXIS));
         chatPanel.setBackground(cardBgColor);
@@ -259,15 +257,15 @@ public class Header extends JPanel {
         scrollPane.getVerticalScrollBar().setUnitIncrement(16);
         scrollPane.setHorizontalScrollBarPolicy(JScrollPane.HORIZONTAL_SCROLLBAR_NEVER);
 
-        // Message initial (AI - aligné à gauche)
-        JPanel initialMessagePanel = createMessageBubble(
+        // Msg init
+        JPanel initialMessagePanel = createMsgDiv(
                 "Bonjour ! je suis votre assistant AI, comment puis-je vous aider aujourd'hui ?", true);
         chatPanel.add(initialMessagePanel);
         chatPanel.add(Box.createVerticalStrut(8));
 
         mainPanel.add(scrollPane, BorderLayout.CENTER);
 
-        // Input Panel
+        // Input
         JPanel inputPanel = new JPanel(new BorderLayout(8, 0));
         inputPanel.setBackground(cardBgColor);
         inputPanel.setBorder(BorderFactory.createEmptyBorder(12, 0, 0, 0));
@@ -287,9 +285,8 @@ public class Header extends JPanel {
                 Graphics2D g2 = (Graphics2D) g.create();
                 g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
 
-                // Gradient mauve
-                Color color1 = new Color(147, 51, 234); // Purple
-                Color color2 = new Color(219, 39, 119); // Pink
+                Color color1 = new Color(147, 51, 234);
+                Color color2 = new Color(219, 39, 119);
 
                 if (getModel().isPressed()) {
                     color1 = color1.darker();
@@ -324,7 +321,7 @@ public class Header extends JPanel {
             inputField.setEnabled(false);
             sendBtn.setEnabled(false);
 
-            // Supprimer tous les messages sauf le message d'accueil
+            // Supprimer msgs
             Component[] components = chatPanel.getComponents();
             for (Component component : components) {
                 if (!(component instanceof Box.Filler)) {
@@ -332,30 +329,26 @@ public class Header extends JPanel {
                 }
             }
 
-            // Ajouter le nouveau message utilisateur (aligné à droite)
-            JPanel userMessagePanel = createMessageBubble(userInput, false);
+            // Ajouter msg
+            JPanel userMessagePanel = createMsgDiv(userInput, false);
             chatPanel.add(userMessagePanel);
             chatPanel.add(Box.createVerticalStrut(8));
 
-            // Ajouter le message de chargement
-            JPanel loadingPanel = createLoadingBubble();
+            JPanel loadingPanel = createLoadingDiv();
             chatPanel.add(loadingPanel);
 
             chatPanel.revalidate();
             chatPanel.repaint();
             scrollPane.getVerticalScrollBar().setValue(scrollPane.getVerticalScrollBar().getMaximum());
 
-            // Appel à l'API
             try {
-                // Récupérer les données du projet depuis l'API backend
                 CompletableFuture<Map<String, Object>> projectDataFuture = Queries.get("/api/all/" + Params.projetID);
 
                 projectDataFuture.thenAccept(projectData -> {
-                    // Vérifier s'il y a une erreur
                     if (projectData.containsKey("error")) {
                         SwingUtilities.invokeLater(() -> {
                             chatPanel.remove(loadingPanel);
-                            JPanel errorPanel = createMessageBubble(
+                            JPanel errorPanel = createMsgDiv(
                                     "Erreur: Impossible de récupérer les données du projet", true);
                             chatPanel.add(errorPanel);
                             chatPanel.add(Box.createVerticalStrut(8));
@@ -370,12 +363,9 @@ public class Header extends JPanel {
                     }
 
                     try {
-                        // Convertir les données du projet en JSON string
                         String projectDataJson = convertMapToJson(projectData);
-
-                        // Encoder les données pour l'URL
                         String encodedData = URLEncoder.encode(projectDataJson, "UTF-8");
-                        String formattingType = ". REMARQUE TRES IMPORTANTE : ta réponse doit être sous forme d'un div html, pour le styling utilise uniquement l'attribut style, utilise différentes épaisseurs de textes (semi gras et mince) et couleurs (noires, grise et verte claire), mais seule taille de texte. Ne fais pas de design compliqué, juste un titre coloré et gras avec du texte en noire (gris pour les infors supplémentaires s'il y en a) pour chaque paragraphe, pas de cadres ni mises en pages demandés";
+                        String formattingType = ". REMARQUE TRES IMPORTANTE : ta réponse doit être sous forme d'un div html, pour le styling utilise uniquement l'attribut style, utilise différentes épaisseurs de textes (semi gras et mince) et couleurs (noires, grise et pistache), mais seule taille de texte. Ne fais pas de design compliqué, juste un titre coloré et gras avec du texte en noire (gris pour les infors supplémentaires s'il y en a) pour chaque paragraphe, pas de cadres ni mises en pages demandés";
                         String encodedPrompt = URLEncoder.encode(userInput + formattingType, "UTF-8");
                         String apiUrl = "https://pahae-utils.vercel.app/api/responseAI?data=" + encodedData + "&prompt="
                                 + encodedPrompt;
@@ -401,8 +391,7 @@ public class Header extends JPanel {
                                                     : "Désolé, je n'ai pas pu obtenir une réponse.";
                                             aiResponse = format(aiResponse);
                                         }
-                                        // Ajouter uniquement la dernière réponse de l'AI (aligné à gauche)
-                                        JPanel aiMessagePanel = createMessageBubble(aiResponse, true);
+                                        JPanel aiMessagePanel = createMsgDiv(aiResponse, true);
                                         chatPanel.add(aiMessagePanel);
                                         chatPanel.add(Box.createVerticalStrut(8));
                                         chatPanel.revalidate();
@@ -417,7 +406,7 @@ public class Header extends JPanel {
                                 .exceptionally(ex -> {
                                     SwingUtilities.invokeLater(() -> {
                                         chatPanel.remove(loadingPanel);
-                                        JPanel errorPanel = createMessageBubble("Erreur: " + ex.getMessage(), true);
+                                        JPanel errorPanel = createMsgDiv("Erreur: " + ex.getMessage(), true);
                                         chatPanel.add(errorPanel);
                                         chatPanel.add(Box.createVerticalStrut(8));
                                         chatPanel.revalidate();
@@ -433,7 +422,7 @@ public class Header extends JPanel {
                     } catch (UnsupportedEncodingException ex) {
                         SwingUtilities.invokeLater(() -> {
                             chatPanel.remove(loadingPanel);
-                            JPanel errorPanel = createMessageBubble("Erreur d'encodage: " + ex.getMessage(), true);
+                            JPanel errorPanel = createMsgDiv("Erreur d'encodage: " + ex.getMessage(), true);
                             chatPanel.add(errorPanel);
                             chatPanel.revalidate();
                             chatPanel.repaint();
@@ -444,7 +433,7 @@ public class Header extends JPanel {
                 }).exceptionally(ex -> {
                     SwingUtilities.invokeLater(() -> {
                         chatPanel.remove(loadingPanel);
-                        JPanel errorPanel = createMessageBubble(
+                        JPanel errorPanel = createMsgDiv(
                                 "Erreur lors de la récupération des données: " + ex.getMessage(), true);
                         chatPanel.add(errorPanel);
                         chatPanel.add(Box.createVerticalStrut(8));
@@ -459,7 +448,7 @@ public class Header extends JPanel {
                 });
             } catch (Exception ex) {
                 chatPanel.remove(loadingPanel);
-                JPanel errorPanel = createMessageBubble("Erreur: " + ex.getMessage(), true);
+                JPanel errorPanel = createMsgDiv("Erreur: " + ex.getMessage(), true);
                 chatPanel.add(errorPanel);
                 chatPanel.revalidate();
                 chatPanel.repaint();
@@ -498,7 +487,7 @@ public class Header extends JPanel {
         Toolkit.getDefaultToolkit().addAWTEventListener(clickListener, AWTEvent.MOUSE_EVENT_MASK);
     }
 
-    private JPanel createMessageBubble(String message, boolean isAI) {
+    private JPanel createMsgDiv(String message, boolean isAI) {
         JPanel containerPanel = new JPanel();
         containerPanel.setLayout(new BoxLayout(containerPanel, BoxLayout.X_AXIS));
         containerPanel.setBackground(cardBgColor);
@@ -511,10 +500,8 @@ public class Header extends JPanel {
                 Graphics2D g2 = (Graphics2D) g.create();
                 g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
                 if (isAI) {
-                    // AI: fond simple
                     g2.setColor(theme == 0 ? new Color(241, 245, 249) : new Color(45, 45, 45));
                 } else {
-                    // User: gradient mauve
                     Color color1 = new Color(147, 51, 234);
                     Color color2 = new Color(219, 39, 119);
                     GradientPaint gradient = new GradientPaint(0, 0, color1, getWidth(), 0, color2);
@@ -544,11 +531,9 @@ public class Header extends JPanel {
         bubble.add(textLabel, BorderLayout.CENTER);
 
         if (isAI) {
-            // AI: aligné à gauche
             containerPanel.add(bubble);
             containerPanel.add(Box.createHorizontalGlue());
         } else {
-            // User: aligné à droite
             containerPanel.add(Box.createHorizontalGlue());
             containerPanel.add(bubble);
         }
@@ -556,7 +541,7 @@ public class Header extends JPanel {
         return containerPanel;
     }
 
-    private JPanel createLoadingBubble() {
+    private JPanel createLoadingDiv() {
         JPanel containerPanel = new JPanel();
         containerPanel.setLayout(new BoxLayout(containerPanel, BoxLayout.X_AXIS));
         containerPanel.setBackground(cardBgColor);
