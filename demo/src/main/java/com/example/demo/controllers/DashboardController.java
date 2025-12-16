@@ -14,18 +14,20 @@ import java.util.stream.Collectors;
 public class DashboardController {
     @Autowired
     private ProjetRepository projetRepository;
+    @Autowired
     private TacheRepository tacheRepository;
 
     @GetMapping("dashboard/projet/{id}/Membrenbr")
-    public int getNbrMembreProjet(int id) {
+    public int getNbrMembreProjet(@PathVariable int id) {
         Projet pr = projetRepository.findById(id);
         int nbr = pr.getMembres().size();
         return nbr;
     }
 
     @GetMapping("dashboard/projet/{id}/encours")
-    public int getNbrProjetEnCours(int id) {
+    public int getNbrProjetEnCours(@PathVariable int id) {
         Projet pr = projetRepository.findById(id);
+        if (pr == null) return 0;
         List<Tache> taches = pr.getTaches();
         long nbr = taches.stream()
                 .filter(t -> "En cours".equalsIgnoreCase(t.getEtat()))
@@ -36,7 +38,7 @@ public class DashboardController {
     }
 
     @GetMapping("dashboard/projet/{id}/terminer")
-    public int getNbrProjetTerminer(int id) {
+    public int getNbrProjetTerminer(@PathVariable int id) {
         Projet pr = projetRepository.findById(id);
         List<Tache> taches = pr.getTaches();
         long nbr = taches.stream()
@@ -48,7 +50,7 @@ public class DashboardController {
     }
 
     @GetMapping("dashboard/projet/{id}/nbrtache")
-    public int getNbrTacheProjet(int id) {
+    public int getNbrTacheProjet(@PathVariable int id) {
         Projet pr = projetRepository.findById(id);
         List<Tache> taches = pr.getTaches();
         return taches.size();
@@ -71,7 +73,7 @@ public class DashboardController {
     }
 
     @GetMapping("dashboard/projet/{id}/taches")
-    public List<TacheDTO> getTachesProjet(int id) {
+    public List<TacheDTO> getTachesProjet(@PathVariable int id) {
         Projet pr = projetRepository.findById(id);
         if (pr != null) {
             return pr.getTaches()
@@ -99,7 +101,7 @@ public class DashboardController {
     }
 
     @GetMapping("dashboard/projet/{id}/Membre")
-    public List<MembreDTO> getMembreProjet(int id) {
+    public List<MembreDTO> getMembreProjet(@PathVariable int id) {
         Projet pr = projetRepository.findById(id);
         List<Membre> m = pr.getMembres();
         if (pr != null && m != null) {

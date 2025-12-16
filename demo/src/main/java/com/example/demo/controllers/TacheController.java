@@ -14,6 +14,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.HashMap;
 import java.util.Base64;
+import java.util.Date;
 
 @RestController
 @RequestMapping("/api/tache")
@@ -39,6 +40,9 @@ public class TacheController {
 
         @Autowired
         private MembreRepository membreRepository;
+
+        @Autowired
+        private NotificationRepository notificationRepository;
 
         @GetMapping("/{id}")
         public ResponseEntity<Map<String, Object>> getTacheData(@PathVariable int id) {
@@ -173,15 +177,48 @@ public class TacheController {
         }
 
         @PostMapping("/{id}/blocage")
-        public ResponseEntity<Blocage> addBlocage(@PathVariable int id, @RequestBody Map<String, String> payload) {
-                Tache tache = tacheRepository.findById(id).orElseThrow(() -> new RuntimeException("Tâche non trouvée"));
+        public ResponseEntity<Map<String, Object>> addBlocage(@PathVariable int id,
+                        @RequestBody Map<String, String> payload) {
+                Tache tache = tacheRepository.findById(id)
+                                .orElseThrow(() -> new RuntimeException("Tâche non trouvée"));
+
                 Blocage blocage = new Blocage();
                 blocage.setDescription(payload.get("description"));
                 blocage.setDateSignalement(LocalDate.now());
                 blocage.setStatut("Signale");
                 blocage.setTache(tache);
-                Blocage saved = blocageRepository.save(blocage);
-                return ResponseEntity.ok(saved);
+                Blocage savedBlocage = blocageRepository.save(blocage);
+
+                Projet projet = tache.getProjet();
+                if (projet == null) {
+                        throw new RuntimeException("Projet non trouvé pour cette tâche");
+                }
+
+                Membre responsable = membreRepository.findByProjetIdAndRole(projet.getId(), "Responsable");
+                if (responsable == null) {
+                        throw new RuntimeException("Responsable du projet non trouvé");
+                }
+
+                Notification notification = new Notification();
+                notification.setContenu("Nouveau blocage pour la tâche : " + tache.getTitre() + " (" + payload.get("description") + ")");
+                notification.setDateEnvoie(new Date());
+                notification.setEstLue(false);
+                notification.setMembre(responsable);
+                notification.setProjet(projet);
+                notificationRepository.save(notification);
+
+                BlocageDTO blocageDTO = new BlocageDTO(
+                                savedBlocage.getId(),
+                                savedBlocage.getDescription(),
+                                savedBlocage.getDateSignalement(),
+                                savedBlocage.getStatut(),
+                                savedBlocage.getDateResolution());
+
+                Map<String, Object> response = new HashMap<>();
+                response.put("blocage", blocageDTO);
+                response.put("message", "Blocage ajouté avec succès et notification envoyée au responsable !");
+
+                return ResponseEntity.ok(response);
         }
 
         @PostMapping("/{id}/depense")
