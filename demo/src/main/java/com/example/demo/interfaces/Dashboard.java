@@ -2,14 +2,11 @@ package com.example.demo.interfaces;
 
 import com.example.demo.Params;
 import com.example.demo.components.Scrollbar;
+import com.example.demo.Queries;
 
 import javax.swing.*;
-import javax.swing.border.*;
-
-import org.apache.catalina.Container;
-
 import java.awt.*;
-import java.awt.geom.*;
+
 import java.util.*;
 import java.util.List;
 import java.util.function.Consumer;
@@ -23,12 +20,17 @@ public class Dashboard extends JPanel {
     private CardLayout contentLayout;
     private int colorCounter = 0;
     private Consumer<String> onClick;
+    private int projectId;
 
     public Dashboard(Consumer<String> onClick) {
         this.theme = Params.theme;
         this.onClick = onClick;
+        this.projectId = Params.projetID; // Assurez-vous que projectId est défini dans Params
+        
         initializeColors();
-        initializeDemoData();
+        members = new ArrayList<>();
+        tasks = new ArrayList<>();
+        
         setLayout(new BorderLayout());
         setBackground(bgColor);
         contentLayout = new CardLayout();
@@ -43,6 +45,140 @@ public class Dashboard extends JPanel {
 
         add(mainContentPanel, BorderLayout.CENTER);
         contentLayout.show(mainContentPanel, "overview");
+        
+    
+        loadDataFromBackend();
+    }
+
+    private void loadDataFromBackend() {
+        System.out.println("Chargement des données du backend pour projectId: " + projectId);
+        
+        // Charger les tâches
+        Queries.get("/api/dashboard/projet/" + projectId + "/taches")
+                .thenAccept(response -> {
+                    System.out.println("Réponse tâches: " + response);
+                    tasks.clear();
+                    
+                    if (response.containsKey("error")) {
+                        System.err.println("Erreur API tâches: " + response.get("error"));
+                        return;
+                    }
+                    
+                    try {
+                        // Convertir la réponse en liste
+                        Object tachesObj = response;
+                        if (response instanceof java.util.LinkedHashMap) {
+                            // Si c'est un objet, chercher la clé appropriée
+                            if (response.containsKey("taches")) {
+                                tachesObj = response.get("taches");
+                            } else if (response.isEmpty()) {
+                                System.out.println("Aucune tâche retournée");
+                                loadMembersFromBackend();
+                                return;
+                            }
+                        }
+                        
+                        if (tachesObj instanceof List) {
+                            List<?> tachesData = (List<?>) tachesObj;
+                            
+                            for (Object tache : tachesData) {
+                                if (tache instanceof Map) {
+                                    Map<String, Object> tacheMap = (Map<String, Object>) tache;
+                                    String nom = (String) tacheMap.getOrDefault("titre", "Sans nom");
+                                    String etat = (String) tacheMap.getOrDefault("etat", "À faire");
+                                    
+                                    Task task = new Task(nom, 0, etat);
+                                    tasks.add(task);
+                                    System.out.println("Tâche ajoutée: " + nom);
+                                }}}
+                        
+                        loadMembersFromBackend();
+                    } catch (Exception e) {
+                        System.err.println("Erreur parsing tâches: " + e.getMessage());
+                        e.printStackTrace();
+                    }
+                })
+                .exceptionally(e -> {
+                    System.err.println("Exception lors du chargement des tâches: " + e.getMessage());
+                    e.printStackTrace();
+                    return null;
+                });
+    }
+
+    private void loadMembersFromBackend() {
+        System.out.println("Chargement des membres du backend");
+        
+        Queries.get("/api/dashboard/projet/" + projectId + "/Membre")
+                .thenAccept(response -> {
+                    System.out.println("Réponse membres: " + response);
+                    members.clear();
+                    
+                    if (response.containsKey("error")) {
+                        System.err.println("Erreur API membres: " + response.get("error"));
+                        return;
+                    }
+                    
+                    try {
+                        Object membresObj = response;
+                        if (response instanceof java.util.LinkedHashMap) {
+                            if (response.containsKey("membres")) {
+                                membresObj = response.get("membres");
+                            }
+                        }
+                        
+                        if (membresObj instanceof List) {
+                            List<?> membresData = (List<?>) membresObj;
+                            
+                            for (Object membre : membresData) {
+                                if (membre instanceof Map) {
+                                    Map<String, Object> membreMap = (Map<String, Object>) membre;
+                                    
+                                    Integer id = ((Number) membreMap.getOrDefault("id", 0)).intValue();
+                                    String nom = (String) membreMap.getOrDefault("nom", "Inconnu");
+                                    String email = (String) membreMap.getOrDefault("email", "");
+                                    String role = (String) membreMap.getOrDefault("role", "Membre");
+                                    
+                                    String[] nomSplit = nom.split(" ");
+                                    String firstName = nomSplit.length > 0 ? nomSplit[0] : "User";
+                                    String lastName = nomSplit.length > 1 ? nomSplit[1] : "";
+                                    
+                                    List<String> assignedTasks = getAssignedTasksForMember(email);
+                                    
+                                    ProjectMember member = new ProjectMember(id, firstName, lastName, role, assignedTasks);
+                                    members.add(member);
+                                    System.out.println("Membre ajouté: " + firstName + " " + lastName);
+                                }
+                            }
+                        }
+                    } catch (Exception e) {
+                        System.err.println("Erreur parsing membres: " + e.getMessage());
+                        e.printStackTrace();
+                    }
+                    
+                    // Mettre à jour l'interface
+                    SwingUtilities.invokeLater(() -> {
+                        System.out.println("Mise à jour UI avec " + tasks.size() + " tâches et " + members.size() + " membres");
+                        mainContentPanel.removeAll();
+                        mainContentPanel.add(createOverviewPanel(), "overview");
+                        mainContentPanel.add(createMemberDetailPanel(null, getRandomColor()), "detail");
+                        contentLayout.show(mainContentPanel, "overview");
+                        mainContentPanel.revalidate();
+                        mainContentPanel.repaint();
+                    });
+                })
+                .exceptionally(e -> {
+                    System.err.println("Exception lors du chargement des membres: " + e.getMessage());
+                    e.printStackTrace();
+                    return null;
+                });
+    }
+
+    private List<String> getAssignedTasksForMember(String email) {
+        List<String> assigned = new ArrayList<>();
+        for (Task task : tasks) {
+            assigned.add(task.name);
+        }
+        return assigned;
     }
 
     private void initializeColors() {
@@ -65,39 +201,15 @@ public class Dashboard extends JPanel {
         }
     }
 
-    private void initializeDemoData() {
-        members = new ArrayList<>();
-        tasks = new ArrayList<>();
-
-        // Demo tasks
-        tasks.add(new Task("Conception UI/UX", 100, "Design"));
-        tasks.add(new Task("API Backend", 75, "Backend"));
-        tasks.add(new Task("Intégration Frontend", 60, "Frontend"));
-        tasks.add(new Task("Tests unitaires", 40, "Testing"));
-        tasks.add(new Task("Documentation", 30, "Docs"));
-
-        // Demo members
-        members.add(new ProjectMember(1, "Alice", "Martin", "Chef de projet",
-                Arrays.asList("Conception UI/UX", "Documentation")));
-        members.add(new ProjectMember(2, "Bob", "Durant", "Développeur Backend",
-                Arrays.asList("API Backend", "Tests unitaires")));
-        members.add(new ProjectMember(3, "Charlie", "Dubois", "Développeur Frontend",
-                Arrays.asList("Intégration Frontend")));
-        members.add(new ProjectMember(4, "Diana", "Rousseau", "QA Engineer",
-                Arrays.asList("Tests unitaires")));
-    }
-
     private JPanel createOverviewPanel() {
         JPanel panel = new JPanel(new BorderLayout(20, 20));
         panel.setBackground(bgColor);
         panel.setBorder(BorderFactory.createEmptyBorder(25, 25, 25, 25));
 
-        // Scroll pane for responsive content
         JPanel contentWrapper = new JPanel();
         contentWrapper.setLayout(new BoxLayout(contentWrapper, BoxLayout.Y_AXIS));
         contentWrapper.setBackground(bgColor);
 
-        // Title
         JLabel titleLabel = new JLabel("Tableau de bord du projet");
         titleLabel.setFont(new Font("Segoe UI", Font.BOLD, 28));
         titleLabel.setForeground(textPrimary);
@@ -105,19 +217,16 @@ public class Dashboard extends JPanel {
         contentWrapper.add(titleLabel);
         contentWrapper.add(Box.createRigidArea(new Dimension(0, 25)));
 
-        // Stats cards
         JPanel statsPanel = createStatsPanel();
         statsPanel.setAlignmentX(Component.LEFT_ALIGNMENT);
         contentWrapper.add(statsPanel);
         contentWrapper.add(Box.createRigidArea(new Dimension(0, 25)));
 
-        // Progress section
         JPanel progressPanel = createProgressSection();
         progressPanel.setAlignmentX(Component.LEFT_ALIGNMENT);
         contentWrapper.add(progressPanel);
         contentWrapper.add(Box.createRigidArea(new Dimension(0, 25)));
 
-        // Members section
         JPanel membersPanel = createMembersSection();
         membersPanel.setAlignmentX(Component.LEFT_ALIGNMENT);
         contentWrapper.add(membersPanel);
@@ -166,7 +275,6 @@ public class Dashboard extends JPanel {
                 g2.setColor(cardBgColor);
                 g2.fillRoundRect(0, 0, getWidth(), getHeight(), 20, 20);
 
-                // Accent line
                 g2.setColor(accentColor);
                 g2.fillRoundRect(0, 0, 5, getHeight(), 5, 5);
 
@@ -179,13 +287,6 @@ public class Dashboard extends JPanel {
         card.setBorder(BorderFactory.createEmptyBorder(20, 20, 20, 20));
         card.setCursor(new Cursor(Cursor.HAND_CURSOR));
 
-        // // Emoji icon
-        // JLabel iconLabel = new JLabel(emoji);
-        // iconLabel.setFont(new Font("Segoe UI Emoji", Font.PLAIN, 32));
-        // iconLabel.setForeground(accentColor);
-        // card.add(iconLabel, BorderLayout.WEST);
-
-        // img
         ImageIcon icon = new ImageIcon(getClass().getResource(img));
         Image image = icon.getImage();
         Image scaledImage = image.getScaledInstance(38, 38, Image.SCALE_SMOOTH);
@@ -193,7 +294,6 @@ public class Dashboard extends JPanel {
         JLabel iconLabel = new JLabel(icon);
         card.add(iconLabel, BorderLayout.WEST);
 
-        // Text content
         JPanel textPanel = new JPanel();
         textPanel.setLayout(new BoxLayout(textPanel, BoxLayout.Y_AXIS));
         textPanel.setOpaque(false);
@@ -246,7 +346,6 @@ public class Dashboard extends JPanel {
         card.setBorder(BorderFactory.createEmptyBorder(25, 25, 25, 25));
         card.setAlignmentX(Component.LEFT_ALIGNMENT);
 
-        // Overall progress
         double overallProgress = tasks.stream().mapToInt(t -> t.progress).average().orElse(0);
         JLabel overallLabel = new JLabel("Progrès global");
         overallLabel.setFont(new Font("Segoe UI", Font.BOLD, 16));
@@ -260,7 +359,6 @@ public class Dashboard extends JPanel {
         card.add(overallBar);
         card.add(Box.createRigidArea(new Dimension(0, 30)));
 
-        // Individual tasks
         JLabel tasksLabel = new JLabel("Tâches individuelles");
         tasksLabel.setFont(new Font("Segoe UI", Font.BOLD, 16));
         tasksLabel.setForeground(textPrimary);
@@ -322,11 +420,9 @@ public class Dashboard extends JPanel {
                 int height = large ? 14 : 10;
                 int y = (getHeight() - height) / 2;
 
-                // Background
                 g2.setColor(progressBg);
                 g2.fillRoundRect(0, y, getWidth(), height, height, height);
 
-                // Progress fill
                 int fillWidth = (int) (getWidth() * progress / 100.0);
                 g2.setColor(color);
                 g2.fillRoundRect(0, y, fillWidth, height, height, height);
@@ -387,7 +483,6 @@ public class Dashboard extends JPanel {
         card.setBorder(BorderFactory.createEmptyBorder(20, 20, 20, 20));
         card.setCursor(new Cursor(Cursor.HAND_CURSOR));
 
-        // Header with avatar and name
         JPanel header = new JPanel(new BorderLayout(15, 0));
         header.setOpaque(false);
 
@@ -415,7 +510,6 @@ public class Dashboard extends JPanel {
         header.add(info, BorderLayout.CENTER);
         card.add(header, BorderLayout.NORTH);
 
-        // Tasks
         JPanel tasksPanel = new JPanel();
         tasksPanel.setLayout(new FlowLayout(FlowLayout.LEFT, 8, 8));
         tasksPanel.setOpaque(false);
@@ -442,8 +536,6 @@ public class Dashboard extends JPanel {
 
         card.add(tasksPanel, BorderLayout.CENTER);
 
-        // Click listener
-
         card.addMouseListener(new java.awt.event.MouseAdapter() {
             public void mouseClicked(java.awt.event.MouseEvent evt) {
                 Params.membreID = member.id;
@@ -462,11 +554,9 @@ public class Dashboard extends JPanel {
                 Graphics2D g2 = (Graphics2D) g.create();
                 g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
 
-                // Circle background
                 g2.setColor(color);
                 g2.fillOval(0, 0, getWidth(), getHeight());
 
-                // Initials
                 g2.setColor(Color.WHITE);
                 g2.setFont(new Font("Segoe UI", Font.BOLD, 20));
                 String initials = String.valueOf(member.firstName.charAt(0)) + member.lastName.charAt(0);
@@ -504,7 +594,6 @@ public class Dashboard extends JPanel {
         contentWrapper.setLayout(new BoxLayout(contentWrapper, BoxLayout.Y_AXIS));
         contentWrapper.setBackground(bgColor);
 
-        // Back button
         JButton backButton = new JButton("← Retour");
         backButton.setFont(new Font("Segoe UI", Font.PLAIN, 14));
         backButton.setForeground(accentColor);
@@ -519,7 +608,6 @@ public class Dashboard extends JPanel {
         contentWrapper.add(backButton);
         contentWrapper.add(Box.createRigidArea(new Dimension(0, 20)));
 
-        // Member header
         JPanel headerCard = new JPanel() {
             @Override
             protected void paintComponent(Graphics g) {
@@ -588,7 +676,6 @@ public class Dashboard extends JPanel {
         contentWrapper.add(headerCard);
         contentWrapper.add(Box.createRigidArea(new Dimension(0, 25)));
 
-        // Tasks section
         JLabel tasksTitle = new JLabel("Tâches assignées");
         tasksTitle.setFont(new Font("Segoe UI", Font.BOLD, 20));
         tasksTitle.setForeground(textPrimary);
@@ -655,7 +742,6 @@ public class Dashboard extends JPanel {
         textPanel.add(category);
         card.add(textPanel, BorderLayout.WEST);
 
-        // Progress bar
         JPanel progressWrapper = new JPanel(new BorderLayout());
         progressWrapper.setOpaque(false);
         progressWrapper.setBorder(BorderFactory.createEmptyBorder(0, 0, 0, 20));
@@ -668,11 +754,11 @@ public class Dashboard extends JPanel {
 
     private Color getRandomColor() {
         Color[] colors = {
-                new Color(150, 100, 250), // violet
-                new Color(255, 165, 0), // orange
-                new Color(0, 200, 0), // vert
-                new Color(0, 120, 255), // bleu
-                new Color(255, 105, 180), // rose
+                new Color(150, 100, 250),
+                new Color(255, 165, 0),
+                new Color(0, 200, 0),
+                new Color(0, 120, 255),
+                new Color(255, 105, 180),
         };
 
         if (colorCounter == colors.length)
@@ -680,7 +766,6 @@ public class Dashboard extends JPanel {
         return colors[colorCounter++];
     }
 
-    // Classes internes pour les données
     private static class ProjectMember {
         int id;
         String firstName;
