@@ -82,23 +82,14 @@ L’objectif de **Tasky** est de fournir une solution complète et centralisée 
 
 ## 🗂️ Structure du projet
 
-Tasky/
-database.sql
-exemples.sql
-main/
-    demo/
-        src/
-            main/
-                java/
-                    com/
-                        example/
-                            demo/
-                                models/
-                                controllers/
-                                hooks/
-                                interfaces/
-                                components/
-
+- `database.sql` : requêtes SQL pour créer la base
+- `exemples.sql` : requêtes SQL pour insérer des données de test
+- `main/demo/src/main/java/com/example/demo/` : les classes principales de l'application
+- `main/demo/src/main/java/com/example/demo/models` : modèles des entités avec les annotations JPA
+- `main/demo/src/main/java/com/example/demo/controllers` : les contrôleurs
+- `main/demo/src/main/java/com/example/demo/hooks` : les DTOs pour manipuler les données retournées par les APIs
+- `main/demo/src/main/java/com/example/demo/interfaces` : le code du frontend
+- `main/demo/src/main/java/com/example/demo/components` : composants utilisés dans le frontend
 ---
 
 ## 👥 Équipe du projet
