@@ -83,21 +83,21 @@ L’objectif de **Tasky** est de fournir une solution complète et centralisée 
 ## 🗂️ Structure du projet
 
 Tasky/
-├── database.sql
-├── exemples.sql
-└── main/
-    └── demo/
-        └── src/
-            └── main/
-                └── java/
-                    └── com/
-                        └── example/
-                            └── demo/
-                                ├── models/
-                                ├── controllers/
-                                ├── hooks/
-                                ├── interfaces/
-                                └── components/
+database.sql
+exemples.sql
+main/
+    demo/
+        src/
+            main/
+                java/
+                    com/
+                        example/
+                            demo/
+                                models/
+                                controllers/
+                                hooks/
+                                interfaces/
+                                components/
 
 ---
 
