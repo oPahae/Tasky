@@ -83,36 +83,35 @@ L’objectif de **Tasky** est de fournir une solution complète et centralisée 
 ## 🗂️ Structure du projet
 
 Tasky/
-│
-├── database.sql
-│   └── Scripts SQL pour la création de la base de données
-│
-├── exemples.sql
-│   └── Données de test
-│
-└── main/
-    └── demo/
-        └── src/
-            └── main/
-                └── java/
-                    └── com/
-                        └── example/
-                            └── demo/
-                                ├── models/
-                                │   └── Entités JPA (User, Project, Task, etc.)
-                                │
-                                ├── controllers/
-                                │   └── Contrôleurs Spring Boot (API)
-                                │
-                                ├── hooks/
-                                │   └── DTOs pour la manipulation des données
-                                │
-                                ├── interfaces/
-                                │   └── Interfaces graphiques (Java Swing)
-                                │
-                                └── components/
-                                    └── Composants réutilisables du frontend
-
+|
+|-- database.sql
+|   |-- Scripts SQL pour la création de la base de données
+|
+|-- exemples.sql
+|   |-- Données de test
+|
+`-- main/
+    `-- demo/
+        `-- src/
+            `-- main/
+                `-- java/
+                    `-- com/
+                        `-- example/
+                            `-- demo/
+                                |-- models/
+                                |   `-- Entités JPA
+                                |
+                                |-- controllers/
+                                |   `-- Contrôleurs Spring Boot
+                                |
+                                |-- hooks/
+                                |   `-- DTOs
+                                |
+                                |-- interfaces/
+                                |   `-- Frontend Java Swing
+                                |
+                                `-- components/
+                                    `-- Composants réutilisables
 
 ---
 
