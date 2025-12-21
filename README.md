@@ -85,27 +85,33 @@ L’objectif de **Tasky** est de fournir une solution complète et centralisée 
 Tasky/
 │
 ├── database.sql
-│ └── Scripts SQL pour la création de la base de données
+│   └── Scripts SQL pour la création de la base de données
 │
 ├── exemples.sql
-│ └── Données de test
+│   └── Données de test
 │
-└── main/demo/src/main/java/com/example/demo/
-│
-├── models/
-│ └── Entités JPA (User, Project, Task, etc.)
-│
-├── controllers/
-│ └── Contrôleurs Spring Boot (API)
-│
-├── hooks/
-│ └── DTOs pour la manipulation des données
-│
-├── interfaces/
-│ └── Interfaces graphiques (Java Swing)
-│
-└── components/
-└── Composants réutilisables du frontend
+└── main/
+    └── demo/
+        └── src/
+            └── main/
+                └── java/
+                    └── com/
+                        └── example/
+                            └── demo/
+                                ├── models/
+                                │   └── Entités JPA (User, Project, Task, etc.)
+                                │
+                                ├── controllers/
+                                │   └── Contrôleurs Spring Boot (API)
+                                │
+                                ├── hooks/
+                                │   └── DTOs pour la manipulation des données
+                                │
+                                ├── interfaces/
+                                │   └── Interfaces graphiques (Java Swing)
+                                │
+                                └── components/
+                                    └── Composants réutilisables du frontend
 
 
 ---
