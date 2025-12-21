@@ -82,3 +82,61 @@ L’objectif de **Tasky** est de fournir une solution complète et centralisée 
 
 ## 🗂️ Structure du projet
 
+Tasky/
+│
+├── database.sql
+│ └── Scripts SQL pour la création de la base de données
+│
+├── exemples.sql
+│ └── Données de test
+│
+└── main/demo/src/main/java/com/example/demo/
+│
+├── models/
+│ └── Entités JPA (User, Project, Task, etc.)
+│
+├── controllers/
+│ └── Contrôleurs Spring Boot (API)
+│
+├── hooks/
+│ └── DTOs pour la manipulation des données
+│
+├── interfaces/
+│ └── Interfaces graphiques (Java Swing)
+│
+└── components/
+└── Composants réutilisables du frontend
+
+
+---
+
+## 👥 Équipe du projet
+
+Projet réalisé par :
+
+- **LAMRISSI Bahaa-eddine**
+- **Tayef Jihane**
+- **GANA Anas**
+- **Kafi Amina**
+
+---
+
+## 📈 Points forts de Tasky
+
+- Application **desktop robuste et complète**
+- Architecture claire (MVC + JPA)
+- Collaboration en temps réel
+- Suivi précis des projets et des ressources
+- Interface riche et fonctionnelle
+- Outils d’analyse et de reporting intégrés
+
+---
+
+## 🏁 Conclusion
+
+**Tasky** est une solution professionnelle de gestion de projets logiciels, pensée pour les équipes de développement souhaitant améliorer leur organisation, leur communication et leur productivité.  
+Elle combine puissance, flexibilité et simplicité d’utilisation dans une application desktop moderne.
+
+---
+
+📌 *N’hésitez pas à contribuer, signaler des issues ou proposer des améliorations !*
