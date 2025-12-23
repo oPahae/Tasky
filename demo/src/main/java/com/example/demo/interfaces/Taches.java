@@ -2,15 +2,22 @@ package com.example.demo.interfaces;
 
 import com.example.demo.Params;
 import com.example.demo.components.Scrollbar;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.example.demo.Queries;
 import javax.swing.*;
+
+import org.springframework.scheduling.config.Task;
+
 import java.awt.*;
+import java.net.URI;
+import java.net.http.HttpClient;
+import java.net.http.HttpRequest;
+import java.net.http.HttpResponse;
 import java.util.*;
 import java.util.List;
 import java.util.function.Consumer;
 import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
-
 
 public class Taches extends JPanel {
     private int theme;
@@ -28,115 +35,106 @@ public class Taches extends JPanel {
         this.theme = Params.theme;
         this.onClickHandler = onClick;
         this.projectId = Params.projetID;
-        
+
         initializeColors();
         tasks = new ArrayList<>();
         members = new ArrayList<>();
-        
+
         setLayout(new BorderLayout());
         setBackground(bgColor);
 
         mainPanel = new JPanel(new BorderLayout());
         add(mainPanel, BorderLayout.CENTER);
-        
+
         loadDataFromBackend();
     }
 
     private void loadDataFromBackend() {
         System.out.println("Chargement des tâches pour projectId: " + projectId);
-        
-        Queries.get("/api/dashboard/projet/" + projectId + "/taches")
+
+        HttpClient client = HttpClient.newHttpClient();
+        HttpRequest request = HttpRequest.newBuilder()
+                .uri(URI.create("http://localhost:8080/api/dashboard/projet/" + projectId + "/taches"))
+                .GET()
+                .build();
+
+        client.sendAsync(request, HttpResponse.BodyHandlers.ofString())
                 .thenAccept(response -> {
-                    System.out.println("Réponse tâches: " + response);
-                    tasks.clear();
-                    if (response.containsKey("error")) {
-                        System.err.println("Erreur API: " + response.get("error"));
-                        showErrorPanel("Erreur lors du chargement des tâches");
-                        return;
-                    }
-                    
                     try {
-                        Object tachesObj = response;
-                        if (response instanceof java.util.LinkedHashMap) {
-                            if (response.containsKey("taches")) {
-                                tachesObj = response.get("taches");
-                            }
+                        ObjectMapper mapper = new ObjectMapper();
+                        List<Map<String, Object>> tachesData = mapper.readValue(response.body(),
+                                new com.fasterxml.jackson.core.type.TypeReference<>() {
+                                });
+
+                        tasks.clear();
+
+                        for (Map<String, Object> tacheMap : tachesData) {
+                            int id = ((Number) tacheMap.get("id")).intValue();
+                            String titre = (String) tacheMap.getOrDefault("titre", "Sans titre");
+                            String description = (String) tacheMap.getOrDefault("description", "");
+                            String etat = (String) tacheMap.getOrDefault("etat", "En attente");
+                            int prog = (int) tacheMap.getOrDefault("progres", 0);
+                            String dateLimite = (String) tacheMap.getOrDefault("dateLimite", 0);
+
+                            Task task = new Task(
+                                    id,
+                                    titre,
+                                    prog,
+                                    description,
+                                    dateLimite,
+                                    new ArrayList<>());
+                            task.setState(etat);
+                            tasks.add(task);
+
+                            System.out.println("Tâche chargée: " + titre);
                         }
-                        
-                        if (tachesObj instanceof List) {
-                            List<?> tachesData = (List<?>) tachesObj;
-                            
-                            for (Object tache : tachesData) {
-                                if (tache instanceof Map) {
-                                    Map<String, Object> tacheMap = (Map<String, Object>) tache;
-                                    
-                                    Integer id = ((Number) tacheMap.getOrDefault("id", 0)).intValue();
-                                    String titre = (String) tacheMap.getOrDefault("titre", "Sans titre");
-                                    String description = (String) tacheMap.getOrDefault("description", "");
-                                    String etat = (String) tacheMap.getOrDefault("etat", "En attente");
-                                    
-                                    Task task = new Task(id, titre, 0, description, LocalDate.now().plusDays(7), new ArrayList<>());
-                                    task.setState(etat);
-                                    tasks.add(task);
-                                    System.out.println("Tâche chargée: " + titre);
-                                }
-                            }
-                        }
-                        
+
                         loadMembersFromBackend();
+
                     } catch (Exception e) {
-                        System.err.println("Erreur parsing: " + e.getMessage());
+                        System.err.println("Erreur parsing tâches: " + e.getMessage());
                         e.printStackTrace();
+                        showErrorPanel("Erreur lors du chargement des tâches");
                     }
                 })
                 .exceptionally(e -> {
-                    System.err.println("Exception: " + e.getMessage());
-                    e.printStackTrace();
+                    System.err.println("Erreur HTTP tâches: " + e.getMessage());
+                    showErrorPanel("Erreur serveur");
                     return null;
                 });
     }
 
     private void loadMembersFromBackend() {
         System.out.println("Chargement des membres pour projectId: " + projectId);
-        
-        Queries.get("/api/dashboard/projet/" + projectId + "/Membre")
+
+        HttpClient client = HttpClient.newHttpClient();
+        HttpRequest request = HttpRequest.newBuilder()
+                .uri(URI.create("http://localhost:8080/api/dashboard/projet/" + projectId + "/Membre"))
+                .GET()
+                .build();
+
+        client.sendAsync(request, HttpResponse.BodyHandlers.ofString())
                 .thenAccept(response -> {
-                    System.out.println("Réponse membres: " + response);
-                    members.clear();
-                    
-                    if (response.containsKey("error")) {
-                        System.err.println("Erreur API membres: " + response.get("error"));
-                        return;
-                    }
-                    
                     try {
-                        Object membresObj = response;
-                        if (response instanceof java.util.LinkedHashMap) {
-                            if (response.containsKey("membres")) {
-                                membresObj = response.get("membres");
-                            }
+                        ObjectMapper mapper = new ObjectMapper();
+                        List<Map<String, Object>> membresData = mapper.readValue(response.body(),
+                                new com.fasterxml.jackson.core.type.TypeReference<>() {
+                                });
+
+                        members.clear();
+
+                        for (Map<String, Object> membreMap : membresData) {
+                            String nom = (String) membreMap.getOrDefault("nom", "Inconnu");
+                            String role = (String) membreMap.getOrDefault("role", "Membre");
+
+                            String[] split = nom.split(" ", 2);
+                            String firstName = split[0];
+                            String lastName = split.length > 1 ? split[1] : "";
+
+                            ProjectMember member = new ProjectMember(firstName, lastName, role);
+                            members.add(member);
                         }
-                        
-                        if (membresObj instanceof List) {
-                            List<?> membresData = (List<?>) membresObj;
-                            
-                            for (Object membre : membresData) {
-                                if (membre instanceof Map) {
-                                    Map<String, Object> membreMap = (Map<String, Object>) membre;
-                                    
-                                    String nom = (String) membreMap.getOrDefault("nom", "Inconnu");
-                                    String role = (String) membreMap.getOrDefault("role", "Membre");
-                                    
-                                    String[] nomSplit = nom.split(" ");
-                                    String firstName = nomSplit.length > 0 ? nomSplit[0] : "User";
-                                    String lastName = nomSplit.length > 1 ? nomSplit[1] : "";
-                                    
-                                    ProjectMember member = new ProjectMember(firstName, lastName, role);
-                                    members.add(member);
-                                }
-                            }
-                        }
-                        
+
                         SwingUtilities.invokeLater(() -> {
                             System.out.println("Mise à jour UI avec " + tasks.size() + " tâches");
                             mainPanel.removeAll();
@@ -144,14 +142,14 @@ public class Taches extends JPanel {
                             mainPanel.revalidate();
                             mainPanel.repaint();
                         });
+
                     } catch (Exception e) {
                         System.err.println("Erreur parsing membres: " + e.getMessage());
                         e.printStackTrace();
                     }
                 })
                 .exceptionally(e -> {
-                    System.err.println("Exception membres: " + e.getMessage());
-                    e.printStackTrace();
+                    System.err.println("Erreur HTTP membres: " + e.getMessage());
                     return null;
                 });
     }
@@ -206,6 +204,7 @@ public class Taches extends JPanel {
 
         // Header avec ombre subtile
         JPanel headerWrapper = new JPanel(new BorderLayout());
+        headerWrapper.setMaximumSize(new Dimension(Integer.MAX_VALUE, 100));
         headerWrapper.setBackground(bgColor);
         headerWrapper.setAlignmentX(Component.LEFT_ALIGNMENT);
 
@@ -424,7 +423,7 @@ public class Taches extends JPanel {
         JPanel deadlinePanel = new JPanel(new FlowLayout(FlowLayout.LEFT, 6, 0));
         deadlinePanel.setOpaque(false);
 
-        JLabel deadlineLabel = new JLabel(task.deadline.format(dateFormatter));
+        JLabel deadlineLabel = new JLabel(task.deadline);
         deadlineLabel.setFont(new Font("Segoe UI", Font.PLAIN, 13));
         deadlineLabel.setForeground(textSecondary);
         deadlinePanel.add(deadlineLabel);
@@ -455,7 +454,7 @@ public class Taches extends JPanel {
                 "Confirmation de suppression",
                 JOptionPane.YES_NO_OPTION,
                 JOptionPane.WARNING_MESSAGE);
-        
+
         if (result == JOptionPane.YES_OPTION) {
             Queries.delete("/api/taches/" + task.id)
                     .thenAccept(response -> {
@@ -464,7 +463,8 @@ public class Taches extends JPanel {
                     })
                     .exceptionally(e -> {
                         System.err.println("Erreur suppression: " + e.getMessage());
-                        JOptionPane.showMessageDialog(this, "Erreur lors de la suppression", "Erreur", JOptionPane.ERROR_MESSAGE);
+                        JOptionPane.showMessageDialog(this, "Erreur lors de la suppression", "Erreur",
+                                JOptionPane.ERROR_MESSAGE);
                         return null;
                     });
         }
@@ -679,11 +679,11 @@ public class Taches extends JPanel {
         String name;
         int progress;
         String description;
-        LocalDate deadline;
+        String deadline;
         List<ProjectMember> assignedMembers;
         String state;
 
-        public Task(int id, String name, int progress, String description, LocalDate deadline,
+        public Task(int id, String name, int progress, String description, String deadline,
                 List<ProjectMember> assignedMembers) {
             this.id = id;
             this.name = name;
@@ -699,14 +699,13 @@ public class Taches extends JPanel {
         }
 
         public String getStatus() {
-            if (state.equalsIgnoreCase("Terminée")) {
+            if (progress == 100) {
                 return "Terminée";
-            } else if (state.equalsIgnoreCase("En cours")) {
+            } else if (progress == 0) {
+                return "En attente";
+            } else {
                 return "En cours";
-            } else if (state.equalsIgnoreCase("Bloquée")) {
-                return "Bloquée";
             }
-            return "En attente";
         }
     }
 }

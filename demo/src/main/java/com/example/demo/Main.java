@@ -57,6 +57,7 @@ public class Main extends JFrame {
         pageFactories.put("Ajouter une Tâche", () -> new AjouterTache(this::navigateTo));
         pageFactories.put("Profile", Profile::new);
         pageFactories.put("Graphes", Graphes::new);
+        pageFactories.put("Mes projets", () -> new MesProjet(this::navigateTo));
 
         // Initialiser centerPanel AVANT d'appeler refreshSidebarAndHeader()
         centerPanel = new JPanel(new BorderLayout());

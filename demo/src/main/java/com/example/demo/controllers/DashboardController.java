@@ -68,6 +68,7 @@ public class DashboardController {
         dto.dateCreation = (t.getDateCreation());
         dto.dateFin = (t.getDateFin());
         dto.dateLimite = (t.getDateLimite());
+        dto.progres = (int) getProgress(t.getId());
 
         return dto;
     }

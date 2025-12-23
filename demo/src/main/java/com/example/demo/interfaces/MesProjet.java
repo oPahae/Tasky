@@ -2,10 +2,16 @@ package com.example.demo.interfaces;
 
 import com.example.demo.Params;
 import com.example.demo.components.Scrollbar;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.example.demo.Queries;
+import com.example.demo.SessionManager;
 
 import javax.swing.*;
 import java.awt.*;
+import java.net.URI;
+import java.net.http.HttpClient;
+import java.net.http.HttpRequest;
+import java.net.http.HttpResponse;
 import java.util.*;
 import java.util.List;
 import java.util.function.Consumer;
@@ -20,14 +26,14 @@ public class MesProjet extends JPanel {
     private Consumer<String> onClick;
     private int userId;
 
-    public MesProjet(Consumer<String> onClick, int userId) {
+    public MesProjet(Consumer<String> onClick) {
         this.theme = Params.theme;
         this.onClick = onClick;
-        this.userId = userId;
-        
+        this.userId = SessionManager.getInstance().getUserId();
+
         initializeColors();
         projets = new ArrayList<>();
-        
+
         setLayout(new BorderLayout());
         setBackground(bgColor);
         contentLayout = new CardLayout();
@@ -42,72 +48,72 @@ public class MesProjet extends JPanel {
 
         add(mainContentPanel, BorderLayout.CENTER);
         contentLayout.show(mainContentPanel, "overview");
-        
+
         loadProjetsFromBackend();
     }
 
     private void loadProjetsFromBackend() {
         System.out.println("Chargement des projets du backend pour userId: " + userId);
-        
-        Queries.get("/api/projet/user/" + userId)
+
+        HttpClient client = HttpClient.newHttpClient();
+        HttpRequest request = HttpRequest.newBuilder()
+                .uri(URI.create("http://localhost:8080/api/projet/user/" + userId))
+                .GET()
+                .build();
+
+        client.sendAsync(request, HttpResponse.BodyHandlers.ofString())
                 .thenAccept(response -> {
-                    System.out.println("Réponse projets: " + response);
-                    projets.clear();
-                    
-                    if (response.containsKey("error")) {
-                        System.err.println("Erreur API projets: " + response.get("error"));
-                        return;
-                    }
-                    
                     try {
-                        Object projetsObj = response;
-                        if (response instanceof java.util.LinkedHashMap) {
-                            if (response.containsKey("projets")) {
-                                projetsObj = response.get("projets");
-                            } else if (response.isEmpty()) {
-                                System.out.println("Aucun projet retourné");
-                                updateUI();
-                                return;
-                            }
+                        ObjectMapper mapper = new ObjectMapper();
+                        List<Map<String, Object>> projetsData = mapper.readValue(
+                                response.body(),
+                                new com.fasterxml.jackson.core.type.TypeReference<>() {
+                                });
+
+                        projets.clear();
+
+                        for (Map<String, Object> projetMap : projetsData) {
+                            int id = ((Number) projetMap.getOrDefault("id", 0)).intValue();
+                            String nom = (String) projetMap.getOrDefault("nom", "Sans nom");
+                            String code = (String) projetMap.getOrDefault("code", "");
+                            String description = (String) projetMap.getOrDefault("description", "");
+
+                            double budget = projetMap.get("budget") instanceof Number
+                                    ? ((Number) projetMap.get("budget")).doubleValue()
+                                    : 0.0;
+
+                            double budgetConsomme = projetMap.get("budgetConsomme") instanceof Number
+                                    ? ((Number) projetMap.get("budgetConsomme")).doubleValue()
+                                    : 0.0;
+
+                            Projet projet = new Projet(
+                                    id, nom, code, description, budget, budgetConsomme);
+                            projets.add(projet);
+                            System.out.println("Projet ajouté: " + nom);
                         }
-                        
-                        if (projetsObj instanceof List) {
-                            List<?> projetsData = (List<?>) projetsObj;
-                            
-                            for (Object projetObj : projetsData) {
-                                if (projetObj instanceof Map) {
-                                    Map<String, Object> projetMap = (Map<String, Object>) projetObj;
-                                    
-                                    Integer id = ((Number) projetMap.getOrDefault("id", 0)).intValue();
-                                    String nom = (String) projetMap.getOrDefault("nom", "Sans nom");
-                                    String code = (String) projetMap.getOrDefault("code", "");
-                                    String description = (String) projetMap.getOrDefault("description", "");
-                                    Object budgetObj = projetMap.getOrDefault("budget", 0);
-                                    Double budget = budgetObj instanceof Number ? ((Number) budgetObj).doubleValue() : 0.0;
-                                    Object budgetConsommeObj = projetMap.getOrDefault("budgetConsomme", 0);
-                                    Double budgetConsomme = budgetConsommeObj instanceof Number ? ((Number) budgetConsommeObj).doubleValue() : 0.0;
-                                    
-                                    Projet projet = new Projet(id, nom, code, description, budget, budgetConsomme);
-                                    projets.add(projet);
-                                    System.out.println("Projet ajouté: " + nom);
-                                }
-                            }
-                        }
-                        
-                        updateUI();
+
+                        SwingUtilities.invokeLater(() -> {
+                            mainContentPanel.removeAll();
+                            JPanel overviewPanel = createOverviewPanel();
+                            JPanel detailPanel = createProjetDetailPanel(null);
+                            mainContentPanel.add(overviewPanel, "overview");
+                            mainContentPanel.add(detailPanel, "detail");
+                            contentLayout.show(mainContentPanel, "overview");
+                            mainContentPanel.revalidate();
+                            mainContentPanel.repaint();
+                        });
+
                     } catch (Exception e) {
                         System.err.println("Erreur parsing projets: " + e.getMessage());
                         e.printStackTrace();
                     }
                 })
                 .exceptionally(e -> {
-                    System.err.println("Exception lors du chargement des projets: " + e.getMessage());
+                    System.err.println("Erreur HTTP projets: " + e.getMessage());
                     e.printStackTrace();
                     return null;
                 });
     }
-
-   
 
     private void initializeColors() {
         if (theme == 0) { // Light mode
@@ -321,8 +327,8 @@ public class MesProjet extends JPanel {
         leftPanel.add(codeLabel);
         leftPanel.add(Box.createRigidArea(new Dimension(0, 10)));
 
-        JLabel descLabel = new JLabel(projet.description.length() > 80 ? 
-            projet.description.substring(0, 80) + "..." : projet.description);
+        JLabel descLabel = new JLabel(
+                projet.description.length() > 80 ? projet.description.substring(0, 80) + "..." : projet.description);
         descLabel.setFont(new Font("Segoe UI", Font.PLAIN, 12));
         descLabel.setForeground(textSecondary);
         descLabel.setAlignmentX(Component.LEFT_ALIGNMENT);
@@ -386,7 +392,8 @@ public class MesProjet extends JPanel {
         panel.setBackground(bgColor);
         panel.setBorder(BorderFactory.createEmptyBorder(25, 25, 25, 25));
 
-        if (projet == null) return panel;
+        if (projet == null)
+            return panel;
 
         JPanel contentWrapper = new JPanel();
         contentWrapper.setLayout(new BoxLayout(contentWrapper, BoxLayout.Y_AXIS));
@@ -469,7 +476,7 @@ public class MesProjet extends JPanel {
 
         detailsCard.add(createDetailItem("Budget total", String.format("%.2f €", projet.budget)));
         detailsCard.add(createDetailItem("Budget consommé", String.format("%.2f €", projet.budgetConsomme)));
-        detailsCard.add(createDetailItem("Progression", (int)projet.progress + "%"));
+        detailsCard.add(createDetailItem("Progression", (int) projet.progress + "%"));
         detailsCard.add(createDetailItem("Reste", String.format("%.2f €", projet.budget - projet.budgetConsomme)));
 
         contentWrapper.add(detailsCard);
