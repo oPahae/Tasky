@@ -29,7 +29,7 @@ public class Tache extends JPanel {
         this.tacheId = Params.tacheID;
         this.theme = Params.theme;
         initializeColors();
-        taskData = new TaskData("", "", LocalDate.now(), LocalDate.now());
+        taskData = new TaskData("", "", null, null);
         subTasks = new ArrayList<>();
         documents = new ArrayList<>();
         comments = new ArrayList<>();
@@ -67,7 +67,6 @@ public class Tache extends JPanel {
     }
 
     private void loadTacheData() {
-        System.out.println("tacheID: " + tacheId);
         Queries.get("/api/tache/" + tacheId)
                 .thenAccept(response -> {
                     SwingUtilities.invokeLater(() -> {
@@ -76,43 +75,64 @@ public class Tache extends JPanel {
                                     JOptionPane.ERROR_MESSAGE);
                         } else {
                             Map<String, Object> tacheData = (Map<String, Object>) response.get("tache");
+
+                            if (tacheData == null || tacheData.isEmpty()) {
+                                taskData = new TaskData("", "", null, null);
+                                subTasks = new ArrayList<>();
+                                documents = new ArrayList<>();
+                                comments = new ArrayList<>();
+                                refreshUI();
+                                return;
+                            }
+
                             Map<String, Object> taskMap = (Map<String, Object>) tacheData.get("tache");
-                            taskData = new TaskData(
-                                    (String) taskMap.get("titre"),
-                                    (String) taskMap.get("description"),
-                                    LocalDate.parse((String) taskMap.get("dateLimite")),
-                                    LocalDate.parse((String) taskMap.get("dateCreation")));
+                            if (taskMap != null) {
+                                taskData = new TaskData(
+                                        (String) taskMap.getOrDefault("titre", ""),
+                                        (String) taskMap.getOrDefault("description", ""),
+                                        taskMap.get("dateLimite") != null
+                                                ? LocalDate.parse((String) taskMap.get("dateLimite"))
+                                                : null,
+                                        taskMap.get("dateCreation") != null
+                                                ? LocalDate.parse((String) taskMap.get("dateCreation"))
+                                                : null);
+                            } else {
+                                taskData = new TaskData("", "", null, null);
+                            }
 
                             List<Map<String, Object>> subTasksData = (List<Map<String, Object>>) tacheData
-                                    .get("sousTaches");
+                                    .getOrDefault("sousTaches", new ArrayList<>());
                             subTasks = new ArrayList<>();
                             for (Map<String, Object> subTaskData : subTasksData) {
                                 subTasks.add(new SubTask(
-                                        ((Number) subTaskData.get("id")).intValue(),
-                                        (String) subTaskData.get("titre"),
-                                        (Boolean) subTaskData.get("termine")));
+                                        ((Number) subTaskData.getOrDefault("id", 0)).intValue(),
+                                        (String) subTaskData.getOrDefault("titre", ""),
+                                        (Boolean) subTaskData.getOrDefault("termine", false)));
                             }
 
                             List<Map<String, Object>> documentsData = (List<Map<String, Object>>) tacheData
-                                    .get("documents");
+                                    .getOrDefault("documents", new ArrayList<>());
                             documents = new ArrayList<>();
                             for (Map<String, Object> docData : documentsData) {
                                 documents.add(new Document(
-                                        (String) docData.get("nom"),
-                                        ((Number) docData.get("size")).intValue(),
-                                        (String) docData.get("type")));
+                                        (String) docData.getOrDefault("nom", ""),
+                                        ((Number) docData.getOrDefault("size", 0)).intValue(),
+                                        (String) docData.getOrDefault("type", "")));
                             }
 
                             List<Map<String, Object>> commentsData = (List<Map<String, Object>>) tacheData
-                                    .get("commentaires");
+                                    .getOrDefault("commentaires", new ArrayList<>());
                             comments = new ArrayList<>();
                             for (Map<String, Object> commentData : commentsData) {
                                 comments.add(new Comment(
-                                        (String) commentData.get("author"),
-                                        (String) commentData.get("contenu"),
-                                        LocalDate.parse((String) commentData.get("dateCreation")),
+                                        (String) commentData.getOrDefault("author", ""),
+                                        (String) commentData.getOrDefault("contenu", ""),
+                                        commentData.get("dateCreation") != null
+                                                ? LocalDate.parse((String) commentData.get("dateCreation"))
+                                                : null,
                                         getRandomColor()));
                             }
+
                             refreshUI();
                         }
                     });
@@ -153,11 +173,11 @@ public class Tache extends JPanel {
         section.setLayout(new BoxLayout(section, BoxLayout.Y_AXIS));
         section.setBackground(bgColor);
         section.setAlignmentX(Component.LEFT_ALIGNMENT);
-        JLabel titleLabel = new JLabel(taskData.name);
+        JLabel titleLabel = new JLabel(taskData != null ? taskData.name : "Nouvelle tâche");
         titleLabel.setFont(new Font("Segoe UI", Font.BOLD, 32));
         titleLabel.setForeground(textPrimary);
         titleLabel.setAlignmentX(Component.LEFT_ALIGNMENT);
-        JLabel descLabel = new JLabel("<html><body style='width: 100%;'>" + taskData.description + "</body></html>");
+        JLabel descLabel = new JLabel("<html><body style='width: 100%;'>" + (taskData != null ? taskData.description : "") + "</body></html>");
         descLabel.setFont(new Font("Segoe UI", Font.PLAIN, 15));
         descLabel.setForeground(textSecondary);
         descLabel.setAlignmentX(Component.LEFT_ALIGNMENT);
@@ -179,7 +199,6 @@ public class Tache extends JPanel {
         card.setBorder(BorderFactory.createEmptyBorder(30, 30, 30, 30));
         card.setAlignmentX(Component.LEFT_ALIGNMENT);
         card.setMaximumSize(new Dimension(Integer.MAX_VALUE, 320));
-        // En-tête avec icône
         JPanel headerPanel = new JPanel();
         headerPanel.setLayout(new BoxLayout(headerPanel, BoxLayout.X_AXIS));
         headerPanel.setOpaque(false);
@@ -194,27 +213,24 @@ public class Tache extends JPanel {
         headerPanel.add(Box.createHorizontalGlue());
         card.add(headerPanel);
         card.add(Box.createRigidArea(new Dimension(0, 18)));
-        // Barre de progression moderne
         JPanel progressBar = createProgressBar(progress, true);
         progressBar.setAlignmentX(Component.LEFT_ALIGNMENT);
         card.add(progressBar);
         card.add(Box.createRigidArea(new Dimension(0, 30)));
-        // Panneau des dates avec effet glassmorphism
         JPanel datesPanel = new JPanel(new GridLayout(1, 2, 20, 0));
         datesPanel.setOpaque(false);
         datesPanel.setMaximumSize(new Dimension(Integer.MAX_VALUE, 110));
         datesPanel.setAlignmentX(Component.LEFT_ALIGNMENT);
-        datesPanel.add(createDateCard("Date de création", taskData.dateCreation, "📅",
+        datesPanel.add(createDateCard("Date de création", taskData != null ? taskData.dateCreation : null, "📅",
                 new Color(139, 92, 246), new Color(167, 139, 250)));
-        datesPanel.add(createDateCard("Date limite", taskData.dateEcheance, "⏰",
+        datesPanel.add(createDateCard("Date limite", taskData != null ? taskData.dateEcheance : null, "⏰",
                 new Color(236, 72, 153), new Color(244, 114, 182)));
         card.add(datesPanel);
         section.add(card);
         return section;
     }
 
-    private JPanel createDateCard(String label, LocalDate date, String emoji, Color primaryColor,
-            Color secondaryColor) {
+    private JPanel createDateCard(String label, LocalDate date, String emoji, Color primaryColor, Color secondaryColor) {
         JPanel card = new JPanel() {
             @Override
             protected void paintComponent(Graphics g) {
@@ -260,8 +276,13 @@ public class Tache extends JPanel {
         labelText.setFont(new Font("Segoe UI", Font.PLAIN, 12));
         labelText.setForeground(new Color(255, 255, 255, 200));
         labelText.setAlignmentX(Component.LEFT_ALIGNMENT);
-        DateTimeFormatter formatter = DateTimeFormatter.ofPattern("dd MMMM yyyy", Locale.FRENCH);
-        JLabel dateLabel = new JLabel(date.format(formatter));
+        JLabel dateLabel;
+        if (date != null) {
+            DateTimeFormatter formatter = DateTimeFormatter.ofPattern("dd MMMM yyyy", Locale.FRENCH);
+            dateLabel = new JLabel(date.format(formatter));
+        } else {
+            dateLabel = new JLabel("Non définie");
+        }
         dateLabel.setFont(new Font("Segoe UI", Font.BOLD, 17));
         dateLabel.setForeground(Color.WHITE);
         dateLabel.setAlignmentX(Component.LEFT_ALIGNMENT);
@@ -393,8 +414,7 @@ public class Tache extends JPanel {
         });
         JLabel nameLabel = new JLabel(subTask.name);
         nameLabel.setFont(new Font("Segoe UI", Font.PLAIN, 16));
-        nameLabel
-                .setForeground(subTask.completed ? new Color(148, 163, 184) : (theme == 0 ? Color.BLACK : Color.WHITE));
+        nameLabel.setForeground(subTask.completed ? new Color(148, 163, 184) : (theme == 0 ? Color.BLACK : Color.WHITE));
         if (subTask.completed) {
             nameLabel.setText("<html><strike>" + subTask.name + "</strike></html>");
         }
@@ -614,7 +634,12 @@ public class Tache extends JPanel {
         datePanel.setOpaque(false);
         datePanel.setMaximumSize(new Dimension(Integer.MAX_VALUE, 25));
         DateTimeFormatter formatter = DateTimeFormatter.ofPattern("dd MMM yyyy", Locale.FRENCH);
-        JLabel dateLabel = new JLabel(comment.date.format(formatter));
+        JLabel dateLabel;
+        if (comment.date != null) {
+            dateLabel = new JLabel(comment.date.format(formatter));
+        } else {
+            dateLabel = new JLabel("Date inconnue");
+        }
         dateLabel.setFont(new Font("Segoe UI", Font.PLAIN, 12));
         dateLabel.setForeground(textSecondary);
         datePanel.add(dateLabel);
@@ -857,9 +882,6 @@ public class Tache extends JPanel {
                                     Map<String, Object> docData = (Map<String, Object>) responseWrapper.get("document");
 
                                     if (docData != null) {
-                                        System.out.println("Nom du document : " + docData.get("nom"));
-                                        System.out.println("Taille du document : " + docData.get("size"));
-
                                         int size = 0;
                                         if (docData.get("size") != null) {
                                             size = ((Number) docData.get("size")).intValue();
@@ -926,7 +948,6 @@ public class Tache extends JPanel {
                                     JOptionPane.showMessageDialog(this, "Erreur: " + response.get("error"), "Erreur",
                                             JOptionPane.ERROR_MESSAGE);
                                 } else {
-                                    // Recharger les données de la tâche après l'ajout
                                     loadTacheData();
                                     JOptionPane.showMessageDialog(this, "Dépense ajoutée avec succès!", "Succès",
                                             JOptionPane.INFORMATION_MESSAGE);
@@ -942,9 +963,9 @@ public class Tache extends JPanel {
 
     private void refreshUI() {
         SwingUtilities.invokeLater(() -> {
-            removeAll(); // Supprime tout le contenu actuel
+            removeAll();
             setLayout(new BorderLayout());
-            JPanel mainPanel = createMainPanel(); // Recrée le panel principal
+            JPanel mainPanel = createMainPanel();
             add(mainPanel, BorderLayout.CENTER);
             revalidate();
             repaint();
@@ -1004,13 +1025,11 @@ public class Tache extends JPanel {
                                 List<Map<String, Object>> documentsData = (List<Map<String, Object>>) tacheData
                                         .get("documents");
 
-                                // Trouver le document correspondant par nom
                                 for (Map<String, Object> docData : documentsData) {
                                     if (docData.get("nom").equals(doc.name)) {
                                         String contenuBase64 = (String) docData.get("contenuBase64");
                                         byte[] fileContent = Base64.getDecoder().decode(contenuBase64);
 
-                                        // Ouvrir une boîte de dialogue pour choisir l'emplacement d'enregistrement
                                         JFileChooser fileChooser = new JFileChooser();
                                         fileChooser.setSelectedFile(new File(doc.name));
                                         int userSelection = fileChooser.showSaveDialog(this);
