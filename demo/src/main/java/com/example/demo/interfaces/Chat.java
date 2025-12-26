@@ -3,42 +3,62 @@ package com.example.demo.interfaces;
 import com.example.demo.Params;
 import com.example.demo.components.Scrollbar;
 import com.example.demo.hooks.MessageDTO;
-
-import java.net.HttpURLConnection;
-import java.net.URL;
-import java.io.OutputStream;
-import com.google.gson.Gson; // si tu n’as pas Gson, tu peux l’ajouter via Maven
-
+import com.google.gson.Gson;
+import com.google.gson.GsonBuilder;
+import org.springframework.messaging.converter.MappingJackson2MessageConverter;
+import org.springframework.messaging.simp.stomp.*;
+import org.springframework.web.socket.client.WebSocketClient;
+import org.springframework.web.socket.client.standard.StandardWebSocketClient;
+import org.springframework.web.socket.messaging.WebSocketStompClient;
+import org.springframework.web.socket.sockjs.client.SockJsClient;
+import org.springframework.web.socket.sockjs.client.Transport;
+import org.springframework.web.socket.sockjs.client.WebSocketTransport;
+import java.lang.reflect.Type;
 
 import javax.swing.*;
-import javax.swing.border.*;
 import java.awt.*;
-import java.awt.event.*;
+import java.io.BufferedReader;
+import java.io.InputStreamReader;
+import java.net.HttpURLConnection;
+import java.net.URL;
 import java.text.SimpleDateFormat;
 import java.util.*;
 import java.util.List;
 
 public class Chat extends JPanel {
     private int theme;
-    private Color bgColor, cardBgColor, textPrimary, textSecondary, accentColor, progressBg;
+    private Color bgColor, cardBgColor, textPrimary, textSecondary, accentColor;
     private Color myMessageBg, otherMessageBg, inputBg;
     private List<ChatMessage> messages;
     private JPanel messagesContainer;
     private JTextArea inputField;
     private int myId = 1;
+    private int projectId = 1;
     private String projectName = "Projet Dashboard";
     private SimpleDateFormat timeFormat = new SimpleDateFormat("HH:mm");
-    private SimpleDateFormat dateFormat = new SimpleDateFormat("dd/MM/yyyy HH:mm");
+
+    // WebSocket
+    private WebSocketStompClient stompClient;
+    private StompSession stompSession;
+    private Gson gson = new GsonBuilder().setLenient().setDateFormat("yyyy-MM-dd'T'HH:mm:ss").create();
+
+    // Set pour éviter les doublons par ID
+    private Set<Integer> loadedMessageIds = new HashSet<>();
 
     public Chat() {
         this.theme = Params.theme;
         initializeColors();
-        initializeDemoData();
+        messages = new ArrayList<>();
+
         setLayout(new BorderLayout());
         setBackground(bgColor);
         add(createTopBar(), BorderLayout.NORTH);
         add(createMessagesArea(), BorderLayout.CENTER);
         add(createInputArea(), BorderLayout.SOUTH);
+
+        // Charger l'historique puis connecter WebSocket
+        loadMessageHistory();
+        connectWebSocket();
     }
 
     private void initializeColors() {
@@ -48,7 +68,6 @@ public class Chat extends JPanel {
             textPrimary = new Color(30, 30, 30);
             textSecondary = new Color(100, 100, 100);
             accentColor = new Color(59, 130, 246);
-            progressBg = new Color(229, 231, 235);
             myMessageBg = new Color(99, 102, 241);
             otherMessageBg = new Color(240, 241, 245);
             inputBg = Color.WHITE;
@@ -58,39 +77,168 @@ public class Chat extends JPanel {
             textPrimary = new Color(230, 230, 230);
             textSecondary = new Color(100, 100, 100);
             accentColor = new Color(0, 120, 215);
-            progressBg = new Color(40, 40, 40);
             myMessageBg = new Color(99, 102, 241);
             otherMessageBg = new Color(40, 40, 40);
             inputBg = new Color(30, 30, 30);
         }
     }
 
-    private void initializeDemoData() {
-        messages = new ArrayList<>();
+    private void connectWebSocket() {
+        new Thread(() -> {
+            try {
+                List<Transport> transports = new ArrayList<>();
+                transports.add(new WebSocketTransport(new StandardWebSocketClient()));
 
-        messages.add(new ChatMessage(2, "Alice", "Martin", "RESPONSABLE",
-                "Bonjour à tous ! Comment avance le projet ?",
-                new Date(System.currentTimeMillis() - 3600000)));
+                SockJsClient sockJsClient = new SockJsClient(transports);
+                stompClient = new WebSocketStompClient(sockJsClient);
+                stompClient.setMessageConverter(new MappingJackson2MessageConverter());
 
-        messages.add(new ChatMessage(1, "Vous", "", "NORMAL",
-                "Bonjour Alice ! Tout se passe bien de mon côté.",
-                new Date(System.currentTimeMillis() - 3500000)));
+                StompSessionHandler sessionHandler = new StompSessionHandlerAdapter() {
+                    @Override
+                    public void afterConnected(StompSession session, StompHeaders connectedHeaders) {
+                        stompSession = session;
+                        System.out.println("✅ WebSocket connecté");
 
-        messages.add(new ChatMessage(3, "Bob", "Durant", "GESTIONNAIRE",
-                "J'ai terminé l'API Backend. Je vais passer aux tests.",
-                new Date(System.currentTimeMillis() - 3000000)));
+                        session.subscribe("/topic/projet/" + projectId, new StompFrameHandler() {
+                            @Override
+                            public Type getPayloadType(StompHeaders headers) {
+                                return MessageDTO.class;
+                            }
 
-        messages.add(new ChatMessage(2, "Alice", "Martin", "RESPONSABLE",
-                "Excellent travail Bob ! 👍",
-                new Date(System.currentTimeMillis() - 2500000)));
+                            @Override
+                            public void handleFrame(StompHeaders headers, Object payload) {
+                                MessageDTO dto = (MessageDTO) payload;
+                                SwingUtilities.invokeLater(() -> {
+                                    if (!loadedMessageIds.contains(dto.id)) {
+                                        ChatMessage msg = new ChatMessage(
+                                                dto.membreId,
+                                                dto.prenomMembre,
+                                                dto.nomMembre,
+                                                dto.typeMembre,
+                                                dto.contenu,
+                                                dto.dateEnvoi
+                                        );
+                                        msg.id = dto.id;
+                                        addMessage(msg);
+                                    }
+                                });
+                            }
+                        });
+                    }
 
-        messages.add(new ChatMessage(4, "Charlie", "Dubois", "NORMAL",
-                "Voici la maquette de la nouvelle interface :",
-                new Date(System.currentTimeMillis() - 2000000)));
+                    @Override
+                    public void handleTransportError(StompSession session, Throwable exception) {
+                        System.err.println("❌ Erreur WebSocket : " + exception.getMessage());
+                    }
+                };
 
-        messages.add(new ChatMessage(1, "Vous", "", "NORMAL",
-                "Super ! J'aime beaucoup le design.",
-                new Date(System.currentTimeMillis() - 1500000)));
+                String url = "http://localhost:8080/ws-chat";
+                System.out.println("Connexion à : " + url);
+                stompClient.connect(url, sessionHandler);
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
+        }).start();
+    }
+
+    private void loadMessageHistory() {
+        new Thread(() -> {
+            try {
+                System.out.println("🔄 Chargement de l'historique pour projet " + projectId);
+
+                URL url = new URL("http://localhost:8080/api/messages/projet/" + projectId);
+                HttpURLConnection conn = (HttpURLConnection) url.openConnection();
+                conn.setRequestMethod("GET");
+                conn.setRequestProperty("Accept", "application/json");
+                conn.setConnectTimeout(5000);
+                conn.setReadTimeout(5000);
+
+                int responseCode = conn.getResponseCode();
+                System.out.println("📡 Code réponse HTTP: " + responseCode);
+
+                if (responseCode != 200) {
+                    System.err.println("❌ Erreur HTTP: " + responseCode);
+                    return;
+                }
+
+                BufferedReader reader = new BufferedReader(
+                        new InputStreamReader(conn.getInputStream(), "UTF-8"));
+
+                StringBuilder json = new StringBuilder();
+                String line;
+                while ((line = reader.readLine()) != null) {
+                    json.append(line);
+                }
+                reader.close();
+
+                String jsonString = json.toString();
+                System.out.println("📦 JSON reçu (premiers 200 chars): " +
+                    (jsonString.length() > 200 ? jsonString.substring(0, 200) + "..." : jsonString));
+
+                if (jsonString.trim().isEmpty() || jsonString.equals("[]")) {
+                    System.out.println("⚠️ Aucun message dans l'historique");
+                    return;
+                }
+
+                MessageDTO[] dtos = gson.fromJson(jsonString, MessageDTO[].class);
+
+                if (dtos == null || dtos.length == 0) {
+                    System.out.println("⚠️ Aucun message parsé");
+                    return;
+                }
+
+                SwingUtilities.invokeLater(() -> {
+                    // Réinitialiser l'interface et le Set avant de recharger
+                    messagesContainer.removeAll();
+                    loadedMessageIds.clear();
+                    messages.clear();
+
+                    System.out.println("📝 Ajout de " + dtos.length + " messages à l'interface");
+
+                    for (MessageDTO dto : dtos) {
+                        if (dto.id == 0) {
+                            System.err.println("⚠️ Message sans ID détecté");
+                            continue;
+                        }
+
+                        ChatMessage msg = new ChatMessage(
+                                dto.membreId,
+                                dto.prenomMembre != null ? dto.prenomMembre : "Inconnu",
+                                dto.nomMembre != null ? dto.nomMembre : "",
+                                dto.typeMembre != null ? dto.typeMembre : "NORMAL",
+                                dto.contenu != null ? dto.contenu : "",
+                                dto.dateEnvoi != null ? dto.dateEnvoi : new Date()
+                        );
+                        msg.id = dto.id;
+
+                        loadedMessageIds.add(msg.id);
+                        messages.add(msg);
+                        messagesContainer.add(createMessageBubble(msg));
+                        messagesContainer.add(Box.createRigidArea(new Dimension(0, 12)));
+                    }
+
+                    messagesContainer.revalidate();
+                    messagesContainer.repaint();
+
+                    // Scroll vers le bas
+                    SwingUtilities.invokeLater(() -> {
+                        try {
+                            JScrollBar vertical = ((JScrollPane) messagesContainer.getParent().getParent())
+                                .getVerticalScrollBar();
+                            vertical.setValue(vertical.getMaximum());
+                        } catch (Exception e) {
+                            System.err.println("⚠️ Erreur scroll: " + e.getMessage());
+                        }
+                    });
+                });
+
+                System.out.println("✅ Historique chargé (" + dtos.length + " messages)");
+
+            } catch (Exception e) {
+                System.err.println("❌ Erreur lors du chargement de l'historique:");
+                e.printStackTrace();
+            }
+        }).start();
     }
 
     private JPanel createTopBar() {
@@ -102,10 +250,8 @@ public class Chat extends JPanel {
                 g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
                 g2.setColor(cardBgColor);
                 g2.fillRect(0, 0, getWidth(), getHeight());
-
                 g2.setColor(theme == 0 ? new Color(229, 231, 235) : new Color(40, 40, 40));
                 g2.fillRect(0, getHeight() - 1, getWidth(), 1);
-
                 g2.dispose();
             }
         };
@@ -125,8 +271,8 @@ public class Chat extends JPanel {
 
         JButton callButton = createModernButton("📞", new Color(16, 185, 129), new Color(52, 211, 153));
         callButton.setPreferredSize(new Dimension(45, 45));
-        callButton.addActionListener(e -> JOptionPane.showMessageDialog(this, "Appel vocal", "Appel",
-                JOptionPane.INFORMATION_MESSAGE));
+        callButton.addActionListener(e -> JOptionPane.showMessageDialog(this, 
+            "Appel vocal", "Appel", JOptionPane.INFORMATION_MESSAGE));
 
         buttonsPanel.add(callButton);
         topBar.add(buttonsPanel, BorderLayout.EAST);
@@ -142,11 +288,6 @@ public class Chat extends JPanel {
         messagesContainer.setLayout(new BoxLayout(messagesContainer, BoxLayout.Y_AXIS));
         messagesContainer.setBackground(bgColor);
         messagesContainer.setBorder(BorderFactory.createEmptyBorder(20, 25, 20, 25));
-
-        for (ChatMessage msg : messages) {
-            messagesContainer.add(createMessageBubble(msg));
-            messagesContainer.add(Box.createRigidArea(new Dimension(0, 12)));
-        }
 
         Scrollbar scroll = new Scrollbar(theme);
         JScrollPane scrollPane = scroll.create(messagesContainer);
@@ -172,69 +313,42 @@ public class Chat extends JPanel {
             container.add(Box.createHorizontalGlue());
         }
 
-        JPanel messagePanel = new JPanel();
-        messagePanel.setLayout(new BoxLayout(messagePanel, BoxLayout.Y_AXIS));
-        messagePanel.setOpaque(false);
-
-        if (!isMyMessage) {
-            JPanel header = new JPanel(new FlowLayout(FlowLayout.LEFT, 12, 0));
-            header.setOpaque(false);
-            header.setAlignmentX(Component.LEFT_ALIGNMENT);
-            header.setMaximumSize(new Dimension(Integer.MAX_VALUE, 40));
-
-            JPanel avatar = createAvatar(msg.prenom, msg.nom);
-            header.add(avatar);
-
-            JPanel infoPanel = new JPanel();
-            infoPanel.setLayout(new BoxLayout(infoPanel, BoxLayout.Y_AXIS));
-            infoPanel.setOpaque(false);
-            infoPanel.setAlignmentY(Component.CENTER_ALIGNMENT);
-
-            JLabel nameLabel = new JLabel(msg.prenom + " " + msg.nom);
-            nameLabel.setFont(new Font("Segoe UI", Font.BOLD, 13));
-            nameLabel.setForeground(textPrimary);
-            nameLabel.setAlignmentX(Component.LEFT_ALIGNMENT);
-
-            if (!msg.type.equals("NORMAL")) {
-                JLabel roleLabel = new JLabel(msg.type);
-                roleLabel.setFont(new Font("Segoe UI", Font.BOLD, 10));
-                roleLabel.setForeground(msg.type.equals("RESPONSABLE") ? new Color(139, 92, 246)
-                        : new Color(245, 158, 11));
-                roleLabel.setBorder(BorderFactory.createCompoundBorder(
-                        BorderFactory.createLineBorder(msg.type.equals("RESPONSABLE")
-                                ? new Color(139, 92, 246, 150)
-                                : new Color(245, 158, 11, 150), 1, true),
-                        BorderFactory.createEmptyBorder(3, 8, 3, 8)));
-                roleLabel.setOpaque(false);
-                infoPanel.add(roleLabel);
-            }
-
-            infoPanel.add(nameLabel);
-            header.add(infoPanel);
-            messagePanel.add(header);
-            messagePanel.add(Box.createRigidArea(new Dimension(0, 8)));
-        }
-
+        // Bulle de message avec avatar et nom intégrés
         JPanel bubble = new JPanel() {
             @Override
             protected void paintComponent(Graphics g) {
                 super.paintComponent(g);
                 Graphics2D g2 = (Graphics2D) g.create();
                 g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
-
                 Color bubbleColor = isMyMessage ? myMessageBg : otherMessageBg;
                 g2.setColor(bubbleColor);
                 g2.fillRoundRect(0, 0, getWidth(), getHeight(), 18, 18);
-
                 g2.dispose();
             }
         };
-        bubble.setLayout(new BorderLayout(15, 10));
+        bubble.setLayout(new BorderLayout(12, 8));
         bubble.setOpaque(false);
         bubble.setBorder(BorderFactory.createEmptyBorder(14, 18, 14, 18));
         bubble.setAlignmentX(isMyMessage ? Component.RIGHT_ALIGNMENT : Component.LEFT_ALIGNMENT);
-        bubble.setMaximumSize(new Dimension(500, Integer.MAX_VALUE));
+        bubble.setMaximumSize(new Dimension(550, Integer.MAX_VALUE));
 
+        // Header avec avatar et nom dans la bulle
+        JPanel headerPanel = new JPanel(new BorderLayout(12, 0));
+        headerPanel.setOpaque(false);
+
+        // Avatar
+        JPanel avatar = createAvatar(msg.prenom, msg.nom);
+        headerPanel.add(avatar, BorderLayout.WEST);
+
+        // Nom complet
+        JLabel nameLabel = new JLabel(msg.prenom + " " + msg.nom);
+        nameLabel.setFont(new Font("Segoe UI", Font.BOLD, 13));
+        nameLabel.setForeground(isMyMessage ? new Color(255, 255, 255, 230) : textPrimary);
+        headerPanel.add(nameLabel, BorderLayout.CENTER);
+
+        bubble.add(headerPanel, BorderLayout.NORTH);
+
+        // Contenu du message
         JTextArea textArea = new JTextArea(msg.contenu);
         textArea.setEditable(false);
         textArea.setLineWrap(true);
@@ -242,19 +356,18 @@ public class Chat extends JPanel {
         textArea.setOpaque(false);
         textArea.setFont(new Font("Segoe UI", Font.PLAIN, 14));
         textArea.setForeground(isMyMessage ? Color.WHITE : textPrimary);
-        textArea.setBorder(null);
+        textArea.setBorder(BorderFactory.createEmptyBorder(5, 0, 5, 0));
         textArea.setMargin(new Insets(0, 0, 0, 0));
 
         bubble.add(textArea, BorderLayout.CENTER);
 
+        // Heure
         JLabel timeLabel = new JLabel(timeFormat.format(msg.date));
         timeLabel.setFont(new Font("Segoe UI", Font.PLAIN, 11));
         timeLabel.setForeground(isMyMessage ? new Color(255, 255, 255, 180) : textSecondary);
-        timeLabel.setAlignmentX(Component.RIGHT_ALIGNMENT);
         bubble.add(timeLabel, BorderLayout.SOUTH);
 
-        messagePanel.add(bubble);
-        container.add(messagePanel);
+        container.add(bubble);
 
         if (!isMyMessage) {
             container.add(Box.createHorizontalGlue());
@@ -270,13 +383,15 @@ public class Chat extends JPanel {
                 super.paintComponent(g);
                 Graphics2D g2 = (Graphics2D) g.create();
                 g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
+                int hue = (prenom + nom).hashCode() % 360;
+        Color color1 = Color.getHSBColor(hue / 360f, 0.7f, 0.85f);
+        Color color2 = Color.getHSBColor(hue / 360f, 0.8f, 0.70f);
 
-                GradientPaint gradient = new GradientPaint(
-                        0, 0, new Color(99, 102, 241),
-                        getWidth(), getHeight(), new Color(139, 92, 246));
+        GradientPaint gradient = new GradientPaint(
+            0, 0, color1,
+            getWidth(), getHeight(), color2);
                 g2.setPaint(gradient);
                 g2.fillOval(0, 0, getWidth(), getHeight());
-
                 g2.setColor(Color.WHITE);
                 g2.setFont(new Font("Segoe UI", Font.BOLD, 14));
                 String initials = "" + prenom.charAt(0) + nom.charAt(0);
@@ -284,7 +399,6 @@ public class Chat extends JPanel {
                 int x = (getWidth() - fm.stringWidth(initials)) / 2;
                 int y = (getHeight() + fm.getAscent() - fm.getDescent()) / 2;
                 g2.drawString(initials, x, y);
-
                 g2.dispose();
             }
         };
@@ -303,10 +417,8 @@ public class Chat extends JPanel {
                 Graphics2D g2 = (Graphics2D) g.create();
                 g2.setColor(cardBgColor);
                 g2.fillRect(0, 0, getWidth(), getHeight());
-
                 g2.setColor(theme == 0 ? new Color(229, 231, 235) : new Color(40, 40, 40));
                 g2.fillRect(0, 0, getWidth(), 1);
-
                 g2.dispose();
             }
         };
@@ -321,14 +433,11 @@ public class Chat extends JPanel {
                 super.paintComponent(g);
                 Graphics2D g2 = (Graphics2D) g.create();
                 g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
-
                 g2.setColor(inputBg);
                 g2.fillRoundRect(0, 0, getWidth(), getHeight(), 14, 14);
-
                 g2.setColor(theme == 0 ? new Color(229, 231, 235) : new Color(60, 60, 60));
                 g2.setStroke(new BasicStroke(1.5f));
                 g2.drawRoundRect(1, 1, getWidth() - 3, getHeight() - 3, 14, 14);
-
                 g2.dispose();
             }
         };
@@ -361,7 +470,6 @@ public class Chat extends JPanel {
         inputWrapper.add(sendButton, BorderLayout.EAST);
 
         panel.add(inputWrapper, BorderLayout.CENTER);
-
         return panel;
     }
 
@@ -371,20 +479,17 @@ public class Chat extends JPanel {
             protected void paintComponent(Graphics g) {
                 Graphics2D g2 = (Graphics2D) g.create();
                 g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
-
                 GradientPaint gradient = new GradientPaint(
-                        0, 0, getModel().isPressed() ? color2 : color1,
-                        0, getHeight(), getModel().isPressed() ? color1 : color2);
+                    0, 0, getModel().isPressed() ? color2 : color1,
+                    0, getHeight(), getModel().isPressed() ? color1 : color2);
                 g2.setPaint(gradient);
                 g2.fillRoundRect(0, 0, getWidth(), getHeight(), 12, 12);
-
                 g2.setFont(new Font("Segoe UI Emoji", Font.PLAIN, 18));
                 FontMetrics fm = g2.getFontMetrics();
                 int x = (getWidth() - fm.stringWidth(getText())) / 2;
                 int y = (getHeight() + fm.getAscent() - fm.getDescent()) / 2;
                 g2.setColor(Color.WHITE);
                 g2.drawString(getText(), x, y);
-
                 g2.dispose();
             }
         };
@@ -397,54 +502,28 @@ public class Chat extends JPanel {
         return button;
     }
 
-   private void sendMessage() {
-    String text = inputField.getText().trim();
-    if (!text.isEmpty()) {
-        // Création du message local pour l'interface
-        ChatMessage newMessage = new ChatMessage(
-                myId, "Vous", "", "NORMAL",
-                text,
-                new Date());
-        addMessage(newMessage);
-        inputField.setText("");
+    private void sendMessage() {
+        String text = inputField.getText().trim();
+        if (!text.isEmpty() && stompSession != null && stompSession.isConnected()) {
+            MessageDTO dto = new MessageDTO();
+            dto.contenu = text;
+            dto.dateEnvoi = new Date();
+            dto.estLu = false;
+            dto.membreId = myId;
+            dto.projetId = projectId;
 
-        // Création du DTO pour envoyer au backend
-        MessageDTO dto = new MessageDTO();
-        dto.contenu = text;
-        dto.dateEnvoi = new Date();
-        dto.estLu = false;
-        dto.membreId = myId;
-        dto.projetId = 1; // <-- remplace par l'ID réel de ton projet
-
-        // Envoi HTTP dans un thread séparé
-        new Thread(() -> {
-            try {
-                URL url = new URL("http://localhost:8080/messages");
-                HttpURLConnection conn = (HttpURLConnection) url.openConnection();
-                conn.setRequestMethod("POST");
-                conn.setRequestProperty("Content-Type", "application/json");
-                conn.setDoOutput(true);
-
-                String json = new Gson().toJson(dto);
-                OutputStream os = conn.getOutputStream();
-                os.write(json.getBytes());
-                os.flush();
-                os.close();
-
-                int responseCode = conn.getResponseCode();
-                if(responseCode != 200) {
-                    System.out.println("Erreur en envoyant le message: " + responseCode);
-                }
-
-                conn.disconnect();
-            } catch (Exception e) {
-                e.printStackTrace();
-            }
-        }).start();
+            stompSession.send("/app/chat.sendMessage", dto);
+            inputField.setText("");
+        } else if (stompSession == null || !stompSession.isConnected()) {
+            JOptionPane.showMessageDialog(this,
+                "Non connecté au serveur. Veuillez réessayer.",
+                "Erreur de connexion",
+                JOptionPane.ERROR_MESSAGE);
+        }
     }
-}
 
     private void addMessage(ChatMessage message) {
+        loadedMessageIds.add(message.id);
         messages.add(message);
         messagesContainer.add(createMessageBubble(message));
         messagesContainer.add(Box.createRigidArea(new Dimension(0, 12)));
@@ -452,12 +531,14 @@ public class Chat extends JPanel {
         messagesContainer.repaint();
 
         SwingUtilities.invokeLater(() -> {
-            JScrollBar vertical = ((JScrollPane) messagesContainer.getParent().getParent()).getVerticalScrollBar();
+            JScrollBar vertical = ((JScrollPane) messagesContainer.getParent().getParent())
+                .getVerticalScrollBar();
             vertical.setValue(vertical.getMaximum());
         });
     }
 
     private static class ChatMessage {
+        int id;
         int membreId;
         String prenom;
         String nom;
