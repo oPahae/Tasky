@@ -1,22 +1,43 @@
 package com.example.demo.interfaces;
 
+import java.awt.BasicStroke;
+import java.awt.BorderLayout;
+import java.awt.Color;
+import java.awt.Component;
+import java.awt.Cursor;
+import java.awt.Dimension;
+import java.awt.FlowLayout;
+import java.awt.Font;
+import java.awt.FontMetrics;
+import java.awt.GradientPaint;
+import java.awt.Graphics;
+import java.awt.Graphics2D;
+import java.awt.Insets;
+import java.awt.RenderingHints;
+import java.io.OutputStream;
+import java.net.HttpURLConnection;
+import java.net.URL;
+import java.text.SimpleDateFormat;
+import java.util.ArrayList;
+import java.util.Date;
+import java.util.List;
+
+import javax.swing.BorderFactory;
+import javax.swing.Box;
+import javax.swing.BoxLayout;
+import javax.swing.JButton;
+import javax.swing.JLabel;
+import javax.swing.JOptionPane;
+import javax.swing.JPanel;
+import javax.swing.JScrollBar;
+import javax.swing.JScrollPane;
+import javax.swing.JTextArea;
+import javax.swing.SwingUtilities;
+
 import com.example.demo.Params;
 import com.example.demo.components.Scrollbar;
 import com.example.demo.hooks.MessageDTO;
-   
-
-import java.net.HttpURLConnection;
-import java.net.URL;
-import java.io.OutputStream;
 import com.google.gson.Gson;
-
-import javax.swing.*;
-import javax.swing.border.*;
-import java.awt.*;
-import java.awt.event.*;
-import java.text.SimpleDateFormat;
-import java.util.*;
-import java.util.List;
 
 public class Chat extends JPanel {
     private int theme;
@@ -419,7 +440,7 @@ public class Chat extends JPanel {
             // Envoi HTTP dans un thread séparé
             new Thread(() -> {
                 try {
-                    URL url = new URL("http://localhost:8080/api/messages");  //  correction de l'URL(+api)
+                    URL url = new URL("http://localhost:8081/api/messages");  //  correction de l'URL(+api)
                     HttpURLConnection conn = (HttpURLConnection) url.openConnection();
                     conn.setRequestMethod("POST");
                     conn.setRequestProperty("Content-Type", "application/json");
