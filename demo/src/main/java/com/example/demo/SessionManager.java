@@ -2,15 +2,31 @@ package com.example.demo;
 
 public class SessionManager {
     private static SessionManager instance;
+    
+    // Informations User
     private String token;
+    private int userId;
     private String prenom;
     private String nom;
     private String email;
     private String competance;
     private String telephone;
-    private int userId;
+    
+    // Informations Membre actuel (pour le projet sélectionné)
+    private int currentMembreId;
+    private String currentMembreRole;
+    private String currentMembreType;
+    
+    // Informations Projet sélectionné
+    private int currentProjetId;
+    private String currentProjetNom;
+    private String currentProjetDescription;
 
-    private SessionManager() {}
+    private SessionManager() {
+        // Valeurs par défaut
+        this.currentMembreId = -1;
+        this.currentProjetId = -1;
+    }
 
     public static SessionManager getInstance() {
         if (instance == null) {
@@ -23,7 +39,8 @@ public class SessionManager {
         getInstance();
     }
 
-    // Méthode pour sauvegarder toutes les infos de session
+    // ========== GESTION USER ==========
+    
     public void setUserSession(String token, String prenom, String nom, String email, 
                                String competance, String telephone, int userId) {
         this.token = token;
@@ -35,16 +52,45 @@ public class SessionManager {
         this.userId = userId;
     }
 
-    // Méthode simplifiée pour infos de base
-    public void setUserInfo(String prenom, String nom, String email) {
+    public void setUserInfo(String prenom, String nom, String email, int userId) {
         this.prenom = prenom;
         this.nom = nom;
         this.email = email;
+        this.userId = userId;
     }
 
-    // Getters
+    // ========== GESTION MEMBRE ACTUEL ==========
+    
+    public void setCurrentMembre(int membreId, String role, String type) {
+        this.currentMembreId = membreId;
+        this.currentMembreRole = role;
+        this.currentMembreType = type;
+        
+        System.out.println("✅ Membre actuel défini : ID=" + membreId + ", Role=" + role);
+    }
+
+    // ========== GESTION PROJET SÉLECTIONNÉ ==========
+    
+    public void setCurrentProjet(int projetId, String projetNom, String projetDescription) {
+        this.currentProjetId = projetId;
+        this.currentProjetNom = projetNom;
+        this.currentProjetDescription = projetDescription;
+        
+        System.out.println("✅ Projet actuel défini : ID=" + projetId + ", Nom=" + projetNom);
+    }
+
+    public void setCurrentProjet(int projetId, String projetNom) {
+        setCurrentProjet(projetId, projetNom, "");
+    }
+
+    // ========== GETTERS USER ==========
+    
     public String getToken() {
         return token;
+    }
+
+    public int getUserId() {
+        return userId;
     }
 
     public String getPrenom() {
@@ -71,15 +117,54 @@ public class SessionManager {
         return telephone != null ? telephone : "";
     }
 
-    public int getUserId() {
-        return userId;
+    // ========== GETTERS MEMBRE ACTUEL ==========
+    
+    public int getCurrentMembreId() {
+        return currentMembreId;
     }
 
+    public String getCurrentMembreRole() {
+        return currentMembreRole != null ? currentMembreRole : "NORMAL";
+    }
+
+    public String getCurrentMembreType() {
+        return currentMembreType != null ? currentMembreType : "NORMAL";
+    }
+
+    // ========== GETTERS PROJET ACTUEL ==========
+    
+    public int getCurrentProjetId() {
+        return currentProjetId;
+    }
+
+    public String getCurrentProjetNom() {
+        return currentProjetNom != null ? currentProjetNom : "Projet";
+    }
+
+    public String getCurrentProjetDescription() {
+        return currentProjetDescription != null ? currentProjetDescription : "";
+    }
+
+    // ========== VÉRIFICATIONS ==========
+    
     public boolean isLoggedIn() {
-        return token != null && !token.isEmpty();
+        return token != null && !token.isEmpty() && userId > 0;
     }
 
-    // Méthode pour se déconnecter
+    public boolean hasMembreSelected() {
+        return currentMembreId > 0;
+    }
+
+    public boolean hasProjetSelected() {
+        return currentProjetId > 0;
+    }
+
+    public boolean isReadyForChat() {
+        return isLoggedIn() && hasMembreSelected() && hasProjetSelected();
+    }
+
+    // ========== LOGOUT ==========
+    
     public void logout() {
         this.token = null;
         this.prenom = null;
@@ -88,17 +173,38 @@ public class SessionManager {
         this.competance = null;
         this.telephone = null;
         this.userId = -1;
+        this.currentMembreId = -1;
+        this.currentProjetId = -1;
+        this.currentProjetNom = null;
+        this.currentMembreRole = null;
+        this.currentMembreType = null;
     }
 
-    // Méthode pour afficher les infos (debug)
+    // ========== DEBUG ==========
+    
     public void printSessionInfo() {
-        System.out.println("=== SESSION INFO ===");
-        System.out.println("Token: " + (token != null ? "***" + token.substring(Math.max(0, token.length() - 4)) : "null"));
-        System.out.println("Nom complet: " + getFullName());
-        System.out.println("Email: " + getEmail());
-        System.out.println("Compétence: " + getCompetance());
-        System.out.println("Téléphone: " + getTelephone());
-        System.out.println("User ID: " + getUserId());
-        System.out.println("===================");
+        System.out.println("==================== SESSION INFO ====================");
+        System.out.println("USER:");
+        System.out.println("  - Token: " + (token != null ? "***" + token.substring(Math.max(0, token.length() - 4)) : "null"));
+        System.out.println("  - User ID: " + userId);
+        System.out.println("  - Nom complet: " + getFullName());
+        System.out.println("  - Email: " + getEmail());
+        System.out.println();
+        System.out.println("MEMBRE ACTUEL:");
+        System.out.println("  - Membre ID: " + currentMembreId);
+        System.out.println("  - Role: " + getCurrentMembreRole());
+        System.out.println("  - Type: " + getCurrentMembreType());
+        System.out.println();
+        System.out.println("PROJET ACTUEL:");
+        System.out.println("  - Projet ID: " + currentProjetId);
+        System.out.println("  - Nom: " + getCurrentProjetNom());
+        System.out.println("  - Description: " + getCurrentProjetDescription());
+        System.out.println();
+        System.out.println("STATUS:");
+        System.out.println("  - Logged in: " + isLoggedIn());
+        System.out.println("  - Membre selected: " + hasMembreSelected());
+        System.out.println("  - Projet selected: " + hasProjetSelected());
+        System.out.println("  - Ready for chat: " + isReadyForChat());
+        System.out.println("======================================================");
     }
 }
