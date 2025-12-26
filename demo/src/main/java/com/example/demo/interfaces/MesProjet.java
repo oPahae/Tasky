@@ -308,6 +308,24 @@ public class MesProjet extends JPanel {
         card.setMaximumSize(new Dimension(Integer.MAX_VALUE, 180));
         card.setCursor(new Cursor(Cursor.HAND_CURSOR));
 
+        card.addMouseListener(new java.awt.event.MouseAdapter() {
+          public void mouseClicked(java.awt.event.MouseEvent evt) {
+                    System.out.println("🖱️ Clic sur projet: " + projet.nom);
+                    
+                    // 1. Définir le projet dans Params
+                    Params.projetID = projet.id;
+                    
+                    // 2. Définir le projet dans SessionManager
+                    SessionManager.getInstance().setCurrentProjet(
+                        projet.id, 
+                        projet.nom, 
+                        projet.description
+                    );
+                    
+                    // 3. Récupérer le membreId PUIS afficher les détails
+                    loadMembreIdForProjetAndShowDetail(projet);
+                }
+     });
         JPanel leftPanel = new JPanel();
         leftPanel.setLayout(new BoxLayout(leftPanel, BoxLayout.Y_AXIS));
         leftPanel.setOpaque(false);
@@ -564,6 +582,69 @@ public class MesProjet extends JPanel {
         return colors[colorCounter++];
     }
 
+    // ✅ NOUVELLE MÉTHODE : Charger le membre et afficher les détails
+    private void loadMembreIdForProjetAndShowDetail(Projet projet) {
+    new Thread(() -> {
+        try {
+            int userId = SessionManager.getInstance().getUserId();
+            System.out.println("🔍 Chargement membre pour userId=" + userId + ", projetId=" + projet.id);
+            
+            String urlString = "http://localhost:8080/api/membre/user/" + userId + "/projet/" + projet.id;
+            
+            HttpClient client = HttpClient.newHttpClient();
+            HttpRequest request = HttpRequest.newBuilder()
+                    .uri(URI.create(urlString))
+                    .GET()
+                    .build();
+            
+            HttpResponse<String> response = client.send(request, HttpResponse.BodyHandlers.ofString());
+            
+            if (response.statusCode() == 200) {
+                ObjectMapper mapper = new ObjectMapper();
+                Map<String, Object> membreData = mapper.readValue(
+                    response.body(), 
+                    new com.fasterxml.jackson.core.type.TypeReference<>() {}
+                );
+                
+                int membreId = ((Number) membreData.get("id")).intValue();
+                String role = (String) membreData.getOrDefault("role", "NORMAL");
+                String type = (String) membreData.getOrDefault("type", "NORMAL");
+                
+                // Définir le membre dans SessionManager
+                SessionManager.getInstance().setCurrentMembre(membreId, role, type);
+                Params.membreID = membreId;
+                
+                System.out.println("✅ Membre chargé: ID=" + membreId);
+                SessionManager.getInstance().printSessionInfo();
+                
+                // Afficher les détails du projet
+                SwingUtilities.invokeLater(() -> {
+                    showProjetDetail(projet);
+                });
+                
+            } else {
+                System.err.println("❌ Erreur HTTP: " + response.statusCode());
+                SwingUtilities.invokeLater(() -> {
+                    JOptionPane.showMessageDialog(MesProjet.this, 
+                        "Erreur: Vous n'êtes pas membre de ce projet", 
+                        "Erreur", 
+                        JOptionPane.ERROR_MESSAGE);
+                });
+            }
+            
+        } catch (Exception e) {
+            System.err.println("❌ Erreur lors de la récupération du membre:");
+            e.printStackTrace();
+            
+            SwingUtilities.invokeLater(() -> {
+                JOptionPane.showMessageDialog(MesProjet.this, 
+                    "Erreur de connexion au serveur", 
+                    "Erreur", 
+                    JOptionPane.ERROR_MESSAGE);
+            });
+        }
+    }).start();
+}
     public static class Projet {
         public int id;
         public String nom;

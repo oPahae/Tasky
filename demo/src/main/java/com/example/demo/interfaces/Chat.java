@@ -1,47 +1,29 @@
 package com.example.demo.interfaces;
 
 import com.example.demo.Params;
+import com.example.demo.SessionManager;
 import com.example.demo.components.Scrollbar;
 import com.example.demo.hooks.MessageDTO;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 import org.springframework.messaging.converter.MappingJackson2MessageConverter;
 import org.springframework.messaging.simp.stomp.*;
-import org.springframework.web.socket.client.WebSocketClient;
 import org.springframework.web.socket.client.standard.StandardWebSocketClient;
 import org.springframework.web.socket.messaging.WebSocketStompClient;
 import org.springframework.web.socket.sockjs.client.SockJsClient;
 import org.springframework.web.socket.sockjs.client.Transport;
 import org.springframework.web.socket.sockjs.client.WebSocketTransport;
-import java.lang.reflect.Type;
 
 import javax.swing.*;
 import java.awt.*;
 import java.io.BufferedReader;
 import java.io.InputStreamReader;
+import java.lang.reflect.Type;
 import java.net.HttpURLConnection;
 import java.net.URL;
 import java.text.SimpleDateFormat;
-import java.util.ArrayList;
-import java.util.Date;
+import java.util.*;
 import java.util.List;
-
-import javax.swing.BorderFactory;
-import javax.swing.Box;
-import javax.swing.BoxLayout;
-import javax.swing.JButton;
-import javax.swing.JLabel;
-import javax.swing.JOptionPane;
-import javax.swing.JPanel;
-import javax.swing.JScrollBar;
-import javax.swing.JScrollPane;
-import javax.swing.JTextArea;
-import javax.swing.SwingUtilities;
-
-import com.example.demo.Params;
-import com.example.demo.components.Scrollbar;
-import com.example.demo.hooks.MessageDTO;
-import com.google.gson.Gson;
 
 public class Chat extends JPanel {
     private int theme;
@@ -50,21 +32,40 @@ public class Chat extends JPanel {
     private List<ChatMessage> messages;
     private JPanel messagesContainer;
     private JTextArea inputField;
-    private int myId = 1;
-    private int projectId = 1;
-    private String projectName = "Projet Dashboard";
+    
+    // ✅ IDs DYNAMIQUES depuis SessionManager
+    private int myId;
+    private int projectId;
+    private String projectName;
+    
     private SimpleDateFormat timeFormat = new SimpleDateFormat("HH:mm");
 
     // WebSocket
     private WebSocketStompClient stompClient;
     private StompSession stompSession;
     private Gson gson = new GsonBuilder().setLenient().setDateFormat("yyyy-MM-dd'T'HH:mm:ss").create();
-
-    // Set pour éviter les doublons par ID
     private Set<Integer> loadedMessageIds = new HashSet<>();
 
     public Chat() {
         this.theme = Params.theme;
+        
+        // ✅ RÉCUPÉRER LES IDs DEPUIS SessionManager
+        SessionManager session = SessionManager.getInstance();
+        
+        if (!session.isReadyForChat()) {
+            initErrorPanel("⚠️ Session invalide. Veuillez vous reconnecter et sélectionner un projet.");
+            return;
+        }
+        
+        this.myId = session.getCurrentMembreId();
+        this.projectId = session.getCurrentProjetId();
+        this.projectName = session.getCurrentProjetNom();
+        
+        System.out.println("🚀 Chat initialisé:");
+        System.out.println("   - Membre ID: " + myId);
+        System.out.println("   - Projet ID: " + projectId);
+        System.out.println("   - Projet Nom: " + projectName);
+        
         initializeColors();
         messages = new ArrayList<>();
 
@@ -74,9 +75,26 @@ public class Chat extends JPanel {
         add(createMessagesArea(), BorderLayout.CENTER);
         add(createInputArea(), BorderLayout.SOUTH);
 
-        // Charger l'historique puis connecter WebSocket
         loadMessageHistory();
         connectWebSocket();
+    }
+
+    private void initErrorPanel(String errorMessage) {
+        setLayout(new BorderLayout());
+        setBackground(new Color(245, 247, 250));
+        
+        JPanel errorPanel = new JPanel();
+        errorPanel.setLayout(new BoxLayout(errorPanel, BoxLayout.Y_AXIS));
+        errorPanel.setBackground(Color.WHITE);
+        errorPanel.setBorder(BorderFactory.createEmptyBorder(50, 50, 50, 50));
+        
+        JLabel errorLabel = new JLabel(errorMessage);
+        errorLabel.setFont(new Font("Segoe UI", Font.BOLD, 18));
+        errorLabel.setForeground(new Color(220, 38, 38));
+        errorLabel.setAlignmentX(Component.CENTER_ALIGNMENT);
+        
+        errorPanel.add(errorLabel);
+        add(errorPanel, BorderLayout.CENTER);
     }
 
     private void initializeColors() {
@@ -115,7 +133,7 @@ public class Chat extends JPanel {
                     @Override
                     public void afterConnected(StompSession session, StompHeaders connectedHeaders) {
                         stompSession = session;
-                        System.out.println("✅ WebSocket connecté");
+                        System.out.println("✅ WebSocket connecté pour projet " + projectId);
 
                         session.subscribe("/topic/projet/" + projectId, new StompFrameHandler() {
                             @Override
@@ -151,7 +169,6 @@ public class Chat extends JPanel {
                 };
 
                 String url = "http://localhost:8080/ws-chat";
-                System.out.println("Connexion à : " + url);
                 stompClient.connect(url, sessionHandler);
             } catch (Exception e) {
                 e.printStackTrace();
@@ -190,8 +207,6 @@ public class Chat extends JPanel {
                 reader.close();
 
                 String jsonString = json.toString();
-                System.out.println("📦 JSON reçu (premiers 200 chars): " +
-                    (jsonString.length() > 200 ? jsonString.substring(0, 200) + "..." : jsonString));
 
                 if (jsonString.trim().isEmpty() || jsonString.equals("[]")) {
                     System.out.println("⚠️ Aucun message dans l'historique");
@@ -206,7 +221,6 @@ public class Chat extends JPanel {
                 }
 
                 SwingUtilities.invokeLater(() -> {
-                    // Réinitialiser l'interface et le Set avant de recharger
                     messagesContainer.removeAll();
                     loadedMessageIds.clear();
                     messages.clear();
@@ -238,7 +252,6 @@ public class Chat extends JPanel {
                     messagesContainer.revalidate();
                     messagesContainer.repaint();
 
-                    // Scroll vers le bas
                     SwingUtilities.invokeLater(() -> {
                         try {
                             JScrollBar vertical = ((JScrollPane) messagesContainer.getParent().getParent())
@@ -331,7 +344,6 @@ public class Chat extends JPanel {
             container.add(Box.createHorizontalGlue());
         }
 
-        // Bulle de message avec avatar et nom intégrés
         JPanel bubble = new JPanel() {
             @Override
             protected void paintComponent(Graphics g) {
@@ -350,15 +362,12 @@ public class Chat extends JPanel {
         bubble.setAlignmentX(isMyMessage ? Component.RIGHT_ALIGNMENT : Component.LEFT_ALIGNMENT);
         bubble.setMaximumSize(new Dimension(550, Integer.MAX_VALUE));
 
-        // Header avec avatar et nom dans la bulle
         JPanel headerPanel = new JPanel(new BorderLayout(12, 0));
         headerPanel.setOpaque(false);
 
-        // Avatar
         JPanel avatar = createAvatar(msg.prenom, msg.nom);
         headerPanel.add(avatar, BorderLayout.WEST);
 
-        // Nom complet
         JLabel nameLabel = new JLabel(msg.prenom + " " + msg.nom);
         nameLabel.setFont(new Font("Segoe UI", Font.BOLD, 13));
         nameLabel.setForeground(isMyMessage ? new Color(255, 255, 255, 230) : textPrimary);
@@ -366,7 +375,6 @@ public class Chat extends JPanel {
 
         bubble.add(headerPanel, BorderLayout.NORTH);
 
-        // Contenu du message
         JTextArea textArea = new JTextArea(msg.contenu);
         textArea.setEditable(false);
         textArea.setLineWrap(true);
@@ -379,7 +387,6 @@ public class Chat extends JPanel {
 
         bubble.add(textArea, BorderLayout.CENTER);
 
-        // Heure
         JLabel timeLabel = new JLabel(timeFormat.format(msg.date));
         timeLabel.setFont(new Font("Segoe UI", Font.PLAIN, 11));
         timeLabel.setForeground(isMyMessage ? new Color(255, 255, 255, 180) : textSecondary);
@@ -402,12 +409,12 @@ public class Chat extends JPanel {
                 Graphics2D g2 = (Graphics2D) g.create();
                 g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
                 int hue = (prenom + nom).hashCode() % 360;
-        Color color1 = Color.getHSBColor(hue / 360f, 0.7f, 0.85f);
-        Color color2 = Color.getHSBColor(hue / 360f, 0.8f, 0.70f);
+                Color color1 = Color.getHSBColor(hue / 360f, 0.7f, 0.85f);
+                Color color2 = Color.getHSBColor(hue / 360f, 0.8f, 0.70f);
 
-        GradientPaint gradient = new GradientPaint(
-            0, 0, color1,
-            getWidth(), getHeight(), color2);
+                GradientPaint gradient = new GradientPaint(
+                    0, 0, color1,
+                    getWidth(), getHeight(), color2);
                 g2.setPaint(gradient);
                 g2.fillOval(0, 0, getWidth(), getHeight());
                 g2.setColor(Color.WHITE);

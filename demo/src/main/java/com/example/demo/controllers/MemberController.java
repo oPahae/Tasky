@@ -12,12 +12,16 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.stream.Collectors;
 
+
 @RestController
 @RequestMapping("/api/membre")
+@CrossOrigin(origins = "*")  // Ajouté pour permettre les appels depuis Swing
 public class MemberController {
 
     @Autowired
@@ -25,6 +29,35 @@ public class MemberController {
 
     @Autowired
     private TacheRepository tacheRepository;
+
+    // ✅ NOUVELLE MÉTHODE : Récupérer le membre d'un utilisateur dans un projet
+    @GetMapping("/user/{userId}/projet/{projetId}")
+    public ResponseEntity<Map<String, Object>> getMembreByUserAndProjet(
+            @PathVariable int userId, 
+            @PathVariable int projetId) {
+        
+        System.out.println("🔍 Recherche membre pour userId=" + userId + ", projetId=" + projetId);
+        
+        // Chercher le membre correspondant
+        Membre membre = membreRepository.findByUserIdAndProjetId(userId, projetId);
+        
+        if (membre == null) {
+            System.err.println("❌ Aucun membre trouvé pour userId=" + userId + " et projetId=" + projetId);
+            return ResponseEntity.notFound().build();
+        }
+        
+        Map<String, Object> response = new HashMap<>();
+        response.put("id", membre.getId());
+        response.put("nom", membre.getNom());
+        response.put("prenom", membre.getPrenom());
+        response.put("email", membre.getEmail());
+        response.put("role", membre.getRole());
+        response.put("type", membre.getType());
+        
+        System.out.println("✅ Membre trouvé: ID=" + membre.getId() + ", Nom=" + membre.getPrenom() + " " + membre.getNom());
+        
+        return ResponseEntity.ok(response);
+    }
 
     // Récupérer les infos d'un membre et ses tâches avec le progrès
     @GetMapping("/get/{id}")
