@@ -21,6 +21,7 @@ public class AjouterTache extends JPanel {
 
     public AjouterTache(Consumer<String> onClick) {
         this.theme = Params.theme;
+        this.onClick = onClick;
         initializeColors();
         initializeDemoMembers();
         memberCheckboxes = new HashMap<>();

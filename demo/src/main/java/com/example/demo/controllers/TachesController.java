@@ -8,7 +8,7 @@ import java.util.stream.Collectors;
 import com.example.demo.models.*;
 import com.example.demo.repositories.TacheRepository;
 import com.example.demo.repositories.MembreRepository;
-
+import com.example.demo.repositories.ProjetRepository;
 import com.example.demo.hooks.TacheDTO;
 
 @RestController
@@ -16,11 +16,13 @@ import com.example.demo.hooks.TacheDTO;
 public class TachesController {
 
     private final TacheRepository tacheRepository;
+    private final ProjetRepository projetRepository;
     private final MembreRepository membreRepository;
 
-    public TachesController(TacheRepository tacheRepository, MembreRepository membreRepository) {
+    public TachesController(TacheRepository tacheRepository, MembreRepository membreRepository,ProjetRepository projetRepository) {
         this.tacheRepository = tacheRepository;
         this.membreRepository = membreRepository;
+        this.projetRepository = projetRepository;
     }
 
     private TacheDTO convertToTacheDTO( Tache t) {
@@ -43,9 +45,12 @@ public class TachesController {
     public boolean addtachetoMember(@PathVariable("idTache")int idTache,@PathVariable("idMembre") int id1) {
         Tache t = tacheRepository.findById(idTache).orElse(null);
         Membre m = membreRepository.findById(id1).orElse(null);
+        Projet p=t.getProjet();
         if (t != null && m != null) {
             t.getMembres().add(m);
             tacheRepository.save(t);
+            p.getNotificationss().add(new Notification("Vous avez été assigné à la tâche: "+t.getTitre()));
+            projetRepository.save(p);
             return true;
         }
         return false;

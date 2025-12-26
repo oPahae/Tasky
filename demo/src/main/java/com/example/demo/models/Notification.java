@@ -23,6 +23,11 @@ public class Notification {
     private Projet projet;
 
     public Notification() {}
+      public Notification(String contenu) {
+        this.contenu = contenu;
+        this.dateEnvoie = new Date();
+        this.estLue = false;
+    }
     public Notification(String contenu ,boolean estLue) {
         this.contenu = contenu;
         this.dateEnvoie = new Date();

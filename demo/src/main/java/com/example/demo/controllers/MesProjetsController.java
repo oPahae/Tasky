@@ -178,8 +178,8 @@ public class MesProjetsController {
             membre.setNom(user.getNom() + " " + user.getPrenom());
             membre.setEmail(user.getEmail());
             membre.setDescription("Créateur du projet");
-            membre.setRole("Créateur");
-            membre.setType("Standard");
+            membre.setRole("Responsable");
+            membre.setType("-");
             membre.setUser(user);
             membre.setProjet(p);
             membre.setDateRejointe(new Date());
@@ -219,7 +219,7 @@ public class MesProjetsController {
         membre.setEmail(user.getEmail());
         membre.setDescription("Membre depuis " + new Date());
         membre.setRole("Membre");
-        membre.setType("Standard");
+        membre.setType("Développeur");
         membre.setUser(user);
         membre.setProjet(projet);
         membre.setDateRejointe(new Date());

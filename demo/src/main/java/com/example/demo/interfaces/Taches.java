@@ -2,14 +2,17 @@ package com.example.demo.interfaces;
 
 import com.example.demo.Params;
 import com.example.demo.components.Scrollbar;
-
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.example.demo.Queries;
 import javax.swing.*;
-import javax.swing.border.*;
 
-import org.apache.catalina.Container;
+import org.springframework.scheduling.config.Task;
 
 import java.awt.*;
-import java.awt.geom.*;
+import java.net.URI;
+import java.net.http.HttpClient;
+import java.net.http.HttpRequest;
+import java.net.http.HttpResponse;
 import java.util.*;
 import java.util.List;
 import java.util.function.Consumer;
@@ -18,23 +21,152 @@ import java.time.format.DateTimeFormatter;
 
 public class Taches extends JPanel {
     private int theme;
-    private Color bgColor, cardBgColor, textPrimary, textSecondary, accentColor, progressBg, progressFill, dangerColor, borderColor;
+    private Color bgColor, cardBgColor, textPrimary, textSecondary, accentColor, progressBg, progressFill, dangerColor,
+            borderColor;
     private List<Task> tasks;
     private List<ProjectMember> members;
     private int colorCounter = 0;
     private DateTimeFormatter dateFormatter = DateTimeFormatter.ofPattern("dd MMM yyyy");
     private Consumer<String> onClickHandler;
+    private int projectId;
+    private JPanel mainPanel;
 
     public Taches(Consumer<String> onClick) {
         this.theme = Params.theme;
         this.onClickHandler = onClick;
+        this.projectId = Params.projetID;
+
         initializeColors();
-        initializeDemoData();
+        tasks = new ArrayList<>();
+        members = new ArrayList<>();
+
         setLayout(new BorderLayout());
         setBackground(bgColor);
 
-        JPanel mainPanel = createMainPanel(onClick);
+        mainPanel = new JPanel(new BorderLayout());
         add(mainPanel, BorderLayout.CENTER);
+
+        loadDataFromBackend();
+    }
+
+    private void loadDataFromBackend() {
+        System.out.println("Chargement des tâches pour projectId: " + projectId);
+
+        HttpClient client = HttpClient.newHttpClient();
+        HttpRequest request = HttpRequest.newBuilder()
+                .uri(URI.create("http://localhost:8080/api/dashboard/projet/" + projectId + "/taches"))
+                .GET()
+                .build();
+
+        client.sendAsync(request, HttpResponse.BodyHandlers.ofString())
+                .thenAccept(response -> {
+                    try {
+                        ObjectMapper mapper = new ObjectMapper();
+                        List<Map<String, Object>> tachesData = mapper.readValue(response.body(),
+                                new com.fasterxml.jackson.core.type.TypeReference<>() {
+                                });
+
+                        tasks.clear();
+
+                        for (Map<String, Object> tacheMap : tachesData) {
+                            int id = ((Number) tacheMap.get("id")).intValue();
+                            String titre = (String) tacheMap.getOrDefault("titre", "Sans titre");
+                            String description = (String) tacheMap.getOrDefault("description", "");
+                            String etat = (String) tacheMap.getOrDefault("etat", "En attente");
+                            int prog = (int) tacheMap.getOrDefault("progres", 0);
+                            String dateLimite = (String) tacheMap.getOrDefault("dateLimite", 0);
+
+                            Task task = new Task(
+                                    id,
+                                    titre,
+                                    prog,
+                                    description,
+                                    dateLimite,
+                                    new ArrayList<>());
+                            task.setState(etat);
+                            tasks.add(task);
+
+                            System.out.println("Tâche chargée: " + titre);
+                        }
+
+                        loadMembersFromBackend();
+
+                    } catch (Exception e) {
+                        System.err.println("Erreur parsing tâches: " + e.getMessage());
+                        e.printStackTrace();
+                        showErrorPanel("Erreur lors du chargement des tâches");
+                    }
+                })
+                .exceptionally(e -> {
+                    System.err.println("Erreur HTTP tâches: " + e.getMessage());
+                    showErrorPanel("Erreur serveur");
+                    return null;
+                });
+    }
+
+    private void loadMembersFromBackend() {
+        System.out.println("Chargement des membres pour projectId: " + projectId);
+
+        HttpClient client = HttpClient.newHttpClient();
+        HttpRequest request = HttpRequest.newBuilder()
+                .uri(URI.create("http://localhost:8080/api/dashboard/projet/" + projectId + "/Membre"))
+                .GET()
+                .build();
+
+        client.sendAsync(request, HttpResponse.BodyHandlers.ofString())
+                .thenAccept(response -> {
+                    try {
+                        ObjectMapper mapper = new ObjectMapper();
+                        List<Map<String, Object>> membresData = mapper.readValue(response.body(),
+                                new com.fasterxml.jackson.core.type.TypeReference<>() {
+                                });
+
+                        members.clear();
+
+                        for (Map<String, Object> membreMap : membresData) {
+                            String nom = (String) membreMap.getOrDefault("nom", "Inconnu");
+                            String role = (String) membreMap.getOrDefault("role", "Membre");
+
+                            String[] split = nom.split(" ", 2);
+                            String firstName = split[0];
+                            String lastName = split.length > 1 ? split[1] : "";
+
+                            ProjectMember member = new ProjectMember(firstName, lastName, role);
+                            members.add(member);
+                        }
+
+                        SwingUtilities.invokeLater(() -> {
+                            System.out.println("Mise à jour UI avec " + tasks.size() + " tâches");
+                            mainPanel.removeAll();
+                            mainPanel.add(createMainPanel(onClickHandler), BorderLayout.CENTER);
+                            mainPanel.revalidate();
+                            mainPanel.repaint();
+                        });
+
+                    } catch (Exception e) {
+                        System.err.println("Erreur parsing membres: " + e.getMessage());
+                        e.printStackTrace();
+                    }
+                })
+                .exceptionally(e -> {
+                    System.err.println("Erreur HTTP membres: " + e.getMessage());
+                    return null;
+                });
+    }
+
+    private void showErrorPanel(String message) {
+        SwingUtilities.invokeLater(() -> {
+            mainPanel.removeAll();
+            JPanel errorPanel = new JPanel();
+            errorPanel.setBackground(bgColor);
+            JLabel errorLabel = new JLabel(message);
+            errorLabel.setForeground(dangerColor);
+            errorLabel.setFont(new Font("Segoe UI", Font.PLAIN, 16));
+            errorPanel.add(errorLabel);
+            mainPanel.add(errorPanel, BorderLayout.CENTER);
+            mainPanel.revalidate();
+            mainPanel.repaint();
+        });
     }
 
     private void initializeColors() {
@@ -61,50 +193,6 @@ public class Taches extends JPanel {
         }
     }
 
-    private void initializeDemoData() {
-        members = new ArrayList<>();
-        tasks = new ArrayList<>();
-
-        // Demo members
-        members.add(new ProjectMember("Alice", "Martin", "Chef de projet"));
-        members.add(new ProjectMember("Bob", "Durant", "Développeur Backend"));
-        members.add(new ProjectMember("Charlie", "Dubois", "Développeur Frontend"));
-        members.add(new ProjectMember("Diana", "Rousseau", "QA Engineer"));
-
-        // Demo tasks avec deadline et membres assignés
-        tasks.add(new Task(1, "Conception UI/UX", 100, "Design",
-                LocalDate.now().plusDays(5),
-                Arrays.asList(members.get(0))));
-
-        tasks.add(new Task(2, "API Backend", 75, "Backend",
-                LocalDate.now().plusDays(10),
-                Arrays.asList(members.get(1))));
-
-        tasks.add(new Task(3, "Intégration Frontend", 60, "Frontend",
-                LocalDate.now().plusDays(15),
-                Arrays.asList(members.get(2), members.get(0))));
-
-        tasks.add(new Task(4, "Tests unitaires", 40, "Testing",
-                LocalDate.now().plusDays(20),
-                Arrays.asList(members.get(3), members.get(1))));
-
-        tasks.add(new Task(5, "Documentation", 30, "Docs",
-                LocalDate.now().plusDays(25),
-                Arrays.asList(members.get(0))));
-
-        tasks.add(new Task(6, "Déploiement", 0, "DevOps",
-                LocalDate.now().plusDays(30),
-                Arrays.asList(members.get(1), members.get(2))));
-
-        tasks.add(new Task(7, "Revue de code", 85, "Quality",
-                LocalDate.now().plusDays(7),
-                Arrays.asList(members.get(1), members.get(3))));
-
-        tasks.add(new Task(8, "Optimisation performance", 50, "Backend",
-                LocalDate.now().plusDays(12),
-                Arrays.asList(members.get(1), members.get(2), members.get(0))));
-    }
-
     private JPanel createMainPanel(Consumer<String> onClick) {
         JPanel panel = new JPanel(new BorderLayout(20, 20));
         panel.setBackground(bgColor);
@@ -116,35 +204,35 @@ public class Taches extends JPanel {
 
         // Header avec ombre subtile
         JPanel headerWrapper = new JPanel(new BorderLayout());
+        headerWrapper.setMaximumSize(new Dimension(Integer.MAX_VALUE, 100));
         headerWrapper.setBackground(bgColor);
         headerWrapper.setAlignmentX(Component.LEFT_ALIGNMENT);
-        
+
         JPanel header = new JPanel(new BorderLayout());
         header.setBackground(cardBgColor);
         header.setBorder(BorderFactory.createCompoundBorder(
-            BorderFactory.createLineBorder(borderColor, 1),
-            BorderFactory.createEmptyBorder(20, 25, 20, 25)
-        ));
+                BorderFactory.createLineBorder(borderColor, 1),
+                BorderFactory.createEmptyBorder(20, 25, 20, 25)));
 
         // Title section
         JPanel titleSection = new JPanel();
         titleSection.setLayout(new BoxLayout(titleSection, BoxLayout.Y_AXIS));
         titleSection.setBackground(cardBgColor);
-        
+
         JLabel tasksTitle = new JLabel("Gestion des tâches");
         tasksTitle.setFont(new Font("Segoe UI", Font.BOLD, 26));
         tasksTitle.setForeground(textPrimary);
         tasksTitle.setAlignmentX(Component.LEFT_ALIGNMENT);
-        
+
         JLabel subtitle = new JLabel(tasks.size() + " tâches actives");
         subtitle.setFont(new Font("Segoe UI", Font.PLAIN, 14));
         subtitle.setForeground(textSecondary);
         subtitle.setAlignmentX(Component.LEFT_ALIGNMENT);
-        
+
         titleSection.add(tasksTitle);
         titleSection.add(Box.createRigidArea(new Dimension(0, 5)));
         titleSection.add(subtitle);
-        
+
         header.add(titleSection, BorderLayout.WEST);
 
         JButton addBtn = new JButton("+ Nouvelle tâche") {
@@ -153,10 +241,10 @@ public class Taches extends JPanel {
                 Graphics2D g2 = (Graphics2D) g.create();
                 g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
                 GradientPaint gradient = new GradientPaint(
-                            0, 0, accentColor,
-                            getWidth(), getHeight(), new Color(139, 92, 246));
-                    g2.setPaint(gradient);
-                    g2.fillRoundRect(0, 0, getWidth(), getHeight(), 10, 10);
+                        0, 0, accentColor,
+                        getWidth(), getHeight(), new Color(139, 92, 246));
+                g2.setPaint(gradient);
+                g2.fillRoundRect(0, 0, getWidth(), getHeight(), 10, 10);
                 g2.dispose();
                 super.paintComponent(g);
             }
@@ -172,16 +260,24 @@ public class Taches extends JPanel {
 
         header.add(addBtn, BorderLayout.EAST);
         headerWrapper.add(header);
-        
+
         contentWrapper.add(headerWrapper);
         contentWrapper.add(Box.createRigidArea(new Dimension(0, 25)));
 
         // Tasks list
-        for (Task task : tasks) {
-            JPanel taskCard = createTaskCard(task, onClick);
-            taskCard.setAlignmentX(Component.LEFT_ALIGNMENT);
-            contentWrapper.add(taskCard);
-            contentWrapper.add(Box.createRigidArea(new Dimension(0, 15)));
+        if (tasks.isEmpty()) {
+            JLabel emptyLabel = new JLabel("Aucune tâche disponible");
+            emptyLabel.setForeground(textSecondary);
+            emptyLabel.setFont(new Font("Segoe UI", Font.PLAIN, 16));
+            emptyLabel.setAlignmentX(Component.LEFT_ALIGNMENT);
+            contentWrapper.add(emptyLabel);
+        } else {
+            for (Task task : tasks) {
+                JPanel taskCard = createTaskCard(task, onClick);
+                taskCard.setAlignmentX(Component.LEFT_ALIGNMENT);
+                contentWrapper.add(taskCard);
+                contentWrapper.add(Box.createRigidArea(new Dimension(0, 15)));
+            }
         }
 
         Scrollbar scroll = new Scrollbar(theme);
@@ -199,45 +295,42 @@ public class Taches extends JPanel {
         Color taskColor = getRandomColor();
         JPanel card = new JPanel() {
             private boolean hovered = false;
-            
+
             {
                 addMouseListener(new java.awt.event.MouseAdapter() {
                     public void mouseEntered(java.awt.event.MouseEvent evt) {
                         hovered = true;
                         repaint();
                     }
+
                     public void mouseExited(java.awt.event.MouseEvent evt) {
                         hovered = false;
                         repaint();
                     }
                 });
             }
-            
+
             @Override
             protected void paintComponent(Graphics g) {
                 super.paintComponent(g);
                 Graphics2D g2 = (Graphics2D) g.create();
                 g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
-                
-                // Ombre portée
+
                 if (hovered) {
                     g2.setColor(new Color(0, 0, 0, 20));
                     g2.fillRoundRect(2, 4, getWidth() - 4, getHeight() - 4, 16, 16);
                 }
-                
-                // Background de la carte
+
                 g2.setColor(cardBgColor);
                 g2.fillRoundRect(0, 0, getWidth(), getHeight(), 16, 16);
-                
-                // Bordure
+
                 g2.setColor(hovered ? taskColor.brighter() : borderColor);
                 g2.setStroke(new BasicStroke(hovered ? 2 : 1));
                 g2.drawRoundRect(0, 0, getWidth() - 1, getHeight() - 1, 16, 16);
-                
-                // Barre de couleur à gauche
+
                 g2.setColor(taskColor);
                 g2.fillRoundRect(0, 0, 5, getHeight(), 5, 5);
-                
+
                 g2.dispose();
             }
         };
@@ -247,187 +340,134 @@ public class Taches extends JPanel {
         card.setMaximumSize(new Dimension(Integer.MAX_VALUE, 180));
         card.setCursor(new Cursor(Cursor.HAND_CURSOR));
 
-        // Left section: Checkbox + Task info
         JPanel leftSection = new JPanel(new BorderLayout(15, 0));
         leftSection.setOpaque(false);
-        
-        // Checkbox stylisé
-        JCheckBox checkbox = new JCheckBox() {
-            @Override
-            protected void paintComponent(Graphics g) {
-                Graphics2D g2 = (Graphics2D) g.create();
-                g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
-                
-                int size = 24;
-                if (isSelected()) {
-                    g2.setColor(progressFill);
-                    g2.fillRoundRect(0, 0, size, size, 8, 8);
-                    g2.setColor(Color.WHITE);
-                    g2.setStroke(new BasicStroke(2));
-                    g2.drawPolyline(new int[]{6, 10, 18}, new int[]{12, 16, 8}, 3);
-                } else {
-                    g2.setColor(progressBg);
-                    g2.fillRoundRect(0, 0, size, size, 8, 8);
-                    g2.setColor(borderColor);
-                    g2.setStroke(new BasicStroke(2));
-                    g2.drawRoundRect(1, 1, size - 2, size - 2, 7, 7);
-                }
-                g2.dispose();
-            }
-        };
-        checkbox.setSelected(task.progress == 100);
+
+        JCheckBox checkbox = new JCheckBox();
+        checkbox.setSelected(task.getStatus().equals("Terminée"));
         checkbox.setEnabled(false);
         checkbox.setOpaque(false);
         checkbox.setPreferredSize(new Dimension(24, 24));
         leftSection.add(checkbox, BorderLayout.WEST);
-        
-        // Task info
+
         JPanel taskInfo = new JPanel();
         taskInfo.setLayout(new BoxLayout(taskInfo, BoxLayout.Y_AXIS));
         taskInfo.setOpaque(false);
-        
+
         JLabel taskName = new JLabel(task.name);
         taskName.setFont(new Font("Segoe UI", Font.BOLD, 18));
         taskName.setForeground(textPrimary);
         taskName.setAlignmentX(Component.LEFT_ALIGNMENT);
-        
+
         JPanel categoryRow = new JPanel(new FlowLayout(FlowLayout.LEFT, 0, 0));
         categoryRow.setOpaque(false);
         categoryRow.setAlignmentX(Component.LEFT_ALIGNMENT);
-        
-        JLabel categoryIcon = new JLabel("📁 ");
-        categoryIcon.setFont(new Font("Segoe UI", Font.PLAIN, 13));
-        
-        JLabel category = new JLabel(task.category);
+
+        JLabel category = new JLabel(task.description);
         category.setFont(new Font("Segoe UI", Font.PLAIN, 13));
         category.setForeground(textSecondary);
-        
-        categoryRow.add(categoryIcon);
         categoryRow.add(category);
-        
+
         taskInfo.add(taskName);
         taskInfo.add(Box.createRigidArea(new Dimension(0, 6)));
         taskInfo.add(categoryRow);
-        
+
         leftSection.add(taskInfo, BorderLayout.CENTER);
         card.add(leftSection, BorderLayout.WEST);
-        
-        // Right section: Status, Progress, Deadline, Members, Delete button
+
         JPanel rightSection = new JPanel();
         rightSection.setLayout(new BoxLayout(rightSection, BoxLayout.Y_AXIS));
         rightSection.setOpaque(false);
         rightSection.setAlignmentX(Component.RIGHT_ALIGNMENT);
-        
-        // Status, Progress et Delete row
+
         JPanel topRow = new JPanel(new FlowLayout(FlowLayout.RIGHT, 15, 0));
         topRow.setOpaque(false);
-        
-        // Status badge
+
         JLabel statusLabel = createStatusBadge(task.getStatus());
         topRow.add(statusLabel);
-        
-        // Progress percentage
+
         JLabel progressLabel = new JLabel(task.progress + "%");
         progressLabel.setFont(new Font("Segoe UI", Font.BOLD, 16));
         progressLabel.setForeground(textPrimary);
         topRow.add(progressLabel);
-        
-        // Delete button
-        JButton deleteBtn = new JButton("×") {
+
+        JButton deleteBtn = new JButton("✕") {
             @Override
             protected void paintComponent(Graphics g) {
-                Graphics2D g2 = (Graphics2D) g.create();
-                g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
-                
-                if (getModel().isPressed()) {
-                    g2.setColor(dangerColor.darker());
-                } else if (getModel().isRollover()) {
-                    g2.setColor(dangerColor);
-                } else {
-                    g2.setColor(new Color(dangerColor.getRed(), dangerColor.getGreen(), dangerColor.getBlue(), 100));
-                }
-                
-                g2.fillRoundRect(0, 0, getWidth(), getHeight(), 10, 10);
-                g2.dispose();
                 super.paintComponent(g);
             }
         };
         deleteBtn.setFocusPainted(false);
         deleteBtn.setBorderPainted(false);
         deleteBtn.setContentAreaFilled(false);
-        deleteBtn.setForeground(Color.WHITE);
+        deleteBtn.setForeground(dangerColor);
         deleteBtn.setFont(new Font("Segoe UI", Font.BOLD, 24));
         deleteBtn.setCursor(new Cursor(Cursor.HAND_CURSOR));
         deleteBtn.setPreferredSize(new Dimension(36, 36));
         deleteBtn.setToolTipText("Supprimer la tâche");
-        deleteBtn.addActionListener(e -> {
-            int result = JOptionPane.showConfirmDialog(
-                this,
-                "Voulez-vous vraiment supprimer la tâche \"" + task.name + "\" ?",
-                "Confirmation de suppression",
-                JOptionPane.YES_NO_OPTION,
-                JOptionPane.WARNING_MESSAGE
-            );
-            if (result == JOptionPane.YES_OPTION) {
-                deleteTask(task);
-            }
-        });
+        deleteBtn.addActionListener(e -> deleteTacheFromBackend(task));
         topRow.add(deleteBtn);
-        
+
         rightSection.add(topRow);
         rightSection.add(Box.createRigidArea(new Dimension(0, 10)));
-        
-        // Progress bar
+
         JPanel progressBar = createProgressBar(task.progress, taskColor);
         progressBar.setAlignmentX(Component.RIGHT_ALIGNMENT);
         rightSection.add(progressBar);
         rightSection.add(Box.createRigidArea(new Dimension(0, 12)));
-        
-        // Deadline and Members row
+
         JPanel deadlineMembersRow = new JPanel(new FlowLayout(FlowLayout.RIGHT, 15, 0));
         deadlineMembersRow.setOpaque(false);
-        
-        // Deadline avec style amélioré
+        deadlineMembersRow.setPreferredSize(new Dimension(300, 42));
+
         JPanel deadlinePanel = new JPanel(new FlowLayout(FlowLayout.LEFT, 6, 0));
         deadlinePanel.setOpaque(false);
-        
-        JLabel calendarIcon = new JLabel("📅");
-        calendarIcon.setFont(new Font("Segoe UI", Font.PLAIN, 14));
-        
-        JLabel deadlineLabel = new JLabel(task.deadline.format(dateFormatter));
+
+        JLabel deadlineLabel = new JLabel(task.deadline);
         deadlineLabel.setFont(new Font("Segoe UI", Font.PLAIN, 13));
         deadlineLabel.setForeground(textSecondary);
-        
-        deadlinePanel.add(calendarIcon);
         deadlinePanel.add(deadlineLabel);
         deadlineMembersRow.add(deadlinePanel);
-        
-        // Members avatars
+
         JPanel membersPanel = createMembersAvatars(task.assignedMembers);
         deadlineMembersRow.add(membersPanel);
-        
+
         rightSection.add(deadlineMembersRow);
         card.add(rightSection, BorderLayout.EAST);
-        
-        // Ajout du clic sur la carte (sauf sur le bouton delete)
+
         card.addMouseListener(new java.awt.event.MouseAdapter() {
             public void mouseClicked(java.awt.event.MouseEvent evt) {
-                Params.tacheID = task.id;
-                onClick.accept("Tache");
+                if (!(evt.getSource() instanceof JButton)) {
+                    Params.tacheID = task.id;
+                    onClick.accept("Tache");
+                }
             }
         });
-        
+
         return card;
     }
 
-    private void deleteTask(Task task) {
-        tasks.remove(task);
-        // Rafraîchir l'interface
-        removeAll();
-        JPanel mainPanel = createMainPanel(onClickHandler);
-        add(mainPanel, BorderLayout.CENTER);
-        revalidate();
-        repaint();
+    private void deleteTacheFromBackend(Task task) {
+        int result = JOptionPane.showConfirmDialog(
+                this,
+                "Voulez-vous vraiment supprimer la tâche \"" + task.name + "\" ?",
+                "Confirmation de suppression",
+                JOptionPane.YES_NO_OPTION,
+                JOptionPane.WARNING_MESSAGE);
+
+        if (result == JOptionPane.YES_OPTION) {
+            Queries.delete("/api/taches/" + task.id)
+                    .thenAccept(response -> {
+                        System.out.println("Tâche supprimée: " + response);
+                        SwingUtilities.invokeLater(this::loadDataFromBackend);
+                    })
+                    .exceptionally(e -> {
+                        System.err.println("Erreur suppression: " + e.getMessage());
+                        JOptionPane.showMessageDialog(this, "Erreur lors de la suppression", "Erreur",
+                                JOptionPane.ERROR_MESSAGE);
+                        return null;
+                    });
+        }
     }
 
     private JLabel createStatusBadge(String status) {
@@ -447,7 +487,7 @@ public class Taches extends JPanel {
                         bgColor = new Color(245, 158, 11, 40);
                         fgColor = new Color(217, 119, 6);
                         break;
-                    default: // En attente
+                    default:
                         bgColor = new Color(139, 92, 246, 40);
                         fgColor = new Color(124, 58, 237);
                         break;
@@ -479,17 +519,14 @@ public class Taches extends JPanel {
                 Graphics2D g2 = (Graphics2D) g.create();
                 g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
 
-                // Background
                 g2.setColor(progressBg);
                 g2.fillRoundRect(0, 0, getWidth(), getHeight(), 12, 12);
 
-                // Progress fill avec dégradé
                 int fillWidth = (int) (getWidth() * progress / 100.0);
                 if (fillWidth > 0) {
                     GradientPaint gradient = new GradientPaint(
-                        0, 0, color,
-                        fillWidth, 0, color.brighter()
-                    );
+                            0, 0, color,
+                            fillWidth, 0, color.brighter());
                     g2.setPaint(gradient);
                     g2.fillRoundRect(0, 0, fillWidth, getHeight(), 12, 12);
                 }
@@ -505,9 +542,10 @@ public class Taches extends JPanel {
 
     private JPanel createMembersAvatars(List<ProjectMember> members) {
         JPanel panel = new JPanel();
-        panel.setLayout(new FlowLayout(FlowLayout.RIGHT, -8, 0));
+        panel.setLayout(new BoxLayout(panel, BoxLayout.X_AXIS));
         panel.setOpaque(false);
-        
+        panel.add(Box.createHorizontalGlue());
+
         int maxDisplay = Math.min(members.size(), 3);
         for (int i = 0; i < maxDisplay; i++) {
             ProjectMember member = members.get(i);
@@ -516,54 +554,51 @@ public class Taches extends JPanel {
             avatar.setToolTipText(member.firstName + " " + member.lastName + " - " + member.role);
             panel.add(avatar);
         }
-        
+
         if (members.size() > 3) {
             JPanel moreAvatar = createMoreAvatar(members.size() - 3);
             moreAvatar.setToolTipText("+" + (members.size() - 3) + " autres membres");
             panel.add(moreAvatar);
         }
-        
+
         return panel;
     }
 
     private JPanel createMemberAvatar(ProjectMember member, Color color) {
         JPanel avatar = new JPanel() {
             private boolean hovered = false;
-            
+
             {
                 addMouseListener(new java.awt.event.MouseAdapter() {
                     public void mouseEntered(java.awt.event.MouseEvent evt) {
                         hovered = true;
                         repaint();
                     }
+
                     public void mouseExited(java.awt.event.MouseEvent evt) {
                         hovered = false;
                         repaint();
                     }
                 });
             }
-            
+
             @Override
             protected void paintComponent(Graphics g) {
                 super.paintComponent(g);
                 Graphics2D g2 = (Graphics2D) g.create();
                 g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
 
-                // Ombre si hover
                 if (hovered) {
                     g2.setColor(new Color(0, 0, 0, 30));
                     g2.fillOval(2, 2, getWidth(), getHeight());
                 }
 
-                // Bordure blanche
                 g2.setColor(cardBgColor);
                 g2.fillOval(0, 0, getWidth(), getHeight());
 
-                // Cercle de couleur
                 g2.setColor(hovered ? color.brighter() : color);
                 g2.fillOval(3, 3, getWidth() - 6, getHeight() - 6);
 
-                // Initials
                 g2.setColor(Color.WHITE);
                 g2.setFont(new Font("Segoe UI", Font.BOLD, 14));
                 String initials = String.valueOf(member.firstName.charAt(0)) + member.lastName.charAt(0);
@@ -589,15 +624,12 @@ public class Taches extends JPanel {
                 Graphics2D g2 = (Graphics2D) g.create();
                 g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
 
-                // Bordure blanche
                 g2.setColor(cardBgColor);
                 g2.fillOval(0, 0, getWidth(), getHeight());
 
-                // Cercle gris
                 g2.setColor(progressBg);
                 g2.fillOval(3, 3, getWidth() - 6, getHeight() - 6);
 
-                // Texte
                 g2.setColor(textSecondary);
                 g2.setFont(new Font("Segoe UI", Font.BOLD, 13));
                 String text = "+" + count;
@@ -617,12 +649,12 @@ public class Taches extends JPanel {
 
     private Color getRandomColor() {
         Color[] colors = {
-                new Color(139, 92, 246), // violet
-                new Color(249, 115, 22), // orange
-                new Color(34, 197, 94), // vert
-                new Color(59, 130, 246), // bleu
-                new Color(236, 72, 153), // rose
-                new Color(20, 184, 166), // turquoise
+                new Color(139, 92, 246),
+                new Color(249, 115, 22),
+                new Color(34, 197, 94),
+                new Color(59, 130, 246),
+                new Color(236, 72, 153),
+                new Color(20, 184, 166),
         };
 
         if (colorCounter >= colors.length)
@@ -630,7 +662,6 @@ public class Taches extends JPanel {
         return colors[colorCounter++];
     }
 
-    // Inner classes
     private static class ProjectMember {
         String firstName;
         String lastName;
@@ -647,26 +678,34 @@ public class Taches extends JPanel {
         int id;
         String name;
         int progress;
-        String category;
-        LocalDate deadline;
+        String description;
+        String deadline;
         List<ProjectMember> assignedMembers;
+        String state;
 
-        public Task(int id, String name, int progress, String category, LocalDate deadline,
+        public Task(int id, String name, int progress, String description, String deadline,
                 List<ProjectMember> assignedMembers) {
             this.id = id;
             this.name = name;
             this.progress = progress;
-            this.category = category;
+            this.description = description;
             this.deadline = deadline;
             this.assignedMembers = assignedMembers;
+            this.state = "En attente";
+        }
+
+        public void setState(String state) {
+            this.state = state;
         }
 
         public String getStatus() {
-            if (progress == 100)
+            if (progress == 100) {
                 return "Terminée";
-            if (progress > 0)
+            } else if (progress == 0) {
+                return "En attente";
+            } else {
                 return "En cours";
-            return "En attente";
+            }
         }
     }
 }
