@@ -8,145 +8,97 @@ import com.example.demo.repositories.MessageRepository;
 import com.example.demo.repositories.MembreRepository;
 import com.example.demo.repositories.ProjetRepository;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.http.HttpStatus;
-import org.springframework.http.ResponseEntity;
+import org.springframework.messaging.handler.annotation.MessageMapping;
+import org.springframework.messaging.simp.SimpMessagingTemplate;
+import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.Date;
 import java.util.List;
-import java.util.stream.Collectors;
+import java.util.Optional;
 
-@RestController
-@RequestMapping("/api/messages")
-@CrossOrigin(origins = "*")
+@Controller
 public class MessageController {
 
     @Autowired
     private MessageRepository messageRepository;
 
     @Autowired
+    private MembreRepository membreRepository;
+
+    @Autowired
     private ProjetRepository projetRepository;
 
     @Autowired
-    private MembreRepository membreRepository;
+    private SimpMessagingTemplate messagingTemplate;
 
-    /**
-     * Créer un nouveau message
-     * POST /api/messages
-     * Body JSON: {"contenu": "texte", "projetId": 1, "membreId": 1}
-     */
-    @PostMapping
-    public ResponseEntity<MessageDTO> creerMessage(@RequestBody MessageDTO messageDTO) {
-        try {
-            Message message = new Message();
-            message.setContenu(messageDTO.getContenu());
-            message.setDateEnvoi(new Date());
-            message.setEstLu(false);
-
-            // Associer le projet si l'ID est fourni
-            if (messageDTO.getProjetId() != null) {
-                Projet projet = projetRepository.findById(messageDTO.getProjetId())
-                        .orElseThrow(() -> new RuntimeException("Projet non trouvé"));
-                message.setProjet(projet);
-            }
-
-            // Associer le membre si l'ID est fourni
-            if (messageDTO.getMembreId() != null) {
-                Membre membre = membreRepository.findById(messageDTO.getMembreId())
-                        .orElseThrow(() -> new RuntimeException("Membre non trouvé"));
-                message.setMembre(membre);
-            }
-
-            Message savedMessage = messageRepository.save(message);
-            return new ResponseEntity<>(convertToDTO(savedMessage), HttpStatus.CREATED);
-            
-        } catch (RuntimeException e) {
-            return new ResponseEntity<>(null, HttpStatus.BAD_REQUEST);
-        }
+    // REST : historique avec informations complètes du membre
+    @GetMapping("/api/messages/projet/{projetId}")
+    @ResponseBody
+    public List<MessageDTO> getMessagesByProjet(@PathVariable int projetId) {
+        return messageRepository.findByProjetId(projetId)
+                .stream()
+                .map(m -> {
+                    MessageDTO dto = new MessageDTO();
+                    dto.id = m.getId();
+                    dto.contenu = m.getContenu();
+                    dto.dateEnvoi = m.getDateEnvoi();
+                    dto.estLu = m.isEstLu();
+                    dto.projetId = m.getProjet().getId();
+                    dto.membreId = m.getMembre().getId();
+                    
+                    // 🔹 Récupérer les informations du membre depuis la table user/membre
+                    Membre membre = m.getMembre();
+                    dto.prenomMembre = membre.getPrenom() != null ? membre.getPrenom() : "Inconnu";
+                    dto.nomMembre = membre.getNom() != null ? membre.getNom() : "";
+                    dto.typeMembre = membre.getType() != null ? membre.getType() : "NORMAL";
+                    
+                    return dto;
+                })
+                .toList();
     }
 
-    /**
-     * Récupérer tous les messages
-     * GET /api/messages
-     */
-    @GetMapping
-    public ResponseEntity<List<MessageDTO>> obtenirTousLesMessages() {
-        try {
-            List<MessageDTO> messages = messageRepository.findAll().stream()
-                    .map(this::convertToDTO)
-                    .collect(Collectors.toList());
-            return new ResponseEntity<>(messages, HttpStatus.OK);
-            
-        } catch (Exception e) {
-            return new ResponseEntity<>(null, HttpStatus.INTERNAL_SERVER_ERROR);
-        }
-    }
+    // WEBSOCKET : envoyer message avec informations du membre
+    @MessageMapping("/chat.sendMessage")
+    public void sendMessage(MessageDTO dto) {
+        Projet projet = projetRepository.findById(dto.projetId);
+        Optional<Membre> membreOpt = membreRepository.findById(dto.membreId);
 
-    /**
-     * Récupérer les messages par projet
-     * GET /api/messages/projet/{projetId}
-     */
-    @GetMapping("/projet/{projetId}")
-    public ResponseEntity<List<MessageDTO>> obtenirMessagesParProjet(@PathVariable int projetId) {
-        try {
-            List<MessageDTO> messages = messageRepository.findByProjetId(projetId).stream()
-                    .map(this::convertToDTO)
-                    .collect(Collectors.toList());
-            return new ResponseEntity<>(messages, HttpStatus.OK);
-            
-        } catch (Exception e) {
-            return new ResponseEntity<>(null, HttpStatus.INTERNAL_SERVER_ERROR);
+        if (projet == null || membreOpt.isEmpty()) {
+            System.err.println("❌ Projet ou Membre introuvable");
+            return;
         }
-    }
 
-    /**
-     * Marquer un message comme lu
-     * PUT /api/messages/{id}/marquer-lu
-     */
-    @PutMapping("/{id}/marquer-lu")
-    public ResponseEntity<MessageDTO> marquerCommeLu(@PathVariable int id) {
-        try {
-            Message message = messageRepository.findById(id)
-                    .orElseThrow(() -> new RuntimeException("Message non trouvé"));
-            
-            message.setEstLu(true);
-            Message updatedMessage = messageRepository.save(message);
-            return new ResponseEntity<>(convertToDTO(updatedMessage), HttpStatus.OK);
-            
-        } catch (RuntimeException e) {
-            return new ResponseEntity<>(null, HttpStatus.NOT_FOUND);
-        }
-    }
+        Membre membre = membreOpt.get();
 
-    /**
-     * Supprimer un message
-     * DELETE /api/messages/{id}
-     */
-    @DeleteMapping("/{id}")
-    public ResponseEntity<HttpStatus> supprimerMessage(@PathVariable int id) {
-        try {
-            if (!messageRepository.existsById(id)) {
-                return new ResponseEntity<>(HttpStatus.NOT_FOUND);
-            }
-            messageRepository.deleteById(id);
-            return new ResponseEntity<>(HttpStatus.NO_CONTENT);
-            
-        } catch (Exception e) {
-            return new ResponseEntity<>(HttpStatus.INTERNAL_SERVER_ERROR);
-        }
-    }
+        // Sauvegarder le message
+        Message message = new Message();
+        message.setContenu(dto.contenu);
+        message.setDateEnvoi(new Date());
+        message.setEstLu(false);
+        message.setProjet(projet);
+        message.setMembre(membre);
 
-    /**
-     * Méthode utilitaire pour convertir Message en MessageDTO
-     */
-    private MessageDTO convertToDTO(Message message) {
-        return new MessageDTO(
-                message.getId(),
-                message.getContenu(),
-                message.getDateEnvoi(),
-                message.isEstLu(),
-                message.getProjet() != null ? message.getProjet().getId() : null,
-                message.getMembre() != null ? message.getMembre().getId() : null
+        Message saved = messageRepository.save(message);
+
+        // 🔹 Créer la réponse avec toutes les informations du membre
+        MessageDTO response = new MessageDTO();
+        response.id = saved.getId();
+        response.contenu = saved.getContenu();
+        response.dateEnvoi = saved.getDateEnvoi();
+        response.estLu = saved.isEstLu();
+        response.projetId = projet.getId();
+        response.membreId = membre.getId();
+        response.prenomMembre = membre.getPrenom() != null ? membre.getPrenom() : "Inconnu";
+        response.nomMembre = membre.getNom() != null ? membre.getNom() : "";
+        response.typeMembre = membre.getType() != null ? membre.getType() : "NORMAL";
+
+        System.out.println("📤 Envoi message de: " + response.prenomMembre + " " + response.nomMembre);
+
+        // Diffuser à tous les clients connectés
+        messagingTemplate.convertAndSend(
+                "/topic/projet/" + projet.getId(),
+                response
         );
     }
 }
