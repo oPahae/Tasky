@@ -583,67 +583,91 @@ public class MesProjet extends JPanel {
     }
 
     // ✅ NOUVELLE MÉTHODE : Charger le membre et afficher les détails
-    private void loadMembreIdForProjetAndShowDetail(Projet projet) {
-    new Thread(() -> {
-        try {
-            int userId = SessionManager.getInstance().getUserId();
-            System.out.println("🔍 Chargement membre pour userId=" + userId + ", projetId=" + projet.id);
-            
-            String urlString = "http://localhost:8080/api/membre/user/" + userId + "/projet/" + projet.id;
-            
-            HttpClient client = HttpClient.newHttpClient();
-            HttpRequest request = HttpRequest.newBuilder()
-                    .uri(URI.create(urlString))
-                    .GET()
-                    .build();
-            
-            HttpResponse<String> response = client.send(request, HttpResponse.BodyHandlers.ofString());
-            
-            if (response.statusCode() == 200) {
-                ObjectMapper mapper = new ObjectMapper();
-                Map<String, Object> membreData = mapper.readValue(
-                    response.body(), 
-                    new com.fasterxml.jackson.core.type.TypeReference<>() {}
-                );
+   private void loadMembreIdForProjetAndShowDetail(Projet projet) {
+    // Afficher un indicateur de chargement
+    SwingUtilities.invokeLater(() -> {
+        JOptionPane optionPane = new JOptionPane(
+            "Chargement du projet en cours...",
+            JOptionPane.INFORMATION_MESSAGE,
+            JOptionPane.DEFAULT_OPTION,
+            null,
+            new Object[]{},
+            null
+        );
+        
+        JDialog dialog = optionPane.createDialog(this, "Veuillez patienter");
+        dialog.setDefaultCloseOperation(JDialog.DO_NOTHING_ON_CLOSE);
+        dialog.setModal(false);
+        dialog.setVisible(true);
+        
+        // Charger le membre dans un thread
+        new Thread(() -> {
+            try {
+                int userId = SessionManager.getInstance().getUserId();
+                System.out.println("🔍 Chargement membre pour userId=" + userId + ", projetId=" + projet.id);
                 
-                int membreId = ((Number) membreData.get("id")).intValue();
-                String role = (String) membreData.getOrDefault("role", "NORMAL");
-                String type = (String) membreData.getOrDefault("type", "NORMAL");
+                String urlString = "http://localhost:8080/api/membre/user/" + userId + "/projet/" + projet.id;
                 
-                // Définir le membre dans SessionManager
-                SessionManager.getInstance().setCurrentMembre(membreId, role, type);
-                Params.membreID = membreId;
+                HttpClient client = HttpClient.newHttpClient();
+                HttpRequest request = HttpRequest.newBuilder()
+                        .uri(URI.create(urlString))
+                        .GET()
+                        .build();
                 
-                System.out.println("✅ Membre chargé: ID=" + membreId);
-                SessionManager.getInstance().printSessionInfo();
+                HttpResponse<String> response = client.send(request, HttpResponse.BodyHandlers.ofString());
                 
-                // Afficher les détails du projet
+                if (response.statusCode() == 200) {
+                    ObjectMapper mapper = new ObjectMapper();
+                    Map<String, Object> membreData = mapper.readValue(
+                        response.body(), 
+                        new com.fasterxml.jackson.core.type.TypeReference<>() {}
+                    );
+                    
+                    int membreId = ((Number) membreData.get("id")).intValue();
+                    String role = (String) membreData.getOrDefault("role", "NORMAL");
+                    String type = (String) membreData.getOrDefault("type", "NORMAL");
+                    
+                    // ✅ Définir le membre dans SessionManager
+                    SessionManager.getInstance().setCurrentMembre(membreId, role, type);
+                    Params.membreID = membreId;
+                    
+                    System.out.println("✅ Membre chargé: ID=" + membreId);
+                    System.out.println("==================== SESSION APRÈS CHARGEMENT ====================");
+                    SessionManager.getInstance().printSessionInfo();
+                    System.out.println("================================================================");
+                    
+                    // ✅ FERMER le dialog et afficher les détails
+                    SwingUtilities.invokeLater(() -> {
+                        dialog.dispose();
+                        showProjetDetail(projet);
+                    });
+                    
+                } else {
+                    System.err.println("❌ Erreur HTTP: " + response.statusCode());
+                    SwingUtilities.invokeLater(() -> {
+                        dialog.dispose();
+                        JOptionPane.showMessageDialog(MesProjet.this, 
+                            "Erreur: Vous n'êtes pas membre de ce projet (HTTP " + response.statusCode() + ")", 
+                            "Erreur", 
+                            JOptionPane.ERROR_MESSAGE);
+                    });
+                }
+                
+            } catch (Exception e) {
+                System.err.println("❌ Erreur lors de la récupération du membre:");
+                e.printStackTrace();
+                
                 SwingUtilities.invokeLater(() -> {
-                    showProjetDetail(projet);
-                });
-                
-            } else {
-                System.err.println("❌ Erreur HTTP: " + response.statusCode());
-                SwingUtilities.invokeLater(() -> {
+                    dialog.dispose();
                     JOptionPane.showMessageDialog(MesProjet.this, 
-                        "Erreur: Vous n'êtes pas membre de ce projet", 
+                        "Erreur de connexion au serveur: " + e.getMessage(), 
                         "Erreur", 
                         JOptionPane.ERROR_MESSAGE);
                 });
             }
-            
-        } catch (Exception e) {
-            System.err.println("❌ Erreur lors de la récupération du membre:");
-            e.printStackTrace();
-            
-            SwingUtilities.invokeLater(() -> {
-                JOptionPane.showMessageDialog(MesProjet.this, 
-                    "Erreur de connexion au serveur", 
-                    "Erreur", 
-                    JOptionPane.ERROR_MESSAGE);
-            });
-        }
-    }).start();
+        }).start();
+    });
+}
 }
     public static class Projet {
         public int id;
@@ -664,4 +688,3 @@ public class MesProjet extends JPanel {
             this.progress = budget > 0 ? (budgetConsomme / budget) * 100 : 0;
         }
     }
-}
