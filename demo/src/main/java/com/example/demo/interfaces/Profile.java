@@ -568,10 +568,11 @@ public class Profile extends JPanel {
                     
                     // Mettre à jour le SessionManager
                     SessionManager.getInstance().setUserInfo(
-                        prenomField.getText().trim(),
-                        nomField.getText().trim(),
-                        emailField.getText().trim()
-                    );
+                    prenomField.getText().trim(),
+                    nomField.getText().trim(),
+                    emailField.getText().trim(),
+                    SessionManager.getInstance().getUserId()
+                   );
                     
                     System.out.println("✓ Profil mis à jour");
                 } else if (response.containsKey("error")) {

@@ -33,7 +33,7 @@ public class Chat extends JPanel {
     private JPanel messagesContainer;
     private JTextArea inputField;
     
-    // ✅ IDs DYNAMIQUES depuis SessionManager
+    //  ids dynamiques depuis SessionManager
     private int myId;
     private int projectId;
     private String projectName;
