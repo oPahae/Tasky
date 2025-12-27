@@ -48,19 +48,6 @@ public class Chat extends JPanel {
 
     public Chat() {
         this.theme = Params.theme;
-        
-        // ✅ RÉCUPÉRER LES IDs DEPUIS SessionManager
-        SessionManager session = SessionManager.getInstance();
-        
-        if (!session.isReadyForChat()) {
-            initErrorPanel("⚠️ Session invalide. Veuillez vous reconnecter et sélectionner un projet.");
-            return;
-        }
-        
-        this.myId = session.getCurrentMembreId();
-        this.projectId = session.getCurrentProjetId();
-        this.projectName = session.getCurrentProjetNom();
-        
         System.out.println("🚀 Chat initialisé:");
         System.out.println("   - Membre ID: " + myId);
         System.out.println("   - Projet ID: " + projectId);
