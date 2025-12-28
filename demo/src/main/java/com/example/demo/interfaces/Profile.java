@@ -567,13 +567,17 @@ public class Profile extends JPanel {
                     showMessage(profileMessage, "Profil mis à jour avec succès !", sucess);
                     
                     // Mettre à jour le SessionManager
-                    SessionManager.getInstance().setUserInfo(
+                    SessionManager.getInstance().setUserSession(
+                    SessionManager.getInstance().getToken(), // Conserver le token actuel
                     prenomField.getText().trim(),
                     nomField.getText().trim(),
                     emailField.getText().trim(),
-                    SessionManager.getInstance().getUserId()
-                   );
-                    
+                    SessionManager.getInstance().getCompetance(), // Conserver la compétence actuelle
+                    SessionManager.getInstance().getTelephone(), // Conserver le téléphone actuel
+                    SessionManager.getInstance().getUserId() // Conserver l'ID utilisateur actuel
+                );
+
+
                     System.out.println("✓ Profil mis à jour");
                 } else if (response.containsKey("error")) {
                     String errorMsg = String.valueOf(response.get("error"));

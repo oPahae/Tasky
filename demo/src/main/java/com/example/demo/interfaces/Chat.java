@@ -1,6 +1,7 @@
 package com.example.demo.interfaces;
 
 import com.example.demo.Params;
+import com.example.demo.SessionManager;
 import com.example.demo.components.Scrollbar;
 import com.example.demo.hooks.MessageDTO;
 import com.google.gson.Gson;
@@ -15,7 +16,6 @@ import org.springframework.web.socket.sockjs.client.Transport;
 import org.springframework.web.socket.sockjs.client.WebSocketTransport;
 import java.lang.reflect.Type;
 
-
 import javax.swing.*;
 import java.awt.*;
 import java.io.BufferedReader;
@@ -29,26 +29,6 @@ import java.util.List;
 import java.util.Set;
 import java.util.HashSet;
 
-
-import javax.swing.BorderFactory;
-import javax.swing.Box;
-import javax.swing.BoxLayout;
-import javax.swing.JButton;
-import javax.swing.JLabel;
-import javax.swing.JOptionPane;
-import javax.swing.JPanel;
-import javax.swing.JScrollBar;
-import javax.swing.JScrollPane;
-import javax.swing.JTextArea;
-import javax.swing.SwingUtilities;
-
-import com.example.demo.Params;
-import com.example.demo.components.Scrollbar;
-import com.example.demo.hooks.MessageDTO;
-import com.google.gson.Gson;
-
-
-
 public class Chat extends JPanel {
     private int theme;
     private Color bgColor, cardBgColor, textPrimary, textSecondary, accentColor;
@@ -56,9 +36,9 @@ public class Chat extends JPanel {
     private List<ChatMessage> messages;
     private JPanel messagesContainer;
     private JTextArea inputField;
-    private int myId = 1;
-    private int projectId = 1;
-    private String projectName = "Projet Dashboard";
+    private int myId;
+    private int projectId;
+    private String projectName;
     private SimpleDateFormat timeFormat = new SimpleDateFormat("HH:mm");
 
     // WebSocket
@@ -70,20 +50,35 @@ public class Chat extends JPanel {
     private Set<Integer> loadedMessageIds = new HashSet<>();
 
     public Chat() {
-        this.theme = Params.theme;
-        initializeColors();
-        messages = new ArrayList<>();
+    this.theme = Params.theme;
+    initializeColors();
 
-        setLayout(new BorderLayout());
-        setBackground(bgColor);
-        add(createTopBar(), BorderLayout.NORTH);
-        add(createMessagesArea(), BorderLayout.CENTER);
-        add(createInputArea(), BorderLayout.SOUTH);
+    // Utiliser l'ID du user connecté comme membre actuel
+    this.myId = SessionManager.getInstance().getUserId();
+    this.projectId = SessionManager.getInstance().getCurrentProjetId();
+    this.projectName = SessionManager.getInstance().getCurrentProjetNom();
 
-        // Charger l'historique puis connecter WebSocket
-        loadMessageHistory();
-        connectWebSocket();
+    // Vérifier que le projet est sélectionné
+    if (projectId <= 0) {
+        JOptionPane.showMessageDialog(this,
+            "Veuillez sélectionner un projet avant d'ouvrir le chat.",
+            "Erreur",
+            JOptionPane.ERROR_MESSAGE);
+        return;
     }
+
+    messages = new ArrayList<>();
+    setLayout(new BorderLayout());
+    setBackground(bgColor);
+    add(createTopBar(), BorderLayout.NORTH);
+    add(createMessagesArea(), BorderLayout.CENTER);
+    add(createInputArea(), BorderLayout.SOUTH);
+
+    // Charger l'historique et connecter WebSocket
+    loadMessageHistory();
+    connectWebSocket();
+}
+
 
     private void initializeColors() {
         if (theme == 0) {
