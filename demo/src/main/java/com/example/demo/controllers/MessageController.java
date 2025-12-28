@@ -60,45 +60,54 @@ public class MessageController {
 
     // WEBSOCKET : envoyer message avec informations du membre
     @MessageMapping("/chat.sendMessage")
-    public void sendMessage(MessageDTO dto) {
-        Projet projet = projetRepository.findById(dto.projetId);
-        Optional<Membre> membreOpt = membreRepository.findById(dto.membreId);
+public void sendMessage(MessageDTO dto) {
+    System.out.println("📩 Message reçu via WebSocket:");
+    System.out.println("   - Contenu: " + dto.contenu);
+    System.out.println("   - MembreID: " + dto.membreId);
+    System.out.println("   - ProjetID: " + dto.projetId);
+    
+    Projet projet = projetRepository.findById(dto.projetId);
+    Optional<Membre> membreOpt = membreRepository.findById(dto.membreId);
 
-        if (projet == null || membreOpt.isEmpty()) {
-            System.err.println("❌ Projet ou Membre introuvable");
-            return;
-        }
+    if (projet == null || membreOpt.isEmpty()) {
+        System.err.println("❌ Projet ou Membre introuvable");
+        return;
+    }
 
-        Membre membre = membreOpt.get();
+    Membre membre = membreOpt.get();
 
-        // Sauvegarder le message
-        Message message = new Message();
-        message.setContenu(dto.contenu);
-        message.setDateEnvoi(new Date());
-        message.setEstLu(false);
-        message.setProjet(projet);
-        message.setMembre(membre);
+    // Sauvegarder le message
+    Message message = new Message();
+    message.setContenu(dto.contenu);
+    message.setDateEnvoi(new Date());
+    message.setEstLu(false);
+    message.setProjet(projet);
+    message.setMembre(membre);
 
-        Message saved = messageRepository.save(message);
+    Message saved = messageRepository.save(message);
+    System.out.println("✅ Message sauvegardé avec ID: " + saved.getId());
 
-        // 🔹 Créer la réponse avec toutes les informations du membre
-        MessageDTO response = new MessageDTO();
-        response.id = saved.getId();
-        response.contenu = saved.getContenu();
-        response.dateEnvoi = saved.getDateEnvoi();
-        response.estLu = saved.isEstLu();
-        response.projetId = projet.getId();
-        response.membreId = membre.getId();
-        response.prenomMembre = membre.getPrenom() != null ? membre.getPrenom() : "Inconnu";
-        response.nomMembre = membre.getNom() != null ? membre.getNom() : "";
-        response.typeMembre = membre.getType() != null ? membre.getType() : "NORMAL";
+    // 🔹 IMPORTANT : Créer la réponse avec TOUTES les infos du membre
+    MessageDTO response = new MessageDTO();
+    response.id = saved.getId();
+    response.contenu = saved.getContenu();
+    response.dateEnvoi = saved.getDateEnvoi();
+    response.estLu = saved.isEstLu();
+    response.projetId = projet.getId();
+    response.membreId = membre.getId();
+    response.prenomMembre = membre.getPrenom() != null ? membre.getPrenom() : "Inconnu";
+    response.nomMembre = membre.getNom() != null ? membre.getNom() : "";
+    response.typeMembre = membre.getType() != null ? membre.getType() : "NORMAL";
 
-        System.out.println("📤 Envoi message de: " + response.prenomMembre + " " + response.nomMembre);
+    System.out.println("📤 Broadcast message vers /topic/projet/" + projet.getId());
+    System.out.println("   - Membre: " + response.prenomMembre + " " + response.nomMembre);
 
-        // Diffuser à tous les clients connectés
-        messagingTemplate.convertAndSend(
-                "/topic/projet/" + projet.getId(),
-                response
-        );
+    // Diffuser à tous les clients connectés
+    messagingTemplate.convertAndSend(
+            "/topic/projet/" + projet.getId(),
+            response
+    );
+    
+    System.out.println("✅ Message broadcasté avec succès");
     }
 }
