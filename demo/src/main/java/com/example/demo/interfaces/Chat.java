@@ -14,6 +14,7 @@ import org.springframework.web.socket.sockjs.client.SockJsClient;
 import org.springframework.web.socket.sockjs.client.Transport;
 import org.springframework.web.socket.sockjs.client.WebSocketTransport;
 
+
 import javax.swing.*;
 import java.awt.*;
 import java.io.BufferedReader;
@@ -24,6 +25,28 @@ import java.net.URL;
 import java.text.SimpleDateFormat;
 import java.util.*;
 import java.util.List;
+import java.util.Set;
+import java.util.HashSet;
+
+
+import javax.swing.BorderFactory;
+import javax.swing.Box;
+import javax.swing.BoxLayout;
+import javax.swing.JButton;
+import javax.swing.JLabel;
+import javax.swing.JOptionPane;
+import javax.swing.JPanel;
+import javax.swing.JScrollBar;
+import javax.swing.JScrollPane;
+import javax.swing.JTextArea;
+import javax.swing.SwingUtilities;
+
+import com.example.demo.Params;
+import com.example.demo.components.Scrollbar;
+import com.example.demo.hooks.MessageDTO;
+import com.google.gson.Gson;
+
+
 
 public class Chat extends JPanel {
     private int theme;
