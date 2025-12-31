@@ -235,30 +235,32 @@ public class Taches extends JPanel {
 
         header.add(titleSection, BorderLayout.WEST);
 
-        JButton addBtn = new JButton("+ Nouvelle tâche") {
-            @Override
-            protected void paintComponent(Graphics g) {
-                Graphics2D g2 = (Graphics2D) g.create();
-                g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
-                GradientPaint gradient = new GradientPaint(
-                        0, 0, accentColor,
-                        getWidth(), getHeight(), new Color(139, 92, 246));
-                g2.setPaint(gradient);
-                g2.fillRoundRect(0, 0, getWidth(), getHeight(), 10, 10);
-                g2.dispose();
-                super.paintComponent(g);
-            }
-        };
-        addBtn.setFocusPainted(false);
-        addBtn.setBorderPainted(false);
-        addBtn.setContentAreaFilled(false);
-        addBtn.setForeground(Color.WHITE);
-        addBtn.setFont(new Font("Segoe UI", Font.BOLD, 14));
-        addBtn.setCursor(new Cursor(Cursor.HAND_CURSOR));
-        addBtn.setBorder(BorderFactory.createEmptyBorder(12, 24, 12, 24));
-        addBtn.addActionListener(e -> onClick.accept("Ajouter une Tâche"));
+        if (Params.estResponsable) {
+            JButton addBtn = new JButton("+ Nouvelle tâche") {
+                @Override
+                protected void paintComponent(Graphics g) {
+                    Graphics2D g2 = (Graphics2D) g.create();
+                    g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
+                    GradientPaint gradient = new GradientPaint(
+                            0, 0, accentColor,
+                            getWidth(), getHeight(), new Color(139, 92, 246));
+                    g2.setPaint(gradient);
+                    g2.fillRoundRect(0, 0, getWidth(), getHeight(), 10, 10);
+                    g2.dispose();
+                    super.paintComponent(g);
+                }
+            };
+            addBtn.setFocusPainted(false);
+            addBtn.setBorderPainted(false);
+            addBtn.setContentAreaFilled(false);
+            addBtn.setForeground(Color.WHITE);
+            addBtn.setFont(new Font("Segoe UI", Font.BOLD, 14));
+            addBtn.setCursor(new Cursor(Cursor.HAND_CURSOR));
+            addBtn.setBorder(BorderFactory.createEmptyBorder(12, 24, 12, 24));
+            addBtn.addActionListener(e -> onClick.accept("Ajouter une Tâche"));
+            header.add(addBtn, BorderLayout.EAST);
+        }
 
-        header.add(addBtn, BorderLayout.EAST);
         headerWrapper.add(header);
 
         contentWrapper.add(headerWrapper);
@@ -295,15 +297,14 @@ public class Taches extends JPanel {
         Color taskColor = getRandomColor();
         JPanel card = new JPanel() {
             private boolean hovered = false;
-
             {
                 addMouseListener(new java.awt.event.MouseAdapter() {
-                    public void mouseEntered(java.awt.event.MouseEvent evt) {
+                    public void mouseEntered(java.awt.event.MouseEvent e) {
                         hovered = true;
                         repaint();
                     }
 
-                    public void mouseExited(java.awt.event.MouseEvent evt) {
+                    public void mouseExited(java.awt.event.MouseEvent e) {
                         hovered = false;
                         repaint();
                     }
@@ -312,132 +313,115 @@ public class Taches extends JPanel {
 
             @Override
             protected void paintComponent(Graphics g) {
-                super.paintComponent(g);
                 Graphics2D g2 = (Graphics2D) g.create();
                 g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
-
-                if (hovered) {
-                    g2.setColor(new Color(0, 0, 0, 20));
-                    g2.fillRoundRect(2, 4, getWidth() - 4, getHeight() - 4, 16, 16);
-                }
-
+                g2.setColor(new Color(0, 0, 0, hovered ? 35 : 20));
+                g2.fillRoundRect(4, 6, getWidth() - 8, getHeight() - 8, 20, 20);
                 g2.setColor(cardBgColor);
-                g2.fillRoundRect(0, 0, getWidth(), getHeight(), 16, 16);
-
+                g2.fillRoundRect(0, 0, getWidth() - 4, getHeight() - 4, 20, 20);
+                g2.setStroke(new BasicStroke(hovered ? 1.6f : 1f));
                 g2.setColor(hovered ? taskColor.brighter() : borderColor);
-                g2.setStroke(new BasicStroke(hovered ? 2 : 1));
-                g2.drawRoundRect(0, 0, getWidth() - 1, getHeight() - 1, 16, 16);
-
-                g2.setColor(taskColor);
-                g2.fillRoundRect(0, 0, 5, getHeight(), 5, 5);
+                g2.drawRoundRect(0, 0, getWidth() - 5, getHeight() - 5, 20, 20);
+                GradientPaint gp = new GradientPaint(
+                        0, 0, taskColor,
+                        0, getHeight(), taskColor.darker());
+                g2.setPaint(gp);
+                g2.fillRoundRect(0, 0, 6, getHeight() - 4, 20, 20);
 
                 g2.dispose();
+                super.paintComponent(g);
             }
         };
-        card.setLayout(new BorderLayout(20, 15));
+
         card.setOpaque(false);
-        card.setBorder(BorderFactory.createEmptyBorder(25, 25, 25, 25));
-        card.setMaximumSize(new Dimension(Integer.MAX_VALUE, 180));
+        card.setLayout(new BorderLayout(25, 20));
+        card.setBorder(BorderFactory.createEmptyBorder(28, 28, 28, 28));
+        card.setMaximumSize(new Dimension(Integer.MAX_VALUE, 190));
         card.setCursor(new Cursor(Cursor.HAND_CURSOR));
 
-        JPanel leftSection = new JPanel(new BorderLayout(15, 0));
-        leftSection.setOpaque(false);
+        JPanel left = new JPanel(new BorderLayout(15, 0));
+        left.setOpaque(false);
 
         JCheckBox checkbox = new JCheckBox();
-        checkbox.setSelected(task.getStatus().equals("Terminée"));
+        checkbox.setSelected("Terminée".equals(task.getStatus()));
         checkbox.setEnabled(false);
         checkbox.setOpaque(false);
         checkbox.setPreferredSize(new Dimension(24, 24));
-        leftSection.add(checkbox, BorderLayout.WEST);
+        left.add(checkbox, BorderLayout.WEST);
 
-        JPanel taskInfo = new JPanel();
-        taskInfo.setLayout(new BoxLayout(taskInfo, BoxLayout.Y_AXIS));
-        taskInfo.setOpaque(false);
+        JPanel info = new JPanel();
+        info.setOpaque(false);
+        info.setLayout(new BoxLayout(info, BoxLayout.Y_AXIS));
 
-        JLabel taskName = new JLabel(task.name);
-        taskName.setFont(new Font("Segoe UI", Font.BOLD, 18));
-        taskName.setForeground(textPrimary);
-        taskName.setAlignmentX(Component.LEFT_ALIGNMENT);
+        JLabel name = new JLabel(task.name);
+        name.setFont(new Font("Segoe UI", Font.BOLD, 18));
+        name.setForeground(textPrimary);
 
-        JPanel categoryRow = new JPanel(new FlowLayout(FlowLayout.LEFT, 0, 0));
-        categoryRow.setOpaque(false);
-        categoryRow.setAlignmentX(Component.LEFT_ALIGNMENT);
+        JLabel desc = new JLabel(task.description);
+        desc.setFont(new Font("Segoe UI", Font.PLAIN, 13));
+        desc.setForeground(textSecondary);
 
-        JLabel category = new JLabel(task.description);
-        category.setFont(new Font("Segoe UI", Font.PLAIN, 13));
-        category.setForeground(textSecondary);
-        categoryRow.add(category);
+        info.add(name);
+        info.add(Box.createVerticalStrut(6));
+        info.add(desc);
 
-        taskInfo.add(taskName);
-        taskInfo.add(Box.createRigidArea(new Dimension(0, 6)));
-        taskInfo.add(categoryRow);
+        left.add(info, BorderLayout.CENTER);
+        card.add(left, BorderLayout.WEST);
 
-        leftSection.add(taskInfo, BorderLayout.CENTER);
-        card.add(leftSection, BorderLayout.WEST);
+        JPanel right = new JPanel();
+        right.setOpaque(false);
+        right.setLayout(new BoxLayout(right, BoxLayout.Y_AXIS));
 
-        JPanel rightSection = new JPanel();
-        rightSection.setLayout(new BoxLayout(rightSection, BoxLayout.Y_AXIS));
-        rightSection.setOpaque(false);
-        rightSection.setAlignmentX(Component.RIGHT_ALIGNMENT);
-
-        JPanel topRow = new JPanel(new FlowLayout(FlowLayout.RIGHT, 15, 0));
+        JPanel topRow = new JPanel(new FlowLayout(FlowLayout.RIGHT, 14, 0));
         topRow.setOpaque(false);
 
-        JLabel statusLabel = createStatusBadge(task.getStatus());
-        topRow.add(statusLabel);
+        JLabel status = createStatusBadge(task.getStatus());
+        topRow.add(status);
 
-        JLabel progressLabel = new JLabel(task.progress + "%");
-        progressLabel.setFont(new Font("Segoe UI", Font.BOLD, 16));
-        progressLabel.setForeground(textPrimary);
-        topRow.add(progressLabel);
+        JLabel percent = new JLabel(task.progress + "%");
+        percent.setFont(new Font("Segoe UI", Font.BOLD, 16));
+        percent.setForeground(textPrimary);
+        topRow.add(percent);
 
-        JButton deleteBtn = new JButton("✕") {
-            @Override
-            protected void paintComponent(Graphics g) {
-                super.paintComponent(g);
-            }
-        };
-        deleteBtn.setFocusPainted(false);
-        deleteBtn.setBorderPainted(false);
-        deleteBtn.setContentAreaFilled(false);
-        deleteBtn.setForeground(dangerColor);
-        deleteBtn.setFont(new Font("Segoe UI", Font.BOLD, 24));
-        deleteBtn.setCursor(new Cursor(Cursor.HAND_CURSOR));
-        deleteBtn.setPreferredSize(new Dimension(36, 36));
-        deleteBtn.setToolTipText("Supprimer la tâche");
-        deleteBtn.addActionListener(e -> deleteTacheFromBackend(task));
-        topRow.add(deleteBtn);
+        if (Params.estResponsable) {
+            ImageIcon icon = new ImageIcon(getClass().getResource("/assets/bin.png"));
+            Image scaled = icon.getImage().getScaledInstance(22, 22, Image.SCALE_SMOOTH);
 
-        rightSection.add(topRow);
-        rightSection.add(Box.createRigidArea(new Dimension(0, 10)));
+            JButton deleteBtn = new JButton(new ImageIcon(scaled));
+            deleteBtn.setBorderPainted(false);
+            deleteBtn.setContentAreaFilled(false);
+            deleteBtn.setFocusPainted(false);
+            deleteBtn.setCursor(new Cursor(Cursor.HAND_CURSOR));
+            deleteBtn.setToolTipText("Supprimer la tâche");
+            deleteBtn.addActionListener(e -> deleteTacheFromBackend(task));
+
+            topRow.add(deleteBtn);
+        }
+
+        right.add(topRow);
+        right.add(Box.createVerticalStrut(12));
 
         JPanel progressBar = createProgressBar(task.progress, taskColor);
-        progressBar.setAlignmentX(Component.RIGHT_ALIGNMENT);
-        rightSection.add(progressBar);
-        rightSection.add(Box.createRigidArea(new Dimension(0, 12)));
+        right.add(progressBar);
+        right.add(Box.createVerticalStrut(14));
 
-        JPanel deadlineMembersRow = new JPanel(new FlowLayout(FlowLayout.RIGHT, 15, 0));
-        deadlineMembersRow.setOpaque(false);
-        deadlineMembersRow.setPreferredSize(new Dimension(300, 42));
+        JPanel bottomRow = new JPanel(new FlowLayout(FlowLayout.RIGHT, 15, 0));
+        bottomRow.setOpaque(false);
 
-        JPanel deadlinePanel = new JPanel(new FlowLayout(FlowLayout.LEFT, 6, 0));
-        deadlinePanel.setOpaque(false);
+        JLabel deadline = new JLabel(task.deadline);
+        deadline.setFont(new Font("Segoe UI", Font.PLAIN, 13));
+        deadline.setForeground(textSecondary);
+        bottomRow.add(deadline);
 
-        JLabel deadlineLabel = new JLabel(task.deadline);
-        deadlineLabel.setFont(new Font("Segoe UI", Font.PLAIN, 13));
-        deadlineLabel.setForeground(textSecondary);
-        deadlinePanel.add(deadlineLabel);
-        deadlineMembersRow.add(deadlinePanel);
+        JPanel members = createMembersAvatars(task.assignedMembers);
+        bottomRow.add(members);
 
-        JPanel membersPanel = createMembersAvatars(task.assignedMembers);
-        deadlineMembersRow.add(membersPanel);
-
-        rightSection.add(deadlineMembersRow);
-        card.add(rightSection, BorderLayout.EAST);
+        right.add(bottomRow);
+        card.add(right, BorderLayout.EAST);
 
         card.addMouseListener(new java.awt.event.MouseAdapter() {
-            public void mouseClicked(java.awt.event.MouseEvent evt) {
-                if (!(evt.getSource() instanceof JButton)) {
+            public void mouseClicked(java.awt.event.MouseEvent e) {
+                if (!(e.getSource() instanceof JButton)) {
                     Params.tacheID = task.id;
                     onClick.accept("Tache");
                 }
@@ -456,7 +440,7 @@ public class Taches extends JPanel {
                 JOptionPane.WARNING_MESSAGE);
 
         if (result == JOptionPane.YES_OPTION) {
-            Queries.delete("/api/taches/" + task.id)
+            Queries.delete("/api/tache/delete/" + task.id)
                     .thenAccept(response -> {
                         System.out.println("Tâche supprimée: " + response);
                         SwingUtilities.invokeLater(this::loadDataFromBackend);

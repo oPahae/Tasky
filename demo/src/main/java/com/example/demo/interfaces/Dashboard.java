@@ -498,7 +498,8 @@ public class Dashboard extends JPanel {
         tasksPanel.setLayout(new FlowLayout(FlowLayout.LEFT, 8, 8));
         tasksPanel.setOpaque(false);
 
-        List<String> sublist = member.assignedTasks.size() > 1 ? member.assignedTasks.subList(0, 2) : member.assignedTasks;
+        List<String> sublist = member.assignedTasks.size() > 1 ? member.assignedTasks.subList(0, 2)
+                : member.assignedTasks;
         sublist.add("...");
 
         for (String task : sublist) {
@@ -525,9 +526,11 @@ public class Dashboard extends JPanel {
 
         card.addMouseListener(new java.awt.event.MouseAdapter() {
             public void mouseClicked(java.awt.event.MouseEvent evt) {
-                System.out.println(member.id);
-                Params.membreID = member.id;
-                onClick.accept("Membre");
+                if (Params.estResponsable) {
+                    System.out.println(member.id);
+                    Params.membreID = member.id;
+                    onClick.accept("Membre");
+                }
             }
         });
 

@@ -127,10 +127,9 @@ public class Sidebar extends JPanel {
         if (projectSelector != null) {
             projectSelector.removeAllItems();
             for (Map<String, Object> project : projects) {
-                int id = (int) project.get("id");
-                // int membreID = (int) project.get("membreID");
                 String nom = (String) project.get("nom");
-                projectSelector.addItem("[" + id + "] " + nom);
+                boolean estResponsable = (boolean) project.get("estResponsable");
+                projectSelector.addItem(nom + (estResponsable ? " (R)" : ""));
             }
         }
     }
@@ -280,45 +279,34 @@ public class Sidebar extends JPanel {
         selectorCard.add(label);
         selectorCard.add(Box.createRigidArea(new Dimension(0, 10)));
 
-        // Initialiser le JComboBox
         projectSelector = createModernComboBox();
 
         projectSelector.addActionListener(e -> {
             int selectedIndex = projectSelector.getSelectedIndex();
             if (selectedIndex >= 0 && selectedIndex < projects.size()) {
-                String selectedItem = (String) projectSelector.getSelectedItem();
-                int start = selectedItem.indexOf('[') + 1;
-                int end = selectedItem.indexOf(']');
-                if (start > 0 && end > start) {
-                    String idStr = selectedItem.substring(start, end);
-                    try {
-                        int projetId = Integer.parseInt(idStr);
-                        Map<String, Object> selectedProject = projects.get(selectedIndex);
-                        String projetNom = (String) selectedProject.get("nom");
-                        int membreID = (int) selectedProject.get("membreID");
-                        String projetDescription = (String) selectedProject.get("description");
+                try {
+                    Map<String, Object> selectedProject = projects.get(selectedIndex);
+                    int projetId = (int) selectedProject.get("id");
+                    String projetNom = (String) selectedProject.get("nom");
+                    int membreID = (int) selectedProject.get("membreID");
+                    boolean estResponsable = (boolean) selectedProject.get("estResponsable");
+                    String projetDescription = (String) selectedProject.get("description");
 
-                        // Mettre à jour SessionManager
-                        SessionManager.getInstance().setCurrentProjet(projetId, projetNom, projetDescription);
+                    SessionManager.getInstance().setCurrentProjet(projetId, projetNom, projetDescription);
 
-                        // Mettre à jour Params.projetID si nécessaire
-                        if (Params.projetID != projetId) {
-                            System.out.println("----------------------------membreID");
-                            System.out.println(membreID);
-                            Params.projetID = projetId;
-                            Params.membreID = membreID;
-                            onClick.accept("Dashboard");
-                        }
-                    } catch (NumberFormatException ex) {
-                        System.err.println("Erreur lors de la conversion de l'ID : " + ex.getMessage());
-                        Params.projetID = -1;
+                    if (Params.projetID != projetId) {
+                        System.out.println("estResponsable : " + estResponsable);
+                        Params.projetID = projetId;
+                        Params.membreID = membreID;
+                        Params.estResponsable = estResponsable;
+                        onClick.accept("Dashboard");
                     }
-                } else {
+                } catch (NumberFormatException ex) {
+                    System.err.println("Erreur lors de la conversion de l'ID : " + ex.getMessage());
                     Params.projetID = -1;
-                        }
-                    }
-                });
-
+                }
+            }
+        });
 
         selectorCard.add(projectSelector);
         return selectorCard;
