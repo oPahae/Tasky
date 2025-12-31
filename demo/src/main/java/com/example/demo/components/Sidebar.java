@@ -292,8 +292,17 @@ public class Sidebar extends JPanel {
                 if (start > 0 && end > start) {
                     String idStr = selectedItem.substring(start, end);
                     try {
-                        if (Params.projetID != Integer.parseInt(idStr)) {
-                            Params.projetID = Integer.parseInt(idStr);
+                        int projetId = Integer.parseInt(idStr);
+                        Map<String, Object> selectedProject = projects.get(selectedIndex);
+                        String projetNom = (String) selectedProject.get("nom");
+                        String projetDescription = (String) selectedProject.get("description");
+
+                        // Mettre à jour SessionManager
+                        SessionManager.getInstance().setCurrentProjet(projetId, projetNom, projetDescription);
+
+                        // Mettre à jour Params.projetID si nécessaire
+                        if (Params.projetID != projetId) {
+                            Params.projetID = projetId;
                             onClick.accept("Dashboard");
                         }
                     } catch (NumberFormatException ex) {
@@ -302,9 +311,10 @@ public class Sidebar extends JPanel {
                     }
                 } else {
                     Params.projetID = -1;
-                }
-            }
-        });
+                        }
+                    }
+                });
+
 
         selectorCard.add(projectSelector);
         return selectorCard;

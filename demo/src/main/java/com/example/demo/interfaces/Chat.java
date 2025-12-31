@@ -1,33 +1,30 @@
 package com.example.demo.interfaces;
 
-import com.example.demo.Params;
-import com.example.demo.SessionManager;
-import com.example.demo.components.Scrollbar;
-import com.example.demo.hooks.MessageDTO;
-import com.google.gson.Gson;
-import com.google.gson.GsonBuilder;
-import org.springframework.messaging.converter.MappingJackson2MessageConverter;
-import org.springframework.messaging.simp.stomp.*;
-import org.springframework.web.socket.client.standard.StandardWebSocketClient;
-import org.springframework.web.socket.messaging.WebSocketStompClient;
-import org.springframework.web.socket.sockjs.client.SockJsClient;
-import org.springframework.web.socket.sockjs.client.Transport;
-import org.springframework.web.socket.sockjs.client.WebSocketTransport;
-
-
-import javax.swing.*;
-import java.awt.*;
+import java.awt.BasicStroke;
+import java.awt.BorderLayout;
+import java.awt.Color;
+import java.awt.Component;
+import java.awt.Cursor;
+import java.awt.Dimension;
+import java.awt.FlowLayout;
+import java.awt.Font;
+import java.awt.FontMetrics;
+import java.awt.GradientPaint;
+import java.awt.Graphics;
+import java.awt.Graphics2D;
+import java.awt.Insets;
+import java.awt.RenderingHints;
 import java.io.BufferedReader;
 import java.io.InputStreamReader;
 import java.lang.reflect.Type;
 import java.net.HttpURLConnection;
 import java.net.URL;
 import java.text.SimpleDateFormat;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Date;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
-import java.util.HashSet;
-
 
 import javax.swing.BorderFactory;
 import javax.swing.Box;
@@ -39,14 +36,32 @@ import javax.swing.JPanel;
 import javax.swing.JScrollBar;
 import javax.swing.JScrollPane;
 import javax.swing.JTextArea;
+import javax.swing.SwingConstants;
 import javax.swing.SwingUtilities;
 
+import org.springframework.messaging.converter.MappingJackson2MessageConverter;
+import org.springframework.messaging.simp.stomp.StompFrameHandler;
+import org.springframework.messaging.simp.stomp.StompSessionHandler;
+import org.springframework.messaging.simp.stomp.StompSessionHandlerAdapter;
+
+import org.springframework.messaging.converter.MappingJackson2MessageConverter;
+import org.springframework.messaging.simp.stomp.StompFrameHandler;
+import org.springframework.messaging.simp.stomp.StompHeaders;
+import org.springframework.messaging.simp.stomp.StompSession;
+import org.springframework.messaging.simp.stomp.StompSessionHandler;
+import org.springframework.messaging.simp.stomp.StompSessionHandlerAdapter;
+import org.springframework.web.socket.client.standard.StandardWebSocketClient;
+import org.springframework.web.socket.messaging.WebSocketStompClient;
+import org.springframework.web.socket.sockjs.client.SockJsClient;
+import org.springframework.web.socket.sockjs.client.Transport;
+import org.springframework.web.socket.sockjs.client.WebSocketTransport;
+
 import com.example.demo.Params;
+import com.example.demo.SessionManager;
 import com.example.demo.components.Scrollbar;
 import com.example.demo.hooks.MessageDTO;
 import com.google.gson.Gson;
-
-
+import com.google.gson.GsonBuilder;
 
 public class Chat extends JPanel {
     private int theme;
@@ -55,12 +70,9 @@ public class Chat extends JPanel {
     private List<ChatMessage> messages;
     private JPanel messagesContainer;
     private JTextArea inputField;
-    
-    //  ids dynamiques depuis SessionManager
     private int myId;
     private int projectId;
     private String projectName;
-    
     private SimpleDateFormat timeFormat = new SimpleDateFormat("HH:mm");
 
     // WebSocket
@@ -70,42 +82,35 @@ public class Chat extends JPanel {
     private Set<Integer> loadedMessageIds = new HashSet<>();
 
     public Chat() {
-        this.theme = Params.theme;
-        System.out.println("🚀 Chat initialisé:");
-        System.out.println("   - Membre ID: " + myId);
-        System.out.println("   - Projet ID: " + projectId);
-        System.out.println("   - Projet Nom: " + projectName);
-        
-        initializeColors();
-        messages = new ArrayList<>();
+    this.theme = Params.theme;
+    initializeColors();
 
-        setLayout(new BorderLayout());
-        setBackground(bgColor);
-        add(createTopBar(), BorderLayout.NORTH);
-        add(createMessagesArea(), BorderLayout.CENTER);
-        add(createInputArea(), BorderLayout.SOUTH);
+    // Utiliser l'ID du user connecté comme membre actuel
+    this.myId = SessionManager.getInstance().getUserId();
+    this.projectId = SessionManager.getInstance().getCurrentProjetId();
+    this.projectName = SessionManager.getInstance().getCurrentProjetNom();
 
-        loadMessageHistory();
-        connectWebSocket();
+    // Vérifier que le projet est sélectionné
+    if (projectId <= 0) {
+        JOptionPane.showMessageDialog(this,
+            "Veuillez sélectionner un projet avant d'ouvrir le chat.",
+            "Erreur",
+            JOptionPane.ERROR_MESSAGE);
+        return;
     }
 
-    private void initErrorPanel(String errorMessage) {
-        setLayout(new BorderLayout());
-        setBackground(new Color(245, 247, 250));
-        
-        JPanel errorPanel = new JPanel();
-        errorPanel.setLayout(new BoxLayout(errorPanel, BoxLayout.Y_AXIS));
-        errorPanel.setBackground(Color.WHITE);
-        errorPanel.setBorder(BorderFactory.createEmptyBorder(50, 50, 50, 50));
-        
-        JLabel errorLabel = new JLabel(errorMessage);
-        errorLabel.setFont(new Font("Segoe UI", Font.BOLD, 18));
-        errorLabel.setForeground(new Color(220, 38, 38));
-        errorLabel.setAlignmentX(Component.CENTER_ALIGNMENT);
-        
-        errorPanel.add(errorLabel);
-        add(errorPanel, BorderLayout.CENTER);
-    }
+    messages = new ArrayList<>();
+    setLayout(new BorderLayout());
+    setBackground(bgColor);
+    add(createTopBar(), BorderLayout.NORTH);
+    add(createMessagesArea(), BorderLayout.CENTER);
+    add(createInputArea(), BorderLayout.SOUTH);
+
+    // Charger l'historique et connecter WebSocket
+    loadMessageHistory();
+    connectWebSocket();
+}
+
 
     private void initializeColors() {
         if (theme == 0) {
@@ -143,7 +148,7 @@ public class Chat extends JPanel {
                     @Override
                     public void afterConnected(StompSession session, StompHeaders connectedHeaders) {
                         stompSession = session;
-                        System.out.println("✅ WebSocket connecté pour projet " + projectId);
+                        System.out.println("WebSocket connecté pour projet " + projectId);
 
                         session.subscribe("/topic/projet/" + projectId, new StompFrameHandler() {
                             @Override
@@ -174,7 +179,7 @@ public class Chat extends JPanel {
 
                     @Override
                     public void handleTransportError(StompSession session, Throwable exception) {
-                        System.err.println("❌ Erreur WebSocket : " + exception.getMessage());
+                        System.err.println("Erreur WebSocket : " + exception.getMessage());
                     }
                 };
 
@@ -189,7 +194,7 @@ public class Chat extends JPanel {
     private void loadMessageHistory() {
         new Thread(() -> {
             try {
-                System.out.println("🔄 Chargement de l'historique pour projet " + projectId);
+                System.out.println("Chargement de l'historique pour projet " + projectId);
 
                 URL url = new URL("http://localhost:8080/api/messages/projet/" + projectId);
                 HttpURLConnection conn = (HttpURLConnection) url.openConnection();
@@ -199,10 +204,10 @@ public class Chat extends JPanel {
                 conn.setReadTimeout(5000);
 
                 int responseCode = conn.getResponseCode();
-                System.out.println("📡 Code réponse HTTP: " + responseCode);
+                System.out.println("Code réponse HTTP: " + responseCode);
 
                 if (responseCode != 200) {
-                    System.err.println("❌ Erreur HTTP: " + responseCode);
+                    System.err.println(" Erreur HTTP: " + responseCode);
                     return;
                 }
 
@@ -219,14 +224,14 @@ public class Chat extends JPanel {
                 String jsonString = json.toString();
 
                 if (jsonString.trim().isEmpty() || jsonString.equals("[]")) {
-                    System.out.println("⚠️ Aucun message dans l'historique");
+                    System.out.println("Aucun message dans l'historique");
                     return;
                 }
 
                 MessageDTO[] dtos = gson.fromJson(jsonString, MessageDTO[].class);
 
                 if (dtos == null || dtos.length == 0) {
-                    System.out.println("⚠️ Aucun message parsé");
+                    System.out.println(" Aucun message parsé");
                     return;
                 }
 
@@ -235,28 +240,43 @@ public class Chat extends JPanel {
                     loadedMessageIds.clear();
                     messages.clear();
 
-                    System.out.println("📝 Ajout de " + dtos.length + " messages à l'interface");
+                    if (dtos == null || dtos.length == 0) {
+                        // Ajouter un message par défaut si la liste est vide
+                        ChatMessage defaultMessage = new ChatMessage(
+                            -1, // ID spécial pour indiquer que c'est un message système
+                            "Système",
+                            "",
+                            "SYSTÈME",
+                            "Aucun message pour cette discussion",
+                            new Date()
+                        );
+                        messages.add(defaultMessage);
+                        messagesContainer.add(createMessageBubble(defaultMessage));
+                        messagesContainer.add(Box.createRigidArea(new Dimension(0, 12)));
+                    } else {
+                        System.out.println("Ajout de " + dtos.length + " messages à l'interface");
 
-                    for (MessageDTO dto : dtos) {
-                        if (dto.id == 0) {
-                            System.err.println("⚠️ Message sans ID détecté");
-                            continue;
-                        }
+                        for (MessageDTO dto : dtos) {
+                            if (dto.id == 0) {
+                                System.err.println(" Message sans ID détecté");
+                                continue;
+                            }
 
-                        ChatMessage msg = new ChatMessage(
+                            ChatMessage msg = new ChatMessage(
                                 dto.membreId,
                                 dto.prenomMembre != null ? dto.prenomMembre : "Inconnu",
                                 dto.nomMembre != null ? dto.nomMembre : "",
                                 dto.typeMembre != null ? dto.typeMembre : "NORMAL",
                                 dto.contenu != null ? dto.contenu : "",
                                 dto.dateEnvoi != null ? dto.dateEnvoi : new Date()
-                        );
-                        msg.id = dto.id;
+                            );
+                            msg.id = dto.id;
 
-                        loadedMessageIds.add(msg.id);
-                        messages.add(msg);
-                        messagesContainer.add(createMessageBubble(msg));
-                        messagesContainer.add(Box.createRigidArea(new Dimension(0, 12)));
+                            loadedMessageIds.add(msg.id);
+                            messages.add(msg);
+                            messagesContainer.add(createMessageBubble(msg));
+                            messagesContainer.add(Box.createRigidArea(new Dimension(0, 12)));
+                        }
                     }
 
                     messagesContainer.revalidate();
@@ -268,15 +288,16 @@ public class Chat extends JPanel {
                                 .getVerticalScrollBar();
                             vertical.setValue(vertical.getMaximum());
                         } catch (Exception e) {
-                            System.err.println("⚠️ Erreur scroll: " + e.getMessage());
+                            System.err.println(" Erreur scroll: " + e.getMessage());
                         }
                     });
                 });
 
-                System.out.println("✅ Historique chargé (" + dtos.length + " messages)");
+
+                System.out.println("Historique chargé (" + dtos.length + " messages)");
 
             } catch (Exception e) {
-                System.err.println("❌ Erreur lors du chargement de l'historique:");
+                System.err.println("Erreur lors du chargement de l'historique:");
                 e.printStackTrace();
             }
         }).start();
@@ -321,6 +342,40 @@ public class Chat extends JPanel {
         return topBar;
     }
 
+    private JPanel createDefaultMessage() {
+    JPanel container = new JPanel();
+    container.setLayout(new BoxLayout(container, BoxLayout.X_AXIS));
+    container.setOpaque(false);
+    container.setAlignmentX(Component.CENTER_ALIGNMENT);
+
+        JPanel bubble = new JPanel() {
+            @Override
+            protected void paintComponent(Graphics g) {
+                super.paintComponent(g);
+                Graphics2D g2 = (Graphics2D) g.create();
+                g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
+                g2.setColor(new Color(200, 200, 200)); // Couleur neutre pour le message par défaut
+                g2.fillRoundRect(0, 0, getWidth(), getHeight(), 18, 18);
+                g2.dispose();
+            }
+        };
+
+        bubble.setLayout(new BorderLayout());
+        bubble.setOpaque(false);
+        bubble.setBorder(BorderFactory.createEmptyBorder(14, 18, 14, 18));
+        bubble.setAlignmentX(Component.CENTER_ALIGNMENT);
+
+        JLabel messageLabel = new JLabel("Aucun message pour cette discussion");
+        messageLabel.setFont(new Font("Segoe UI", Font.ITALIC, 14));
+        messageLabel.setForeground(textSecondary);
+        messageLabel.setHorizontalAlignment(SwingConstants.CENTER);
+
+        bubble.add(messageLabel, BorderLayout.CENTER);
+        container.add(bubble);
+
+        return container;
+    }
+
     private JPanel createMessagesArea() {
         JPanel panel = new JPanel(new BorderLayout());
         panel.setBackground(bgColor);
@@ -329,6 +384,10 @@ public class Chat extends JPanel {
         messagesContainer.setLayout(new BoxLayout(messagesContainer, BoxLayout.Y_AXIS));
         messagesContainer.setBackground(bgColor);
         messagesContainer.setBorder(BorderFactory.createEmptyBorder(20, 25, 20, 25));
+
+        if (messages.isEmpty()) {
+        messagesContainer.add(createDefaultMessage());
+        }
 
         Scrollbar scroll = new Scrollbar(theme);
         JScrollPane scrollPane = scroll.create(messagesContainer);
@@ -341,75 +400,114 @@ public class Chat extends JPanel {
         return panel;
     }
 
-    private JPanel createMessageBubble(ChatMessage msg) {
-        boolean isMyMessage = msg.membreId == myId;
+            private JPanel createMessageBubble(ChatMessage msg) {
+    boolean isMyMessage = msg.membreId == myId;
 
-        JPanel container = new JPanel();
-        container.setLayout(new BoxLayout(container, BoxLayout.X_AXIS));
-        container.setOpaque(false);
-        container.setAlignmentX(Component.LEFT_ALIGNMENT);
-        container.setMaximumSize(new Dimension(Integer.MAX_VALUE, Integer.MAX_VALUE));
+    JPanel container = new JPanel();
+    container.setLayout(new BoxLayout(container, BoxLayout.X_AXIS));
+    container.setOpaque(false);
+    container.setAlignmentX(Component.LEFT_ALIGNMENT);
+    container.setMaximumSize(new Dimension(Integer.MAX_VALUE, Integer.MAX_VALUE));
 
-        if (isMyMessage) {
-            container.add(Box.createHorizontalGlue());
-        }
-
-        JPanel bubble = new JPanel() {
-            @Override
-            protected void paintComponent(Graphics g) {
-                super.paintComponent(g);
-                Graphics2D g2 = (Graphics2D) g.create();
-                g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
-                Color bubbleColor = isMyMessage ? myMessageBg : otherMessageBg;
-                g2.setColor(bubbleColor);
-                g2.fillRoundRect(0, 0, getWidth(), getHeight(), 18, 18);
-                g2.dispose();
-            }
-        };
-        bubble.setLayout(new BorderLayout(12, 8));
-        bubble.setOpaque(false);
-        bubble.setBorder(BorderFactory.createEmptyBorder(14, 18, 14, 18));
-        bubble.setAlignmentX(isMyMessage ? Component.RIGHT_ALIGNMENT : Component.LEFT_ALIGNMENT);
-        bubble.setMaximumSize(new Dimension(550, Integer.MAX_VALUE));
-
-        JPanel headerPanel = new JPanel(new BorderLayout(12, 0));
-        headerPanel.setOpaque(false);
-
-        JPanel avatar = createAvatar(msg.prenom, msg.nom);
-        headerPanel.add(avatar, BorderLayout.WEST);
-
-        JLabel nameLabel = new JLabel(msg.prenom + " " + msg.nom);
-        nameLabel.setFont(new Font("Segoe UI", Font.BOLD, 13));
-        nameLabel.setForeground(isMyMessage ? new Color(255, 255, 255, 230) : textPrimary);
-        headerPanel.add(nameLabel, BorderLayout.CENTER);
-
-        bubble.add(headerPanel, BorderLayout.NORTH);
-
-        JTextArea textArea = new JTextArea(msg.contenu);
-        textArea.setEditable(false);
-        textArea.setLineWrap(true);
-        textArea.setWrapStyleWord(true);
-        textArea.setOpaque(false);
-        textArea.setFont(new Font("Segoe UI", Font.PLAIN, 14));
-        textArea.setForeground(isMyMessage ? Color.WHITE : textPrimary);
-        textArea.setBorder(BorderFactory.createEmptyBorder(5, 0, 5, 0));
-        textArea.setMargin(new Insets(0, 0, 0, 0));
-
-        bubble.add(textArea, BorderLayout.CENTER);
-
-        JLabel timeLabel = new JLabel(timeFormat.format(msg.date));
-        timeLabel.setFont(new Font("Segoe UI", Font.PLAIN, 11));
-        timeLabel.setForeground(isMyMessage ? new Color(255, 255, 255, 180) : textSecondary);
-        bubble.add(timeLabel, BorderLayout.SOUTH);
-
-        container.add(bubble);
-
-        if (!isMyMessage) {
-            container.add(Box.createHorizontalGlue());
-        }
-
-        return container;
+    if (isMyMessage) {
+        container.add(Box.createHorizontalGlue());
     }
+
+    JPanel bubble = new JPanel() {
+        @Override
+        protected void paintComponent(Graphics g) {
+            super.paintComponent(g);
+            Graphics2D g2 = (Graphics2D) g.create();
+            g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
+            Color bubbleColor = isMyMessage ? myMessageBg : otherMessageBg;
+            g2.setColor(bubbleColor);
+            g2.fillRoundRect(0, 0, getWidth(), getHeight(), 18, 18);
+            g2.dispose();
+        }
+        
+        @Override
+        public Dimension getPreferredSize() {
+            Dimension d = super.getPreferredSize();
+            // Limiter la largeur maximale à 550px
+            d.width = Math.min(d.width, 550);
+            return d;
+        }
+        
+        @Override
+        public Dimension getMaximumSize() {
+            Dimension d = getPreferredSize();
+            // Hauteur flexible, largeur limitée
+            d.height = super.getPreferredSize().height;
+            return d;
+        }
+    };
+    
+    bubble.setLayout(new BorderLayout(12, 8));
+    bubble.setOpaque(false);
+    bubble.setBorder(BorderFactory.createEmptyBorder(14, 18, 14, 18));
+    bubble.setAlignmentX(isMyMessage ? Component.RIGHT_ALIGNMENT : Component.LEFT_ALIGNMENT);
+
+    JPanel headerPanel = new JPanel(new BorderLayout(12, 0));
+    headerPanel.setOpaque(false);
+
+    JPanel avatar = createAvatar(msg.prenom, msg.nom);
+    headerPanel.add(avatar, BorderLayout.WEST);
+
+    JLabel nameLabel = new JLabel(msg.prenom + " " + msg.nom);
+    nameLabel.setFont(new Font("Segoe UI", Font.BOLD, 13));
+    nameLabel.setForeground(isMyMessage ? new Color(255, 255, 255, 230) : textPrimary);
+    headerPanel.add(nameLabel, BorderLayout.CENTER);
+
+    bubble.add(headerPanel, BorderLayout.NORTH);
+
+    JTextArea textArea = new JTextArea(msg.contenu);
+    textArea.setEditable(false);
+    textArea.setLineWrap(true);
+    textArea.setWrapStyleWord(true);
+    textArea.setOpaque(false);
+    textArea.setFont(new Font("Segoe UI", Font.PLAIN, 14));
+    textArea.setForeground(isMyMessage ? Color.WHITE : textPrimary);
+    textArea.setBorder(BorderFactory.createEmptyBorder(5, 0, 5, 0));
+    textArea.setMargin(new Insets(0, 0, 0, 0));
+    
+    // Calculer la taille préférée du texte avec une largeur maximale
+    FontMetrics fm = textArea.getFontMetrics(textArea.getFont());
+    int maxWidth = 450; // Largeur max du texte (550 - padding)
+    
+    // Calculer le nombre de lignes nécessaires
+    String[] words = msg.contenu.split("\\s+");
+    int currentLineWidth = 0;
+    int lines = 1;
+    
+    for (String word : words) {
+        int wordWidth = fm.stringWidth(word + " ");
+        if (currentLineWidth + wordWidth > maxWidth) {
+            lines++;
+            currentLineWidth = wordWidth;
+        } else {
+            currentLineWidth += wordWidth;
+        }
+    }
+    
+    int lineHeight = fm.getHeight();
+    int textHeight = lines * lineHeight + 10; // +10 pour les marges
+    textArea.setPreferredSize(new Dimension(maxWidth, textHeight));
+
+    bubble.add(textArea, BorderLayout.CENTER);
+
+    JLabel timeLabel = new JLabel(timeFormat.format(msg.date));
+    timeLabel.setFont(new Font("Segoe UI", Font.PLAIN, 11));
+    timeLabel.setForeground(isMyMessage ? new Color(255, 255, 255, 180) : textSecondary);
+    bubble.add(timeLabel, BorderLayout.SOUTH);
+
+    container.add(bubble);
+
+    if (!isMyMessage) {
+        container.add(Box.createHorizontalGlue());
+    }
+
+    return container;
+}
 
     private JPanel createAvatar(String prenom, String nom) {
         JPanel avatar = new JPanel() {
@@ -540,6 +638,11 @@ public class Chat extends JPanel {
     private void sendMessage() {
         String text = inputField.getText().trim();
         if (!text.isEmpty() && stompSession != null && stompSession.isConnected()) {
+            // Retirer le message par défaut s'il est présent
+        if (messages.isEmpty()) {
+            messagesContainer.removeAll();
+        }
+
             MessageDTO dto = new MessageDTO();
             dto.contenu = text;
             dto.dateEnvoi = new Date();
