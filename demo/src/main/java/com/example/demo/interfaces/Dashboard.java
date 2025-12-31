@@ -525,6 +525,7 @@ public class Dashboard extends JPanel {
 
         card.addMouseListener(new java.awt.event.MouseAdapter() {
             public void mouseClicked(java.awt.event.MouseEvent evt) {
+                System.out.println(member.id);
                 Params.membreID = member.id;
                 onClick.accept("Membre");
             }

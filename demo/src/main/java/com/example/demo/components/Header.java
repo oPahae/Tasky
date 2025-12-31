@@ -65,6 +65,7 @@ public class Header extends JPanel {
         future.thenAccept(response -> {
             // System.out.println("/api/notif/membre/" + Params.membreID + "/projet/" +
             // Params.projetID);
+            // System.out.println(response);
             if (response.containsKey("error")) {
                 System.err.println("Erreur récup : " + response.get("error"));
                 return;
@@ -193,7 +194,7 @@ public class Header extends JPanel {
                 Graphics2D g2 = (Graphics2D) g.create();
                 g2.setRenderingHint(RenderingHints.KEY_INTERPOLATION, RenderingHints.VALUE_INTERPOLATION_BICUBIC); // redimension
                 g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON); // radius
-                g2.setRenderingHint(RenderingHints.KEY_RENDERING, RenderingHints.VALUE_RENDER_QUALITY); //améliore
+                g2.setRenderingHint(RenderingHints.KEY_RENDERING, RenderingHints.VALUE_RENDER_QUALITY); // améliore
 
                 int size = 38;
                 int x = (getWidth() - size) / 2;
@@ -706,10 +707,13 @@ public class Header extends JPanel {
         notificationPopup.setBorder(BorderFactory.createCompoundBorder(
                 BorderFactory.createLineBorder(borderColor, 1),
                 BorderFactory.createEmptyBorder(8, 0, 8, 0)));
+
         JPanel mainPanel = new JPanel();
         mainPanel.setLayout(new BoxLayout(mainPanel, BoxLayout.Y_AXIS));
         mainPanel.setBackground(cardBgColor);
         mainPanel.setBorder(BorderFactory.createEmptyBorder(0, 0, 0, 0));
+
+        // --- HEADER ---
         JPanel headerPanel = new JPanel(new BorderLayout());
         headerPanel.setBackground(cardBgColor);
         headerPanel.setBorder(BorderFactory.createEmptyBorder(8, 16, 12, 16));
@@ -717,6 +721,7 @@ public class Header extends JPanel {
         titleLabel.setFont(new Font("Segoe UI", Font.BOLD, 16));
         titleLabel.setForeground(textPrimary);
         headerPanel.add(titleLabel, BorderLayout.WEST);
+
         int unreadCount = (int) notifications.stream().filter(n -> !n.estLue).count();
         if (unreadCount > 0) {
             JLabel countLabel = new JLabel(unreadCount + " non lue" + (unreadCount > 1 ? "s" : ""));
@@ -725,9 +730,11 @@ public class Header extends JPanel {
             headerPanel.add(countLabel, BorderLayout.EAST);
         }
         mainPanel.add(headerPanel);
+
         JSeparator separator = new JSeparator();
         separator.setForeground(borderColor);
         mainPanel.add(separator);
+
         if (notifications.isEmpty()) {
             JPanel emptyPanel = new JPanel();
             emptyPanel.setBackground(cardBgColor);
@@ -742,9 +749,20 @@ public class Header extends JPanel {
                 mainPanel.add(createNotificationItem(notif));
             }
         }
-        notificationPopup.add(mainPanel);
-        notificationPopup.setPreferredSize(new Dimension(360, Math.min(480, notifications.size() * 90 + 80)));
+
+        JScrollPane scrollPane = new JScrollPane(mainPanel, JScrollPane.VERTICAL_SCROLLBAR_AS_NEEDED, JScrollPane.HORIZONTAL_SCROLLBAR_NEVER);
+        scrollPane.setBorder(null);
+        scrollPane.setOpaque(false);
+        scrollPane.getViewport().setOpaque(false);
+        scrollPane.setBackground(cardBgColor);
+
+        int maxHeight = 480;
+        int preferredHeight = Math.min(maxHeight, notifications.size() * 90 + 80);
+        scrollPane.setPreferredSize(new Dimension(360, preferredHeight));
+
+        notificationPopup.add(scrollPane);
         notificationPopup.show(btn, -320, btn.getHeight() + 5);
+
         AWTEventListener clickListener = new AWTEventListener() {
             @Override
             public void eventDispatched(AWTEvent event) {
@@ -936,6 +954,7 @@ public class Header extends JPanel {
         });
         return btn;
     }
+
     public void addNotification(String contenu, LocalDateTime dateEnvoie, boolean estLue) {
         notifications.add(0, new Notification(-1, contenu, dateEnvoie, estLue));
         repaint();

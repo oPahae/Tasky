@@ -68,7 +68,11 @@ public class MesProjetsController {
     public List<ProjetDTO> getProjetsByUserId(@PathVariable int id) {
         List<Membre> membres = membreRepository.findByUser_Id(id);
         return membres.stream()
-                .map(membre -> convertToProjetDTO(membre.getProjet()))
+                .map(membre -> {
+                    ProjetDTO projetDTO = convertToProjetDTO(membre.getProjet());
+                    projetDTO.membreID = membre.getId();
+                    return projetDTO;
+                })
                 .collect(Collectors.toList());
     }
 
@@ -175,7 +179,8 @@ public class MesProjetsController {
         User user = userRepository.findById(userId).orElse(null);
         if (user != null) {
             Membre membre = new Membre();
-            membre.setNom(user.getNom() + " " + user.getPrenom());
+            membre.setNom(user.getNom());
+            membre.setPrenom(user.getPrenom());
             membre.setEmail(user.getEmail());
             membre.setDescription("Créateur du projet");
             membre.setRole("Responsable");
@@ -215,7 +220,8 @@ public class MesProjetsController {
         }
 
         Membre membre = new Membre();
-        membre.setNom(user.getNom() + " " + user.getPrenom());
+        membre.setNom(user.getNom());
+        membre.setPrenom(user.getPrenom());
         membre.setEmail(user.getEmail());
         membre.setDescription("Membre depuis " + new Date());
         membre.setRole("Membre");

@@ -2,6 +2,7 @@ package com.example.demo;
 
 import java.awt.BorderLayout;
 import java.awt.Color;
+import java.awt.Font;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.LinkedHashMap;
@@ -10,6 +11,7 @@ import java.util.function.Supplier;
 
 import javax.swing.ImageIcon;
 import javax.swing.JFrame;
+import javax.swing.JLabel;
 import javax.swing.JPanel;
 import javax.swing.SwingUtilities;
 
@@ -38,13 +40,11 @@ public class Main extends JFrame {
 
         // components
         headerFactory = () -> new Header(
-            new ArrayList<>(Arrays.asList("Dashboard", "Tâches", "Chat", "Gestion", "Graphes")),
-            this::navigateTo
-        );
+                new ArrayList<>(Arrays.asList("Dashboard", "Tâches", "Chat", "Gestion", "Graphes")),
+                this::navigateTo);
         sidebarFactory = () -> new Sidebar(
-            Arrays.asList("Principale", "Mes projets", "Créer un projet", "Rejoindre un projet"),
-            this::navigateTo
-        );
+                Arrays.asList("Principale", "Mes projets", "Créer un projet", "Rejoindre un projet"),
+                this::navigateTo);
 
         // pages
         pageFactories = new LinkedHashMap<>();
@@ -91,20 +91,39 @@ public class Main extends JFrame {
     }
 
     private void navigateTo(String pageName) {
-        Supplier<JPanel> factory = pageFactories.get(pageName);
-        if (factory == null) {
-            System.out.println("Page inconnue : " + pageName);
-            return;
+        boolean isAllowedWithoutProject = pageName.equals("Créer un projet") || pageName.equals("Rejoindre un projet");
+        centerPanel.removeAll();
+
+        if (Params.projetID == -1 && !isAllowedWithoutProject) {
+            centerPanel.add(createNoProjectPage(), BorderLayout.CENTER);
+        } else {
+            Supplier<JPanel> factory = pageFactories.get(pageName);
+            if (factory == null) {
+                System.out.println("Page inconnue : " + pageName);
+                return;
+            }
+            JPanel newPage = factory.get();
+            currentPage = newPage;
+            centerPanel.add(currentPage, BorderLayout.CENTER);
         }
+
         refreshSidebarAndHeader();
-        JPanel newPage = factory.get();
-        if (currentPage != null) {
-            centerPanel.remove(currentPage);
-        }
-        currentPage = newPage;
-        centerPanel.add(currentPage, BorderLayout.CENTER);
         centerPanel.revalidate();
         centerPanel.repaint();
+    }
+
+    private JPanel createNoProjectPage() {
+        JPanel panel = new JPanel(new BorderLayout());
+        panel.setBackground(Color.WHITE);
+
+        JLabel message = new JLabel("Vous n'avez aucun projet pour le moment");
+        message.setHorizontalAlignment(JLabel.CENTER);
+        message.setVerticalAlignment(JLabel.CENTER);
+        message.setFont(new Font("Segoe UI", Font.BOLD, 24));
+        message.setForeground(Color.GRAY);
+
+        panel.add(message, BorderLayout.CENTER);
+        return panel;
     }
 
     public static void main(String[] args) {
