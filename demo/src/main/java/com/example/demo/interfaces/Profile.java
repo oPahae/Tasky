@@ -646,13 +646,13 @@ public class Profile extends JPanel {
                     currentPasswordField.setText("");
                     newPasswordField.setText("");
                     confirmPasswordField.setText("");
-                    System.out.println("✓ Mot de passe modifié");
+                    System.out.println("Mot de passe modifié");
                 } else if (response.containsKey("error")) {
                     String errorMsg = String.valueOf(response.get("error"));
-                    System.err.println("✗ Erreur: " + errorMsg);
-                    showMessage(passwordMessage, "Erreur: " + errorMsg, danger);
+                    System.err.println("Erreur: " + errorMsg.split("\": \"")[1].replace("}", ""));
+                    showMessage(passwordMessage, errorMsg.split("\": \"")[1].replace("\"}", ""), danger);
                 } else {
-                    System.err.println("✗ Réponse invalide");
+                    System.err.println("Réponse invalide");
                     showMessage(passwordMessage, "Erreur lors de la modification", danger);
                 }
             });

@@ -92,7 +92,7 @@ public class Login extends JPanel {
         emailContainer.add(Box.createVerticalStrut(12));
 
         JTextField emailField = createModernTextField("votre@email.com", PRIMARY_BLUE);
-        emailField.setText("pahae");
+        emailField.setText("lam.bahae7@gmail.com");
         emailField.setAlignmentX(Component.LEFT_ALIGNMENT);
         emailContainer.add(emailField);
 
@@ -521,13 +521,13 @@ public class Login extends JPanel {
                         timer2.setRepeats(false);
                         timer2.start();
                     } else {
-                        showMessage(message, "✗ " + extractErrorMessage(response), errorColor);
+                        showMessage(message, extractErrorMessage(response), errorColor);
                         btnLogin.setEnabled(true);
                         btnLogin.setText("Se connecter");
                     }
                 } catch (Exception ex) {
                     ex.printStackTrace();
-                    showMessage(message, "✗ Erreur de connexion", errorColor);
+                    showMessage(message, "Erreur de connexion", errorColor);
                     btnLogin.setEnabled(true);
                     btnLogin.setText("Se connecter");
                 }

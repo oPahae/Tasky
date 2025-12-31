@@ -13,7 +13,7 @@ public class ProjetDTO {
     public float budgetConsomme;
     public String statut;
     public String code;
-    public int userID;
+    public int membreID;
 
     public ProjetDTO() {}
 

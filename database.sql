@@ -57,7 +57,7 @@ CREATE TABLE Tache (
     titre VARCHAR(150),
     description VARCHAR(255),
     dateLimite DATE,
-    etat VARCHAR(50),
+    etat VARCHAR(50) DEFAULT 'en attente',
     dateCreation DATE,
     dateFin DATE,
     projetID INT,

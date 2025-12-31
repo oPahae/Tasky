@@ -239,6 +239,19 @@ public class TacheController {
                 projet.setBudgetConsomme(projet.getBudgetConsomme() + montant);
                 projetRepository.save(projet);
 
+                Membre responsable = membreRepository.findByProjetIdAndRole(projet.getId(), "Responsable");
+                if (responsable == null) {
+                        throw new RuntimeException("Responsable du projet non trouvé");
+                }
+
+                Notification notification = new Notification();
+                notification.setContenu("Nouvelle dépense pour la tâche : " + tache.getTitre() + " (" + payload.get("montant") + ")");
+                notification.setDateEnvoie(new Date());
+                notification.setEstLue(false);
+                notification.setMembre(responsable);
+                notification.setProjet(projet);
+                notificationRepository.save(notification);
+
                 Map<String, Object> response = new HashMap<>();
                 response.put("tache", updatedTache);
                 response.put("projet", projet);

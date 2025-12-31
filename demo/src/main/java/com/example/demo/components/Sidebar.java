@@ -128,6 +128,7 @@ public class Sidebar extends JPanel {
             projectSelector.removeAllItems();
             for (Map<String, Object> project : projects) {
                 int id = (int) project.get("id");
+                // int membreID = (int) project.get("membreID");
                 String nom = (String) project.get("nom");
                 projectSelector.addItem("[" + id + "] " + nom);
             }
@@ -294,6 +295,7 @@ public class Sidebar extends JPanel {
                         int projetId = Integer.parseInt(idStr);
                         Map<String, Object> selectedProject = projects.get(selectedIndex);
                         String projetNom = (String) selectedProject.get("nom");
+                        int membreID = (int) selectedProject.get("membreID");
                         String projetDescription = (String) selectedProject.get("description");
 
                         // Mettre à jour SessionManager
@@ -301,7 +303,10 @@ public class Sidebar extends JPanel {
 
                         // Mettre à jour Params.projetID si nécessaire
                         if (Params.projetID != projetId) {
+                            System.out.println("----------------------------membreID");
+                            System.out.println(membreID);
                             Params.projetID = projetId;
+                            Params.membreID = membreID;
                             onClick.accept("Dashboard");
                         }
                     } catch (NumberFormatException ex) {
