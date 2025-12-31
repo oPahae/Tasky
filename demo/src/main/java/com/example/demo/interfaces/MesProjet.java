@@ -16,6 +16,7 @@ import java.util.*;
 import java.util.List;
 import java.util.function.Consumer;
 
+
 public class MesProjet extends JPanel {
     private int theme;
     private Color bgColor, cardBgColor, textPrimary, textSecondary, accentColor, progressBg, progressFill;
