@@ -1,6 +1,8 @@
 package com.example.demo.controllers;
 
 import java.text.SimpleDateFormat;
+import java.time.Instant;
+import java.time.ZoneId;
 import java.util.Base64;
 import java.util.Date;
 import java.util.HashMap;
@@ -10,17 +12,15 @@ import java.util.Optional;
 import java.util.stream.Collectors;
 
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.http.HttpHeaders;
-import org.springframework.http.HttpStatus;
-import org.springframework.http.MediaType;
-import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.CrossOrigin;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.client.RestTemplate;
+import org.springframework.http.*;
+import com.fasterxml.jackson.databind.ObjectMapper;
 
-import com.example.demo.interfaces.PDFMonkeyService;
 import com.example.demo.models.Document;
 import com.example.demo.models.Notification;
 import com.example.demo.models.Projet;
@@ -47,15 +47,12 @@ public class GestionController {
     @Autowired
     private ProjetRepository projetRepository;
 
-    @Autowired
-    private PDFMonkeyService pdfMonkeyService;
-
     @GetMapping("/{projetId}")
     public ResponseEntity<Map<String, Object>> getGestionData(@PathVariable int projetId) {
         try {
             System.out.println("=== GET GESTION DATA ===");
             System.out.println("Projet ID: " + projetId);
-            
+
             Map<String, Object> response = new HashMap<>();
 
             // Récupérer les informations du projet
@@ -77,7 +74,7 @@ public class GestionController {
             // Historique (notifications)
             List<Notification> notifications = notificationRepository.findByProjetId(projetId);
             System.out.println("Notifications trouvées: " + notifications.size());
-            
+
             List<Map<String, Object>> historiqueDTO = notifications.stream()
                     .map(n -> {
                         Map<String, Object> notifMap = new HashMap<>();
@@ -87,7 +84,8 @@ public class GestionController {
                         notifMap.put("estLue", n.isEstLue());
                         if (n.getMembre() != null) {
                             notifMap.put("membreNom", n.getMembre().getNom());
-                            System.out.println("  - Notification: " + n.getContenu() + " par " + n.getMembre().getNom());
+                            System.out
+                                    .println("  - Notification: " + n.getContenu() + " par " + n.getMembre().getNom());
                         } else {
                             notifMap.put("membreNom", "Système");
                             System.out.println("  - Notification: " + n.getContenu() + " par Système");
@@ -100,7 +98,7 @@ public class GestionController {
             // Facturation (tâches avec dépenses)
             List<Tache> taches = tacheRepository.findByProjetId(projetId);
             System.out.println("Tâches trouvées: " + taches.size());
-            
+
             List<Map<String, Object>> facturation = taches.stream()
                     .filter(t -> t.getDepense() > 0)
                     .map(t -> {
@@ -121,17 +119,17 @@ public class GestionController {
             // Documents
             List<Document> documents = documentRepository.findAllByProjetId(projetId);
             System.out.println("Documents trouvés: " + documents.size());
-            
+
             List<Map<String, Object>> documentsDTO = documents.stream()
                     .map(d -> {
                         Map<String, Object> docMap = new HashMap<>();
                         docMap.put("id", d.getId());
                         docMap.put("nom", d.getNom());
                         docMap.put("description", d.getDescription());
-                        docMap.put("contenuBase64", d.getContenu() != null ? 
-                                Base64.getEncoder().encodeToString(d.getContenu()) : "");
+                        docMap.put("contenuBase64",
+                                d.getContenu() != null ? Base64.getEncoder().encodeToString(d.getContenu()) : "");
                         if (d.getDateCreation() != null) {
-                            docMap.put("dateCreation", 
+                            docMap.put("dateCreation",
                                     d.getDateCreation().atStartOfDay()
                                             .atZone(java.time.ZoneId.systemDefault())
                                             .toInstant()
@@ -163,166 +161,251 @@ public class GestionController {
         }
     }
 
-    /**
-     * Endpoint pour télécharger le rapport PDF
-     */
     @GetMapping("/{projetId}/rapport/pdf")
     public ResponseEntity<byte[]> downloadRapportPDF(@PathVariable int projetId) {
-        System.out.println("========================================");
-        System.out.println("=== DÉBUT GÉNÉRATION RAPPORT PDF ===");
-        System.out.println("Projet ID: " + projetId);
-        System.out.println("========================================");
-        
+
         try {
-            // Récupérer les informations du projet
-            Optional<Projet> projetOpt = projetRepository.findById((Integer)projetId);
-            if (!projetOpt.isPresent()) {
-                System.err.println("ERREUR: Projet non trouvé avec ID " + projetId);
-                return ResponseEntity.status(HttpStatus.NOT_FOUND).body(null);
-            }
-            
-            Projet projet = projetOpt.get();
-            System.out.println("Projet trouvé: " + projet.getNom());
-            System.out.println("Budget: " + projet.getBudget() + " DHS");
-            
-            // Récupérer l'historique (notifications)
-            System.out.println("\n--- RÉCUPÉRATION HISTORIQUE ---");
-            List<Notification> notifications = notificationRepository.findByProjetId(projetId);
-            System.out.println("Nombre de notifications: " + notifications.size());
-            
-            List<Map<String, Object>> historiqueDTO = notifications.stream()
+            Projet projet = projetRepository.findById(projetId);
+
+            // ===== Historique =====
+            List<Map<String, Object>> historiqueDTO = notificationRepository.findByProjetId(projetId)
+                    .stream()
                     .map(n -> {
-                        Map<String, Object> notifMap = new HashMap<>();
-                        notifMap.put("contenu", n.getContenu());
-                        notifMap.put("dateEnvoie", n.getDateEnvoie().getTime());
-                        if (n.getMembre() != null) {
-                            notifMap.put("membreNom", n.getMembre().getNom());
-                        } else {
-                            notifMap.put("membreNom", "Système");
-                        }
-                        System.out.println("  ✓ " + notifMap.get("membreNom") + ": " + n.getContenu());
-                        return notifMap;
+                        Map<String, Object> m = new HashMap<>();
+                        m.put("contenu", n.getContenu());
+                        m.put("dateEnvoie", n.getDateEnvoie().getTime());
+                        m.put("membreNom", n.getMembre() != null ? n.getMembre().getNom() : "Système");
+                        return m;
                     })
-                    .sorted((n1, n2) -> ((Long) n2.get("dateEnvoie")).compareTo((Long) n1.get("dateEnvoie")))
-                    .collect(Collectors.toList());
+                    .toList();
 
-            System.out.println("Historique formaté: " + historiqueDTO.size() + " événements");
-
-            // Récupérer la facturation (tâches)
-            System.out.println("\n--- RÉCUPÉRATION FACTURATION ---");
+            // ===== Facturation =====
             List<Tache> taches = tacheRepository.findByProjetId(projetId);
-            System.out.println("Nombre de tâches: " + taches.size());
-            
+
             List<Map<String, Object>> facturation = taches.stream()
-                .filter(t -> {
-                    boolean hasExpense = t.getDepense() > 0;
-                    if (hasExpense) {
-                        System.out.println("  ✓ " + t.getTitre() + ": " + t.getDepense() + " DHS");
-                    }
-                    return hasExpense;
-                })
-                .map(t -> {
-                    Map<String, Object> expense = new HashMap<>();
-                    expense.put("tacheId", t.getId());
-                    expense.put("tacheTitre", t.getTitre());
-                    expense.put("tacheDescription", t.getDescription());
-                    expense.put("etat", t.getEtat());
-                    expense.put("depense", t.getDepense());
-
-                    if (t.getDateFin() != null) {
-                        expense.put("dateFin", 
-                                t.getDateFin()
-                                        .atStartOfDay()
-                                        .atZone(java.time.ZoneId.systemDefault())
-                                        .toInstant()
-                                        .toEpochMilli());
-                    }
-
-                    return expense;
-                })
-                .collect(Collectors.toList());
-
-            System.out.println("Facturation formatée: " + facturation.size() + " dépenses");
-
-            double totalDepenses = taches.stream()
-                    .mapToDouble(Tache::getDepense)
-                    .sum();
-            System.out.println("Total dépenses: " + totalDepenses + " DHS");
-
-            // Récupérer les documents
-            System.out.println("\n--- RÉCUPÉRATION DOCUMENTS ---");
-            List<Document> documents = documentRepository.findAllByProjetId(projetId);
-            System.out.println("Nombre de documents: " + documents.size());
-            
-            List<Map<String, Object>> documentsDTO = documents.stream()
-                    .map(d -> {
-                        Map<String, Object> docMap = new HashMap<>();
-                        docMap.put("nom", d.getNom());
-                        if (d.getDateCreation() != null) {
-                            docMap.put("dateCreation", 
-                                    d.getDateCreation().atStartOfDay()
-                                            .atZone(java.time.ZoneId.systemDefault())
-                                            .toInstant()
-                                            .toEpochMilli());
+                    .filter(t -> t.getDepense() > 0)
+                    .map(t -> {
+                        Map<String, Object> m = new HashMap<>();
+                        m.put("tacheTitre", t.getTitre());
+                        m.put("tacheDescription", t.getDescription());
+                        m.put("etat", t.getEtat());
+                        m.put("depense", t.getDepense());
+                        if (t.getDateFin() != null) {
+                            m.put("dateFin", t.getDateFin()
+                                    .atStartOfDay()
+                                    .atZone(ZoneId.systemDefault())
+                                    .toInstant()
+                                    .toEpochMilli());
                         }
-                        docMap.put("size", d.getContenu() != null ? d.getContenu().length : 0);
-                        System.out.println("  ✓ " + d.getNom() + " (" + docMap.get("size") + " bytes)");
-                        return docMap;
+                        return m;
                     })
-                    .sorted((d1, d2) -> ((Long) d2.get("dateCreation")).compareTo((Long) d1.get("dateCreation")))
-                    .collect(Collectors.toList());
+                    .toList();
 
-            System.out.println("Documents formatés: " + documentsDTO.size() + " documents");
+            double totalDepenses = taches.stream().mapToDouble(Tache::getDepense).sum();
 
-            // Vérification avant génération
-            System.out.println("\n--- RÉSUMÉ AVANT GÉNÉRATION PDF ---");
-            System.out.println("Projet: " + projet.getNom());
-            System.out.println("Historique: " + historiqueDTO.size() + " événements");
-            System.out.println("Facturation: " + facturation.size() + " dépenses");
-            System.out.println("Documents: " + documentsDTO.size() + " documents");
-            System.out.println("Total dépenses: " + totalDepenses + " DHS");
-            System.out.println("Budget: " + projet.getBudget() + " DHS");
-            System.out.println("-----------------------------------");
+            // ===== Documents =====
+            List<Map<String, Object>> documentsDTO = documentRepository.findAllByProjetId(projetId)
+                    .stream()
+                    .map(d -> {
+                        Map<String, Object> m = new HashMap<>();
+                        m.put("nom", d.getNom());
+                        m.put("size", d.getContenu() != null ? d.getContenu().length : 0);
+                        if (d.getDateCreation() != null) {
+                            m.put("dateCreation", d.getDateCreation()
+                                    .atStartOfDay()
+                                    .atZone(ZoneId.systemDefault())
+                                    .toInstant()
+                                    .toEpochMilli());
+                        }
+                        return m;
+                    })
+                    .toList();
 
-            // APPEL DU SERVICE PDFMONKEY
-            System.out.println("\n🔄 Appel de PDFMonkeyService...\n");
-            
-            byte[] pdfContent = pdfMonkeyService.generateGestionReport(
-                    projet,
-                    historiqueDTO,
-                    facturation,
-                    documentsDTO,
-                    totalDepenses
-            );
+            // ===== Génération =====
+            byte[] pdfBytes = generatePDF(
+                    Map.of(
+                            "projet", Map.of(
+                                    "nom", projet.getNom(),
+                                    "description", projet.getDescription(),
+                                    "budget", projet.getBudget(),
+                                    "budgetConsomme", projet.getBudgetConsomme()),
+                            "historique", historiqueDTO,
+                            "facturation", facturation,
+                            "documents", documentsDTO,
+                            "totalDepenses", totalDepenses));
 
-            System.out.println("\n✅ PDF généré avec succès!");
-            System.out.println("Taille du PDF: " + pdfContent.length + " bytes");
+            String filename = "Rapport_" + projet.getNom().replaceAll("[^a-zA-Z0-9]", "_") + ".pdf";
 
-            // Préparer la réponse
-            HttpHeaders headers = new HttpHeaders();
-            headers.setContentType(MediaType.APPLICATION_PDF);
-            String filename = "Rapport_" + projet.getNom().replaceAll("[^a-zA-Z0-9]", "_") + "_" + 
-                    new SimpleDateFormat("yyyyMMdd").format(new Date()) + ".pdf";
-            headers.setContentDispositionFormData("attachment", filename);
-            headers.setCacheControl("must-revalidate, post-check=0, pre-check=0");
-
-            System.out.println("Nom du fichier: " + filename);
-            System.out.println("========================================");
-            System.out.println("=== FIN GÉNÉRATION RAPPORT PDF ===");
-            System.out.println("========================================\n");
-
-            return new ResponseEntity<>(pdfContent, headers, HttpStatus.OK);
+            return ResponseEntity.ok()
+                    .contentType(MediaType.APPLICATION_PDF)
+                    .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=" + filename)
+                    .body(pdfBytes);
 
         } catch (Exception e) {
-            System.err.println("\n❌ ERREUR LORS DE LA GÉNÉRATION DU PDF");
-            System.err.println("Type: " + e.getClass().getName());
-            System.err.println("Message: " + e.getMessage());
-            System.err.println("\nStack trace:");
             e.printStackTrace();
-            System.out.println("========================================\n");
-            
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                    .body(null);
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(null);
         }
+    }
+
+    public byte[] generatePDF(Map<String, Object> data) throws Exception {
+        StringBuilder html = buildHTML(data);
+
+        // =========================
+        // CALL API PDF
+        // =========================
+        RestTemplate restTemplate = new RestTemplate();
+        ObjectMapper mapper = new ObjectMapper();
+
+        HttpHeaders headers = new HttpHeaders();
+        headers.setContentType(MediaType.APPLICATION_JSON);
+
+        HttpEntity<String> request = new HttpEntity<>(
+                mapper.writeValueAsString(Map.of("html", html.toString())),
+                headers);
+
+        ResponseEntity<byte[]> response = restTemplate.exchange(
+                "https://pahae-utils.vercel.app/api/generatePDF",
+                HttpMethod.POST,
+                request,
+                byte[].class);
+
+        return response.getBody();
+    }
+
+    public StringBuilder buildHTML(Map<String, Object> data) {
+        SimpleDateFormat sdf = new SimpleDateFormat("dd/MM/yyyy");
+
+        Map<String, Object> projet = (Map<String, Object>) data.get("projet");
+        List<Map<String, Object>> historique = (List<Map<String, Object>>) data.get("historique");
+        List<Map<String, Object>> facturation = (List<Map<String, Object>>) data.get("facturation");
+        List<Map<String, Object>> documents = (List<Map<String, Object>>) data.get("documents");
+        double totalDepenses = (double) data.get("totalDepenses");
+
+        StringBuilder html = new StringBuilder();
+
+        html.append("<!DOCTYPE html>");
+        html.append("<html lang='fr'>");
+        html.append("<head>");
+        html.append("<meta charset='UTF-8'>");
+        html.append("<title>Rapport de Projet</title>");
+        html.append("<style>");
+
+        html.append("body{font-family:'Segoe UI',Arial,sans-serif;background:#f1f5f9;padding:40px;color:#1f2937;}");
+        html.append(
+                ".container{background:#fff;padding:50px;border-radius:14px;box-shadow:0 10px 30px rgba(0,0,0,.08);}");
+        html.append(
+                ".header{display:flex;align-items:center;gap:20px;border-bottom:2px solid #e5e7eb;padding-bottom:20px;margin-bottom:40px;}");
+        html.append(".logo{height:60px;}");
+        html.append(".app-title{font-size:28px;font-weight:700;color:#1e3a8a;}");
+        html.append(".subtitle{color:#6b7280;font-size:14px;margin-top:4px;}");
+
+        html.append(".section{margin-top:35px;padding:25px;background:#f8fafc;border-radius:12px;}");
+        html.append(".section h2{margin-top:0;border-left:5px solid #2563eb;padding-left:12px;color:#1e293b;}");
+
+        html.append(
+                "table{width:100%;border-collapse:collapse;margin-top:15px;background:#fff;border-radius:8px;overflow:hidden;}");
+        html.append("th,td{border-bottom:1px solid #e5e7eb;padding:12px;text-align:left;}");
+        html.append("th{background:#f1f5f9;font-weight:600;color:#374151;}");
+        html.append("tr:last-child td{border-bottom:none;}");
+
+        html.append(
+                ".badge{padding:5px 12px;border-radius:999px;background:#dbeafe;color:#1e40af;font-size:12px;font-weight:600;}");
+
+        html.append(".footer{text-align:center;margin-top:50px;font-size:12px;color:#9ca3af;}");
+
+        html.append("</style>");
+        html.append("</head>");
+        html.append("<body>");
+        html.append("<div class='container'>");
+
+        /* ================= HEADER ================= */
+        html.append("<div class='header'>");
+        html.append("<img class='logo' src='https://taskyx.vercel.app/logo.png' />");
+        html.append("<div>");
+        html.append("<div class='app-title'>Taskyx – Rapport de Projet</div>");
+        html.append("<div class='subtitle'>Généré le ")
+                .append(sdf.format(new Date()))
+                .append("</div>");
+        html.append("</div>");
+        html.append("</div>");
+
+        /* ================= INFOS PROJET ================= */
+        html.append("<div class='section'>");
+        html.append("<h2>1. Informations générales</h2>");
+        html.append("<p><b>Nom du projet :</b> ").append(projet.get("nom")).append("</p>");
+        html.append("<p><b>Description :</b> ").append(projet.get("description")).append("</p>");
+        html.append("<p><b>Budget :</b> ").append(projet.get("budget")).append(" MAD</p>");
+        html.append("<p><b>Budget consommé :</b> ").append(projet.get("budgetConsomme")).append(" MAD</p>");
+        html.append("</div>");
+
+        /* ================= HISTORIQUE ================= */
+        html.append("<div class='section'>");
+        html.append("<h2>2. Historique</h2>");
+        html.append("<table><tr><th>Date</th><th>Membre</th><th>Contenu</th></tr>");
+
+        for (Map<String, Object> h : historique) {
+            html.append("<tr>");
+            html.append("<td>").append(sdf.format(new Date((Long) h.get("dateEnvoie")))).append("</td>");
+            html.append("<td>").append(h.get("membreNom")).append("</td>");
+            html.append("<td>").append(h.get("contenu")).append("</td>");
+            html.append("</tr>");
+        }
+        html.append("</table>");
+        html.append("</div>");
+
+        /* ================= FACTURATION ================= */
+        html.append("<div class='section'>");
+        html.append("<h2>3. Facturation</h2>");
+        html.append("<table><tr><th>Tâche</th><th>Description</th><th>État</th><th>Dépense (MAD)</th></tr>");
+
+        for (Map<String, Object> f : facturation) {
+            html.append("<tr>");
+            html.append("<td>").append(f.get("tacheTitre")).append("</td>");
+            html.append("<td>").append(f.get("tacheDescription")).append("</td>");
+            html.append("<td><span class='badge'>").append(f.get("etat")).append("</span></td>");
+            html.append("<td>").append(f.get("depense")).append("</td>");
+            html.append("</tr>");
+        }
+
+        html.append("<tr>");
+        html.append("<th colspan='3'>Total</th>");
+        html.append("<th>").append(totalDepenses).append("</th>");
+        html.append("</tr>");
+
+        html.append("</table>");
+        html.append("</div>");
+
+        /* ================= DOCUMENTS ================= */
+        html.append("<div class='section'>");
+        html.append("<h2>4. Documents</h2>");
+        html.append("<table><tr><th>Nom</th><th>Taille</th><th>Date</th></tr>");
+
+        for (Map<String, Object> d : documents) {
+            html.append("<tr>");
+            html.append("<td>").append(d.get("nom")).append("</td>");
+            html.append("<td>").append(d.get("size")).append(" octets</td>");
+            html.append("<td>");
+            if (d.get("dateCreation") != null) {
+                html.append(sdf.format(new Date((Long) d.get("dateCreation"))));
+            } else {
+                html.append("-");
+            }
+            html.append("</td>");
+            html.append("</tr>");
+        }
+        html.append("</table>");
+        html.append("</div>");
+
+        /* ================= FOOTER ================= */
+        html.append("<div class='footer'>");
+        html.append("© ").append(new Date().getYear() + 1900)
+                .append(" Taskyx • Rapport généré automatiquement");
+        html.append("</div>");
+
+        html.append("</div>");
+        html.append("</body>");
+        html.append("</html>");
+
+        return html;
     }
 }

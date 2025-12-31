@@ -225,14 +225,15 @@ public class Sidebar extends JPanel {
         section.setBackground(bgColor);
         section.setAlignmentX(Component.LEFT_ALIGNMENT);
 
-        // Logo with modern design
         JPanel logoPanel = new JPanel(new FlowLayout(FlowLayout.LEFT, 10, 0));
         logoPanel.setBackground(bgColor);
         logoPanel.setAlignmentX(Component.LEFT_ALIGNMENT);
         logoPanel.setMaximumSize(new Dimension(Integer.MAX_VALUE, 44));
 
-        JLabel logoIcon = new JLabel("📊");
-        logoIcon.setFont(new Font("Segoe UI Emoji", Font.PLAIN, 28));
+        ImageIcon originalIcon = new ImageIcon(getClass().getResource("/assets/logo.png"));
+        Image scaledImage = originalIcon.getImage().getScaledInstance(28, 28, Image.SCALE_SMOOTH);
+        ImageIcon logoIconImage = new ImageIcon(scaledImage);
+        JLabel logoIcon = new JLabel(logoIconImage);
 
         JLabel appName = new JLabel(Params.appName);
         appName.setFont(new Font("Segoe UI", Font.BOLD, 18));
