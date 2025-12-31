@@ -32,6 +32,10 @@ public class Header extends JPanel {
     private List<Notification> notifications;
 
     public Header(List<String> elements, Consumer<String> onClick) {
+        if(!Params.estResponsable) {
+            elements.remove("Gestion");
+            elements.remove("Graphes");
+        } 
         this.theme = Params.theme;
         initializeColors();
         notifications = new ArrayList<>();

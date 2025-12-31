@@ -4,6 +4,7 @@ import com.example.demo.models.*;
 import com.example.demo.hooks.*;
 import com.example.demo.repositories.*;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
@@ -12,6 +13,7 @@ import java.lang.annotation.Documented;
 import java.time.LocalDate;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.HashMap;
 import java.util.Base64;
 import java.util.Date;
@@ -200,7 +202,8 @@ public class TacheController {
                 }
 
                 Notification notification = new Notification();
-                notification.setContenu("Nouveau blocage pour la tâche : " + tache.getTitre() + " (" + payload.get("description") + ")");
+                notification.setContenu("Nouveau blocage pour la tâche : " + tache.getTitre() + " ("
+                                + payload.get("description") + ")");
                 notification.setDateEnvoie(new Date());
                 notification.setEstLue(false);
                 notification.setMembre(responsable);
@@ -245,7 +248,8 @@ public class TacheController {
                 }
 
                 Notification notification = new Notification();
-                notification.setContenu("Nouvelle dépense pour la tâche : " + tache.getTitre() + " (" + payload.get("montant") + ")");
+                notification.setContenu("Nouvelle dépense pour la tâche : " + tache.getTitre() + " ("
+                                + payload.get("montant") + ")");
                 notification.setDateEnvoie(new Date());
                 notification.setEstLue(false);
                 notification.setMembre(responsable);
@@ -258,5 +262,21 @@ public class TacheController {
                 response.put("message", "Dépense ajoutée avec succès et budget du projet mis à jour !");
 
                 return ResponseEntity.ok(response);
+        }
+
+        @DeleteMapping("/delete/{id}")
+        public ResponseEntity<?> deleteTache(@PathVariable Integer id) {
+
+                Optional<Tache> tache = tacheRepository.findById(id);
+
+                if (tache.isEmpty()) {
+                        return ResponseEntity
+                                        .status(HttpStatus.NOT_FOUND)
+                                        .body("Tâche introuvable");
+                }
+
+                tacheRepository.delete(tache.get());
+
+                return ResponseEntity.ok("Tâche supprimée avec succès");
         }
 }
