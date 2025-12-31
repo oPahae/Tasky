@@ -14,11 +14,12 @@ public class Auth extends JFrame {
         this.theme = Params.theme;
         initializeColors();
         setTitle("Authentification");
-        setSize(1100, 750);
+        setExtendedState(JFrame.MAXIMIZED_BOTH);
         setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
         setLocationRelativeTo(null);
         setUndecorated(false);
         getContentPane().setBackground(bgColor);
+        setUndecorated(true);
 
         contentLayout = new CardLayout();
         mainContentPanel = new JPanel(contentLayout);

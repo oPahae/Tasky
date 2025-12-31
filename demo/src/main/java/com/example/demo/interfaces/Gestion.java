@@ -19,8 +19,6 @@ import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.net.http.HttpRequest;
 
-
-
 public class Gestion extends JPanel {
     private int theme;
     private Color bgColor, cardBgColor, textPrimary, textSecondary, accentColor, successColor, warningColor,
@@ -195,23 +193,21 @@ public class Gestion extends JPanel {
         contentWrapper.setBackground(bgColor);
 
         JPanel headerPanel = new JPanel(new BorderLayout());
-headerPanel.setBackground(bgColor);
-headerPanel.setMaximumSize(new Dimension(Integer.MAX_VALUE, 50));
-headerPanel.setAlignmentX(Component.LEFT_ALIGNMENT);
+        headerPanel.setBackground(bgColor);
+        headerPanel.setMaximumSize(new Dimension(Integer.MAX_VALUE, 50));
+        headerPanel.setAlignmentX(Component.LEFT_ALIGNMENT);
 
-JLabel titleLabel = new JLabel("Gestion du projet");
-titleLabel.setFont(new Font("Segoe UI", Font.BOLD, 28));
-titleLabel.setForeground(textPrimary);
+        JLabel titleLabel = new JLabel("Gestion du projet");
+        titleLabel.setFont(new Font("Segoe UI", Font.BOLD, 28));
+        titleLabel.setForeground(textPrimary);
 
-JButton downloadBtn = createDownloadButton();
+        JButton downloadBtn = createDownloadButton();
 
-headerPanel.add(titleLabel, BorderLayout.WEST);
-headerPanel.add(downloadBtn, BorderLayout.EAST);
+        headerPanel.add(titleLabel, BorderLayout.WEST);
+        headerPanel.add(downloadBtn, BorderLayout.EAST);
 
-contentWrapper.add(headerPanel);
-contentWrapper.add(Box.createRigidArea(new Dimension(0, 25)));
-
-        
+        contentWrapper.add(headerPanel);
+        contentWrapper.add(Box.createRigidArea(new Dimension(0, 25)));
 
         JPanel sectionsPanel = new JPanel(new GridLayout(1, 3, 20, 0));
         sectionsPanel.setBackground(bgColor);
@@ -237,128 +233,119 @@ contentWrapper.add(Box.createRigidArea(new Dimension(0, 25)));
     }
 
     private JButton createDownloadButton() {
-    JButton downloadBtn = new JButton("📥 Télécharger le rapport PDF") {
-        @Override
-        protected void paintComponent(Graphics g) {
-            Graphics2D g2 = (Graphics2D) g.create();
-            g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
-            
-            if (getModel().isPressed()) {
-                g2.setColor(accentColor.darker());
-            } else if (getModel().isRollover()) {
-                g2.setColor(accentColor.brighter());
-            } else {
-                g2.setColor(accentColor);
-            }
-            
-            g2.fillRoundRect(0, 0, getWidth(), getHeight(), 12, 12);
-            g2.dispose();
-            super.paintComponent(g);
-        }
-    };
-    
-    downloadBtn.setFont(new Font("Segoe UI", Font.BOLD, 14));
-    downloadBtn.setForeground(Color.WHITE);
-    downloadBtn.setContentAreaFilled(false);
-    downloadBtn.setBorderPainted(false);
-    downloadBtn.setFocusPainted(false);
-    downloadBtn.setCursor(new Cursor(Cursor.HAND_CURSOR));
-    downloadBtn.setPreferredSize(new Dimension(250, 45));
-    downloadBtn.setMaximumSize(new Dimension(250, 45));
-    
-    downloadBtn.addActionListener(e -> downloadPDFReport());
-    
-    return downloadBtn;
-}
+        JButton downloadBtn = new JButton("Télécharger le rapport PDF") {
+            @Override
+            protected void paintComponent(Graphics g) {
+                Graphics2D g2 = (Graphics2D) g.create();
+                g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
 
-private void downloadPDFReport() {
-
-    JDialog progressDialog = new JDialog(
-            (Frame) SwingUtilities.getWindowAncestor(this),
-            "Génération du rapport",
-            true
-    );
-
-    progressDialog.setLayout(new BorderLayout());
-    progressDialog.setSize(400, 150);
-    progressDialog.setLocationRelativeTo(this);
-    progressDialog.setDefaultCloseOperation(JDialog.DO_NOTHING_ON_CLOSE);
-
-    JPanel panel = new JPanel();
-    panel.setLayout(new BoxLayout(panel, BoxLayout.Y_AXIS));
-    panel.setBorder(BorderFactory.createEmptyBorder(25, 25, 25, 25));
-
-    JLabel label = new JLabel("Génération du rapport PDF en cours...");
-    label.setAlignmentX(Component.CENTER_ALIGNMENT);
-
-    JProgressBar bar = new JProgressBar();
-    bar.setIndeterminate(true);
-    bar.setAlignmentX(Component.CENTER_ALIGNMENT);
-
-    panel.add(label);
-    panel.add(Box.createRigidArea(new Dimension(0, 15)));
-    panel.add(bar);
-
-    progressDialog.add(panel);
-
-    SwingWorker<byte[], Void> worker = new SwingWorker<>() {
-
-        @Override
-        protected byte[] doInBackground() throws Exception {
-            // ✅ APPEL CORRECT (PDF = binaire)
-            return Queries.getBinary(
-                    "/api/gestion/" + Params.projetID + "/rapport/pdf"
-            ).get();
-        }
-
-        @Override
-        protected void done() {
-            progressDialog.dispose();
-
-            try {
-                byte[] pdf = get();
-
-                JFileChooser chooser = new JFileChooser();
-                chooser.setSelectedFile(
-                        new File("Rapport_Projet_" + Params.projetID + ".pdf")
-                );
-
-                if (chooser.showSaveDialog(Gestion.this)
-                        == JFileChooser.APPROVE_OPTION) {
-
-                    File file = chooser.getSelectedFile();
-                    if (!file.getName().toLowerCase().endsWith(".pdf")) {
-                        file = new File(file.getAbsolutePath() + ".pdf");
-                    }
-
-                    Files.write(file.toPath(), pdf);
-
-                    JOptionPane.showMessageDialog(
-                            Gestion.this,
-                            "Rapport PDF téléchargé avec succès",
-                            "Succès",
-                            JOptionPane.INFORMATION_MESSAGE
-                    );
+                if (getModel().isPressed()) {
+                    g2.setColor(accentColor.darker());
+                } else if (getModel().isRollover()) {
+                    g2.setColor(accentColor.brighter());
+                } else {
+                    g2.setColor(accentColor);
                 }
 
-            } catch (Exception e) {
-                e.printStackTrace();
-                JOptionPane.showMessageDialog(
-                        Gestion.this,
-                        "Erreur lors du téléchargement :\n" + e.getMessage(),
-                        "Erreur",
-                        JOptionPane.ERROR_MESSAGE
-                );
+                g2.fillRoundRect(0, 0, getWidth(), getHeight(), 12, 12);
+                g2.dispose();
+                super.paintComponent(g);
             }
-        }
-    };
+        };
 
-    worker.execute();
-    progressDialog.setVisible(true);
-}
+        downloadBtn.setFont(new Font("Segoe UI", Font.BOLD, 14));
+        downloadBtn.setForeground(Color.WHITE);
+        downloadBtn.setContentAreaFilled(false);
+        downloadBtn.setBorderPainted(false);
+        downloadBtn.setFocusPainted(false);
+        downloadBtn.setCursor(new Cursor(Cursor.HAND_CURSOR));
+        downloadBtn.setPreferredSize(new Dimension(250, 45));
+        downloadBtn.setMaximumSize(new Dimension(250, 45));
 
+        downloadBtn.addActionListener(e -> downloadPDFReport());
 
+        return downloadBtn;
+    }
 
+    private void downloadPDFReport() {
+
+        JDialog progressDialog = new JDialog(
+                (Frame) SwingUtilities.getWindowAncestor(this),
+                "Génération du rapport",
+                true);
+
+        progressDialog.setLayout(new BorderLayout());
+        progressDialog.setSize(400, 150);
+        progressDialog.setLocationRelativeTo(this);
+        progressDialog.setDefaultCloseOperation(JDialog.DO_NOTHING_ON_CLOSE);
+
+        JPanel panel = new JPanel();
+        panel.setLayout(new BoxLayout(panel, BoxLayout.Y_AXIS));
+        panel.setBorder(BorderFactory.createEmptyBorder(25, 25, 25, 25));
+
+        JLabel label = new JLabel("Génération du rapport PDF en cours...");
+        label.setAlignmentX(Component.CENTER_ALIGNMENT);
+
+        JProgressBar bar = new JProgressBar();
+        bar.setIndeterminate(true);
+        bar.setAlignmentX(Component.CENTER_ALIGNMENT);
+
+        panel.add(label);
+        panel.add(Box.createRigidArea(new Dimension(0, 15)));
+        panel.add(bar);
+
+        progressDialog.add(panel);
+
+        SwingWorker<byte[], Void> worker = new SwingWorker<>() {
+
+            @Override
+            protected byte[] doInBackground() throws Exception {
+                // ✅ APPEL CORRECT (PDF = binaire)
+                return Queries.getBinary(
+                        "/api/gestion/" + Params.projetID + "/rapport/pdf").get();
+            }
+
+            @Override
+            protected void done() {
+                progressDialog.dispose();
+
+                try {
+                    byte[] pdf = get();
+
+                    JFileChooser chooser = new JFileChooser();
+                    chooser.setSelectedFile(
+                            new File("Rapport_Projet_" + Params.projetID + ".pdf"));
+
+                    if (chooser.showSaveDialog(Gestion.this) == JFileChooser.APPROVE_OPTION) {
+
+                        File file = chooser.getSelectedFile();
+                        if (!file.getName().toLowerCase().endsWith(".pdf")) {
+                            file = new File(file.getAbsolutePath() + ".pdf");
+                        }
+
+                        Files.write(file.toPath(), pdf);
+
+                        JOptionPane.showMessageDialog(
+                                Gestion.this,
+                                "Rapport PDF téléchargé avec succès",
+                                "Succès",
+                                JOptionPane.INFORMATION_MESSAGE);
+                    }
+
+                } catch (Exception e) {
+                    e.printStackTrace();
+                    JOptionPane.showMessageDialog(
+                            Gestion.this,
+                            "Erreur lors du téléchargement :\n" + e.getMessage(),
+                            "Erreur",
+                            JOptionPane.ERROR_MESSAGE);
+                }
+            }
+        };
+
+        worker.execute();
+        progressDialog.setVisible(true);
+    }
 
     private JPanel createHistorySection() {
         JPanel section = new JPanel();
@@ -457,7 +444,8 @@ private void downloadPDFReport() {
         dateLabel.setForeground(accentColor);
         dateLabel.setAlignmentX(Component.LEFT_ALIGNMENT);
 
-        JLabel eventLabel1 = new JLabel((event.description.length() > 0 ? event.description.split(":")[0] + " :" : "").trim());
+        JLabel eventLabel1 = new JLabel(
+                (event.description.length() > 0 ? event.description.split(":")[0] + " :" : "").trim());
         eventLabel1.setFont(new Font("Segoe UI", Font.PLAIN, 14));
         eventLabel1.setForeground(textPrimary);
         eventLabel1.setAlignmentX(Component.LEFT_ALIGNMENT);

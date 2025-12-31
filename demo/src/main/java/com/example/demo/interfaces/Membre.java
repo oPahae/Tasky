@@ -670,15 +670,15 @@ public class Membre extends JPanel {
         Color textColor = Color.WHITE;
         switch (etat.toLowerCase()) {
             case "terminé":
-                text = "✓ Terminé";
+                text = "Terminé";
                 bgColor = successColor;
                 break;
             case "en cours":
-                text = "⚡ En cours";
+                text = "En cours";
                 bgColor = accentColor;
                 break;
             case "en attente":
-                text = "⏸ En attente";
+                text = "En attente";
                 bgColor = warningColor;
                 break;
             default:
