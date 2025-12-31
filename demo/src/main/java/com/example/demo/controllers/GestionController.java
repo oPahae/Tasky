@@ -322,7 +322,7 @@ public class GestionController {
         html.append("<div class='header'>");
         html.append("<img class='logo' src='https://taskyx.vercel.app/logo.png' />");
         html.append("<div>");
-        html.append("<div class='app-title'>Taskyx – Rapport de Projet</div>");
+        html.append("<div class='app-title'>Tasky – Rapport de Projet</div>");
         html.append("<div class='subtitle'>Généré le ")
                 .append(sdf.format(new Date()))
                 .append("</div>");
@@ -399,7 +399,7 @@ public class GestionController {
         /* ================= FOOTER ================= */
         html.append("<div class='footer'>");
         html.append("© ").append(new Date().getYear() + 1900)
-                .append(" Taskyx • Rapport généré automatiquement");
+                .append(" Tasky • Rapport généré automatiquement");
         html.append("</div>");
 
         html.append("</div>");

@@ -54,6 +54,8 @@ public class Header extends JPanel {
         rightSection.add(notifBtn);
         themeToggleBtn = createThemeToggleButton(onClick);
         rightSection.add(themeToggleBtn);
+        JButton exitBtn = createExitBtn(onClick);
+        rightSection.add(exitBtn);
         add(rightSection, BorderLayout.EAST);
     }
 
@@ -193,7 +195,7 @@ public class Header extends JPanel {
                 g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON); // radius
                 g2.setRenderingHint(RenderingHints.KEY_RENDERING, RenderingHints.VALUE_RENDER_QUALITY); //améliore
 
-                int size = 34;
+                int size = 38;
                 int x = (getWidth() - size) / 2;
                 int y = (getHeight() - size) / 2;
 
@@ -365,7 +367,7 @@ public class Header extends JPanel {
                     try {
                         String projectDataJson = convertMapToJson(projectData);
                         String encodedData = URLEncoder.encode(projectDataJson, "UTF-8");
-                        String formattingType = ". REMARQUE TRES IMPORTANTE : ta réponse doit être sous forme d'un div html, pour le styling utilise uniquement l'attribut style, utilise différentes épaisseurs de textes (semi gras et mince) et couleurs (noires, grise et pistache), mais seule taille de texte. Ne fais pas de design compliqué, juste un titre coloré et gras avec du texte en noire (gris pour les infors supplémentaires s'il y en a) pour chaque paragraphe, pas de cadres ni mises en pages demandés";
+                        String formattingType = ". REMARQUE TRES IMPORTANTE : ta réponse doit être sous forme d'un div html, pour le styling utilise uniquement l'attribut style, utilise différentes épaisseurs de texte (semi gras et mince) et couleurs (noires, grise et pistache), mais seule taille de texte. Ne fais pas de design compliqué, juste un titre coloré et gras avec du texte en noire (gris pour les infors supplémentaires s'il y en a) pour chaque paragraphe, pas de cadres ni mises en pages demandés, le design doit être professionel et simple";
                         String encodedPrompt = URLEncoder.encode(userInput + formattingType, "UTF-8");
                         String apiUrl = "https://pahae-utils.vercel.app/api/responseAI?data=" + encodedData + "&prompt="
                                 + encodedPrompt;
@@ -859,7 +861,7 @@ public class Header extends JPanel {
                 g2.setRenderingHint(RenderingHints.KEY_INTERPOLATION, RenderingHints.VALUE_INTERPOLATION_BICUBIC);
                 g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
                 g2.setRenderingHint(RenderingHints.KEY_RENDERING, RenderingHints.VALUE_RENDER_QUALITY);
-                int size = theme == 0 ? 28 : 30;
+                int size = theme == 0 ? 28 : 34;
                 int x = (getWidth() - size) / 2;
                 int y = (getHeight() - size) / 2;
                 Image image = theme == 0 ? moonImage : sunImage;
@@ -894,6 +896,46 @@ public class Header extends JPanel {
         repaint();
     }
 
+    public JButton createExitBtn(Consumer<String> onClick) {
+        JButton btn = new JButton() {
+            private Image img;
+            {
+                try {
+                    img = ImageIO.read(getClass().getResource("/assets/x.png"));
+                } catch (Exception e) {
+                    e.printStackTrace();
+                }
+            }
+
+            @Override
+            protected void paintComponent(Graphics g) {
+                super.paintComponent(g);
+                Graphics2D g2 = (Graphics2D) g.create();
+                g2.setRenderingHint(RenderingHints.KEY_INTERPOLATION, RenderingHints.VALUE_INTERPOLATION_BICUBIC);
+                g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
+                g2.setRenderingHint(RenderingHints.KEY_RENDERING, RenderingHints.VALUE_RENDER_QUALITY);
+                int size = theme == 0 ? 28 : 30;
+                int x = (getWidth() - size) / 2;
+                int y = (getHeight() - size) / 2;
+                Image image = img;
+                if (image != null) {
+                    g2.drawImage(image, x, y, size, size, null);
+                }
+                g2.dispose();
+            }
+        };
+        btn.setPreferredSize(new Dimension(42, 42));
+        btn.setOpaque(false);
+        btn.setContentAreaFilled(false);
+        btn.setBorderPainted(false);
+        btn.setFocusPainted(false);
+        btn.setCursor(new Cursor(Cursor.HAND_CURSOR));
+        btn.setToolTipText("Changer de thème");
+        btn.addActionListener(e -> {
+            System.exit(0);
+        });
+        return btn;
+    }
     public void addNotification(String contenu, LocalDateTime dateEnvoie, boolean estLue) {
         notifications.add(0, new Notification(-1, contenu, dateEnvoie, estLue));
         repaint();

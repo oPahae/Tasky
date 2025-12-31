@@ -243,8 +243,6 @@ public class Sidebar extends JPanel {
         logoPanel.add(appName);
         section.add(logoPanel);
         section.add(Box.createRigidArea(new Dimension(0, 20)));
-
-        // Project selector with shadow
         section.add(createProjectSelector());
 
         return section;
@@ -659,8 +657,8 @@ public class Sidebar extends JPanel {
                 g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
 
                 Color bgColor = getModel().isRollover()
-                        ? new Color(239, 68, 68, 30)
-                        : new Color(239, 68, 68, 12);
+                        ? new Color(112, 0, 7)
+                        : new Color(181, 0, 11);
                 g2.setColor(bgColor);
                 g2.fillRoundRect(0, 0, getWidth(), getHeight(), 10, 10);
 
@@ -677,15 +675,10 @@ public class Sidebar extends JPanel {
         logoutBtn.setCursor(new Cursor(Cursor.HAND_CURSOR));
         logoutBtn.setMaximumSize(new Dimension(Integer.MAX_VALUE, 42));
 
-        JLabel logoutIcon = new JLabel("⎋");
-        logoutIcon.setFont(new Font("Segoe UI Emoji", Font.PLAIN, 15));
-        logoutIcon.setForeground(new Color(239, 68, 68));
-
         JLabel logoutText = new JLabel("Déconnexion");
-        logoutText.setFont(new Font("Segoe UI", Font.PLAIN, 13));
-        logoutText.setForeground(new Color(239, 68, 68));
+        logoutText.setFont(new Font("Segoe UI", Font.BOLD, 13));
+        logoutText.setForeground(Color.WHITE);
 
-        logoutBtn.add(logoutIcon);
         logoutBtn.add(logoutText);
 
         logoutBtn.addActionListener(e -> {
