@@ -331,13 +331,7 @@ public class Chat extends JPanel {
         buttonsPanel.setLayout(new FlowLayout(FlowLayout.RIGHT, 10, 0));
         buttonsPanel.setOpaque(false);
 
-        JButton callButton = createModernButton("📞", new Color(16, 185, 129), new Color(52, 211, 153));
-        callButton.setPreferredSize(new Dimension(45, 45));
-        callButton.addActionListener(e -> JOptionPane.showMessageDialog(this, 
-            "Appel vocal", "Appel", JOptionPane.INFORMATION_MESSAGE));
-
-        buttonsPanel.add(callButton);
-        topBar.add(buttonsPanel, BorderLayout.EAST);
+        
 
         return topBar;
     }
