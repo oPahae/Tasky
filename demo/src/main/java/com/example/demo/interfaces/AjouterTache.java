@@ -1,18 +1,40 @@
 package com.example.demo.interfaces;
 
-import com.example.demo.Params;
-import com.example.demo.components.Scrollbar;
-
-import javax.swing.*;
-import java.awt.*;
+import java.awt.BorderLayout;
+import java.awt.Color;
+import java.awt.Component;
+import java.awt.Cursor;
+import java.awt.Dimension;
+import java.awt.Font;
+import java.awt.FontMetrics;
+import java.awt.Graphics;
+import java.awt.Graphics2D;
+import java.awt.RenderingHints;
 import java.io.BufferedReader;
 import java.io.InputStreamReader;
 import java.io.OutputStream;
 import java.net.HttpURLConnection;
 import java.net.URL;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.function.Consumer;
+
+import javax.swing.BorderFactory;
+import javax.swing.Box;
+import javax.swing.BoxLayout;
+import javax.swing.JButton;
+import javax.swing.JCheckBox;
+import javax.swing.JLabel;
+import javax.swing.JOptionPane;
+import javax.swing.JPanel;
+import javax.swing.JScrollPane;
+import javax.swing.JTextArea;
+import javax.swing.JTextField;
+
+import com.example.demo.Params;
+import com.example.demo.components.Scrollbar;
 
 public class AjouterTache extends JPanel {
     private int theme;
@@ -27,33 +49,33 @@ public class AjouterTache extends JPanel {
     public AjouterTache(Consumer<String> onClick) {
         this.theme = Params.theme;
         this.onClick = onClick;
-        initializeColors();
-        fetchMembersFromBackend();
+        initialiseCouleur();
+        initialiseMembre();
         memberCheckboxes = new HashMap<>();
 
         setLayout(new BorderLayout());
         setBackground(bgColor);
-
-        JPanel contentWrapper = new JPanel();
-        contentWrapper.setLayout(new BoxLayout(contentWrapper, BoxLayout.Y_AXIS));
-        contentWrapper.setBackground(bgColor);
-        contentWrapper.setBorder(BorderFactory.createEmptyBorder(25, 25, 25, 25));
-
+        
+        JPanel content = new JPanel();
+        content.setLayout(new BoxLayout(content, BoxLayout.Y_AXIS));
+        content.setBackground(bgColor);
+        content.setBorder(BorderFactory.createEmptyBorder(25, 25, 25, 25));
+        
         // Title
         JLabel titleLabel = new JLabel("Ajouter une nouvelle tâche");
         titleLabel.setFont(new Font("Segoe UI", Font.BOLD, 28));
         titleLabel.setForeground(textPrimary);
         titleLabel.setAlignmentX(Component.LEFT_ALIGNMENT);
-        contentWrapper.add(titleLabel);
-        contentWrapper.add(Box.createRigidArea(new Dimension(0, 25)));
-
+        content.add(titleLabel);
+        content.add(Box.createRigidArea(new Dimension(0, 25)));
+        
         // Main card
         JPanel mainCard = createMainCard();
         mainCard.setAlignmentX(Component.LEFT_ALIGNMENT);
-        contentWrapper.add(mainCard);
-
+        content.add(mainCard);
+        
         Scrollbar scroll = new Scrollbar(theme);
-        JScrollPane scrollPane = scroll.create(contentWrapper);
+        JScrollPane scrollPane = scroll.create(content);
         scrollPane.setBorder(null);
         scrollPane.getVerticalScrollBar().setUnitIncrement(16);
         scrollPane.setBackground(bgColor);
@@ -62,7 +84,7 @@ public class AjouterTache extends JPanel {
         add(scrollPane, BorderLayout.CENTER);
     }
 
-    private void initializeColors() {
+    private void initialiseCouleur() {
         if (theme == 0) { // Light mode
             bgColor = new Color(245, 247, 250);
             cardBgColor = Color.WHITE;
@@ -82,7 +104,7 @@ public class AjouterTache extends JPanel {
         }
     }
 
-    private void fetchMembersFromBackend() {
+    private void initialiseMembre() {
         members = new ArrayList<>();
 
         try {
@@ -161,7 +183,7 @@ public class AjouterTache extends JPanel {
         card.add(descLabel);
         card.add(Box.createRigidArea(new Dimension(0, 8)));
 
-        JPanel descPanel = createStyledTextArea();
+        JPanel descPanel = createTextArea();
         descPanel.setAlignmentX(Component.LEFT_ALIGNMENT);
         card.add(descPanel);
         card.add(Box.createRigidArea(new Dimension(0, 20)));
@@ -187,13 +209,13 @@ public class AjouterTache extends JPanel {
         card.add(membersLabel);
         card.add(Box.createRigidArea(new Dimension(0, 12)));
 
-        JPanel membersPanel = createMembersCheckboxPanel();
+        JPanel membersPanel = createMembreCheckBoxP();
         membersPanel.setAlignmentX(Component.LEFT_ALIGNMENT);
         card.add(membersPanel);
         card.add(Box.createRigidArea(new Dimension(0, 30)));
 
         // Add button
-        JButton addButton = createStyledButton();
+        JButton addButton = createButton();
         addButton.setAlignmentX(Component.LEFT_ALIGNMENT);
         card.add(addButton);
 
@@ -244,7 +266,7 @@ public class AjouterTache extends JPanel {
         return field;
     }
 
-    private JPanel createStyledTextArea() {
+    private JPanel createTextArea() {
         JPanel wrapper = new JPanel(new BorderLayout()) {
             @Override
             protected void paintComponent(Graphics g) {
@@ -295,7 +317,7 @@ public class AjouterTache extends JPanel {
         return wrapper;
     }
 
-    private JPanel createMembersCheckboxPanel() {
+    private JPanel createMembreCheckBoxP() {
         JPanel panel = new JPanel() {
             @Override
             protected void paintComponent(Graphics g) {
@@ -315,7 +337,7 @@ public class AjouterTache extends JPanel {
         panel.setMaximumSize(new Dimension(Integer.MAX_VALUE, 300));
 
         for (ProjectMember member : members) {
-            JPanel memberRow = createMemberCheckboxRow(member);
+            JPanel memberRow = createMembreChexBoxR(member);
             memberRow.setAlignmentX(Component.LEFT_ALIGNMENT);
             panel.add(memberRow);
             if (members.indexOf(member) < members.size() - 1) {
@@ -326,7 +348,7 @@ public class AjouterTache extends JPanel {
         return panel;
     }
 
-    private JPanel createMemberCheckboxRow(ProjectMember member) {
+    private JPanel createMembreChexBoxR(ProjectMember member) {
         JPanel row = new JPanel(new BorderLayout(15, 0));
         row.setOpaque(false);
         row.setMaximumSize(new Dimension(Integer.MAX_VALUE, 60));
@@ -386,7 +408,7 @@ public class AjouterTache extends JPanel {
         return row;
     }
 
-    private JButton createStyledButton() {
+    private JButton createButton() {
         JButton button = new JButton("Ajouter la tâche") {
             @Override
             protected void paintComponent(Graphics g) {
