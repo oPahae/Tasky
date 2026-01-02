@@ -128,8 +128,8 @@ public class Sidebar extends JPanel {
             projectSelector.removeAllItems();
             for (Map<String, Object> project : projects) {
                 String nom = (String) project.get("nom");
-                boolean estResponsable = (boolean) project.get("estResponsable");
-                projectSelector.addItem(nom + (estResponsable ? " (R)" : ""));
+                String role = (String) project.get("role");
+                projectSelector.addItem(nom + " (" + role + ")");
             }
         }
     }
@@ -289,16 +289,18 @@ public class Sidebar extends JPanel {
                     int projetId = (int) selectedProject.get("id");
                     String projetNom = (String) selectedProject.get("nom");
                     int membreID = (int) selectedProject.get("membreID");
-                    boolean estResponsable = (boolean) selectedProject.get("estResponsable");
+                    String code = (String) selectedProject.get("code");
+                    String role = (String) selectedProject.get("role");
                     String projetDescription = (String) selectedProject.get("description");
 
                     SessionManager.getInstance().setCurrentProjet(projetId, projetNom, projetDescription);
 
                     if (Params.projetID != projetId) {
-                        System.out.println("estResponsable : " + estResponsable);
+                        System.out.println("role : " + role);
                         Params.projetID = projetId;
+                        Params.projetCode = code;
                         Params.membreID = membreID;
-                        Params.estResponsable = estResponsable;
+                        Params.role = role;
                         onClick.accept("Dashboard");
                     }
                 } catch (NumberFormatException ex) {
