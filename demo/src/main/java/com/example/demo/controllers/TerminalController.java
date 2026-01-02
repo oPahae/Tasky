@@ -1,15 +1,32 @@
 package com.example.demo.controllers;
 
-import com.example.demo.hooks.*;
-import com.example.demo.models.*;
-import com.example.demo.repositories.*;
+import java.time.LocalDate;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.stream.Collectors;
+
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.*;
+import org.springframework.web.bind.annotation.DeleteMapping;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.PutMapping;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.RestController;
 
-import java.time.LocalDate;
-import java.util.*;
-import java.util.stream.Collectors;
+import com.example.demo.models.Membre;
+import com.example.demo.models.Projet;
+import com.example.demo.models.Tache;
+import com.example.demo.repositories.MembreRepository;
+import com.example.demo.repositories.ProjetRepository;
+import com.example.demo.repositories.SousTacheRepository;
+import com.example.demo.repositories.TacheRepository;
+import com.example.demo.repositories.UserRepository;
 
 @RestController
 @RequestMapping("/api/terminal")
@@ -30,8 +47,10 @@ public class TerminalController {
     @Autowired
     private UserRepository userRepository;
 
-    // ==================== Gestion des projets ====================
+    // GESTION DES PROJET
 
+
+    //recupere les donnee dun projet
     @GetMapping("/projets/{id}")
     public ResponseEntity<Map<String, Object>> getProject(@PathVariable int id) {
         Projet projet = projetRepository.findById(id);
@@ -57,8 +76,9 @@ public class TerminalController {
         return getProject(id);
     }
 
-    // ==================== Gestion des tâches ====================
+    // GESTION DES TACHES
 
+    //recupere les taches dyal wahed projet
     @GetMapping("/projets/{projetId}/taches")
     public ResponseEntity<Map<String, Object>> getTasksByProject(
             @PathVariable int projetId,
@@ -98,6 +118,8 @@ public class TerminalController {
         return ResponseEntity.ok(Map.of("data", tasksDTO));
     }
 
+
+    //ajoute une nvl tachea un projet
     @PostMapping("/projets/{projetId}/taches")
     public ResponseEntity<Map<String, Object>> addTask(
             @PathVariable int projetId,
@@ -125,6 +147,7 @@ public class TerminalController {
         return ResponseEntity.ok(Map.of("id", tache.getId()));
     }
 
+    //supprimer une tache
     @DeleteMapping("/taches/{id}")
     public ResponseEntity<Map<String, Object>> deleteTask(@PathVariable int id) {
         Tache tache = tacheRepository.findById(id).orElse(null);
@@ -135,6 +158,7 @@ public class TerminalController {
         return ResponseEntity.ok(Map.of("success", true));
     }
 
+    //modifier une tache
     @PutMapping("/taches/{id}")
     public ResponseEntity<Map<String, Object>> updateTask(
             @PathVariable int id,
@@ -162,8 +186,9 @@ public class TerminalController {
         return ResponseEntity.ok(Map.of("success", true));
     }
 
-    // ==================== Gestion des membres ====================
+    // GESTION DES MEMBRES
 
+    //recupere les membres kamlin dyal wahed projet
     @GetMapping("/projets/{projetId}/membres")
     public ResponseEntity<Map<String, Object>> getMembersByProject(@PathVariable int projetId) {
         Projet projet = projetRepository.findById(projetId);
@@ -188,6 +213,8 @@ public class TerminalController {
         return ResponseEntity.ok(Map.of("data", membersDTO));
     }
 
+    
+    //supprimer membre mn wahed projet
     @DeleteMapping("/membres/{id}")
     public ResponseEntity<Map<String, Object>> removeMember(@PathVariable int id) {
         Membre membre = membreRepository.findById(id).orElse(null);

@@ -1,13 +1,22 @@
 package com.example.demo.controllers;
 
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.web.bind.annotation.*;
-import com.example.demo.models.*;
-import com.example.demo.hooks.*;
-import com.example.demo.repositories.*;
-
 import java.util.List;
 import java.util.stream.Collectors;
+
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RestController;
+
+import com.example.demo.hooks.MembreDTO;
+import com.example.demo.hooks.TacheDTO;
+import com.example.demo.models.Membre;
+import com.example.demo.models.Projet;
+import com.example.demo.models.SousTache;
+import com.example.demo.models.Tache;
+import com.example.demo.repositories.ProjetRepository;
+import com.example.demo.repositories.TacheRepository;
 
 @RestController
 @RequestMapping("/api")
@@ -17,14 +26,14 @@ public class DashboardController {
     @Autowired
     private TacheRepository tacheRepository;
 
-    @GetMapping("dashboard/projet/{id}/Membrenbr")
+    @GetMapping("dashboard/projet/{id}/Membrenbr")//nombre dyal mbre fprojet
     public int getNbrMembreProjet(@PathVariable int id) {
         Projet pr = projetRepository.findById(id);
         int nbr = pr.getMembres().size();
         return nbr;
     }
 
-    @GetMapping("dashboard/projet/{id}/encours")
+    @GetMapping("dashboard/projet/{id}/encours")//nombre dyal taches en cours fprojet
     public int getNbrProjetEnCours(@PathVariable int id) {
         Projet pr = projetRepository.findById(id);
         if (pr == null) return 0;
@@ -37,7 +46,7 @@ public class DashboardController {
 
     }
 
-    @GetMapping("dashboard/projet/{id}/terminer")
+    @GetMapping("dashboard/projet/{id}/terminer")//nombre dyal taches terminer fprojet
     public int getNbrProjetTerminer(@PathVariable int id) {
         Projet pr = projetRepository.findById(id);
         List<Tache> taches = pr.getTaches();
@@ -49,13 +58,14 @@ public class DashboardController {
 
     }
 
-    @GetMapping("dashboard/projet/{id}/nbrtache")
+    @GetMapping("dashboard/projet/{id}/nbrtache")//nombre dyal taches kamliin fprojet
     public int getNbrTacheProjet(@PathVariable int id) {
         Projet pr = projetRepository.findById(id);
         List<Tache> taches = pr.getTaches();
         return taches.size();
     }
 
+    //kanhawlo tache jaya mn bdd l objet hitach man9druch nsiftu entite direct l front pour securite
     private TacheDTO convertToTacheDTO(Tache t) {
         if (t == null)
             return null;
@@ -72,8 +82,8 @@ public class DashboardController {
 
         return dto;
     }
-
-    @GetMapping("dashboard/projet/{id}/taches")
+    
+    @GetMapping("dashboard/projet/{id}/taches")//liste dyal taches bles info dyal tache fprojet
     public List<TacheDTO> getTachesProjet(@PathVariable int id) {
         Projet pr = projetRepository.findById(id);
         if (pr != null) {
@@ -85,7 +95,7 @@ public class DashboardController {
         return null;
     }
 
-    @GetMapping("dashboard/taches/{id}/progress")
+    @GetMapping("dashboard/taches/{id}/progress")//% dyal wahed tache
     public double getProgress(@PathVariable int id) {
         Tache t = tacheRepository.findById(id).orElse(null);
         if (t != null) {
@@ -101,7 +111,7 @@ public class DashboardController {
         return 0;
     }
 
-    @GetMapping("dashboard/projet/{id}/Membre")
+    @GetMapping("dashboard/projet/{id}/Membre")//liste dyal membres fprojet
     public List<MembreDTO> getMembreProjet(@PathVariable int id) {
         Projet pr = projetRepository.findById(id);
         List<Membre> m = pr.getMembres();
@@ -112,6 +122,7 @@ public class DashboardController {
 
     }
 
+    //kanhawlo membre jaya mn bdd l objet hitach man9druch nsiftu entite direct l front pour securite
     private MembreDTO convertToMembreDTO(Membre t) {
         if (t == null)
             return null;

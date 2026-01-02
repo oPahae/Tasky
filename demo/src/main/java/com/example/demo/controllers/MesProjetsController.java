@@ -1,5 +1,11 @@
 package com.example.demo.controllers;
 
+import java.util.Date;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.stream.Collectors;
+
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -9,21 +15,16 @@ import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
-import com.example.demo.models.Projet;
-import com.example.demo.models.Tache;
-import com.example.demo.models.User;
+
 import com.example.demo.hooks.MembreDTO;
 import com.example.demo.hooks.ProjetDTO;
 import com.example.demo.models.Membre;
-import com.example.demo.repositories.ProjetRepository;
+import com.example.demo.models.Projet;
+import com.example.demo.models.Tache;
+import com.example.demo.models.User;
 import com.example.demo.repositories.MembreRepository;
+import com.example.demo.repositories.ProjetRepository;
 import com.example.demo.repositories.UserRepository;
-
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.stream.Collectors;
-import java.util.Date;
 
 @RestController
 @RequestMapping("/api")
@@ -36,6 +37,7 @@ public class MesProjetsController {
     private UserRepository userRepository;
 
     @GetMapping("projet/all")
+    //recuperer et convertir tout les projet en dto 
     public List<ProjetDTO> getAllProjet() {
         return projetRepository.findAll().stream()
                 .map(this::convertToProjetDTO)
@@ -43,20 +45,24 @@ public class MesProjetsController {
     }
 
     @DeleteMapping("projet/deleteAll")
+    //supprimer tous les projet de bdd
     public void deleteAllProject() {
         projetRepository.deleteAll();
     }
 
     @DeleteMapping("projet/delete/{id}")
+    //supprimer un projet 
     public void deleteProjet(@PathVariable int id) {
         projetRepository.deleteById(id);
     }
 
+    //ajouter un projet
     @PostMapping("projet/add")
     public void addProjet(@RequestBody Projet p) {
         projetRepository.save(p);
     }
 
+    //recupere un projet dun membre
     @GetMapping("/projet/membre/{id}")
     public List<ProjetDTO> projetByIdMembre(@PathVariable int id) {
         return projetRepository.findByMembres_Id(id).stream()
@@ -64,6 +70,7 @@ public class MesProjetsController {
                 .collect(Collectors.toList());
     }
 
+    //recuperer tt les projet dun membre
     @GetMapping("/projet/user/{id}")
     public List<ProjetDTO> getProjetsByUserId(@PathVariable int id) {
         List<Membre> membres = membreRepository.findByUser_Id(id);
@@ -77,6 +84,7 @@ public class MesProjetsController {
                 .collect(Collectors.toList());
     }
 
+    //modifier un projet
     @PutMapping("projet/modifier/{id}")
     public boolean updateProjetById(@PathVariable int id, @RequestBody Projet pr) {
         Projet pr1 = projetRepository.findById(id);
@@ -94,6 +102,7 @@ public class MesProjetsController {
         return false;
     }
 
+    //recuperer tt les membres dun projet
     @GetMapping("projet/{id}/Membre")
     public List<MembreDTO> getMembreProjet(@PathVariable int id) {
         Projet pr = projetRepository.findById(id);
@@ -104,6 +113,7 @@ public class MesProjetsController {
         return null;
     }
 
+    //convert un projet en dto
     private ProjetDTO convertToProjetDTO(Projet t) {
         if (t == null)
             return null;
@@ -121,6 +131,7 @@ public class MesProjetsController {
         return dto;
     }
 
+    //convert un membre en dto
     private MembreDTO convertToMembreDTO(Membre t) {
         if (t == null)
             return null;
@@ -135,6 +146,7 @@ public class MesProjetsController {
         return dto;
     }
 
+    //calculer le progress dun projet
     @GetMapping("/projet/{id}/progress")
     public double getProgressProjet(@PathVariable int id) {
         Projet p = projetRepository.findById(id);
@@ -152,6 +164,7 @@ public class MesProjetsController {
         return 0;
     }
 
+    //ajouter un membre lprojet
     @GetMapping("projet/{idProjet}/addmembre/{idMembre}")
     public boolean rejoindreAuProjet(@PathVariable("idProjet") int id, @PathVariable("idMembre") int idm) {
         Projet p = projetRepository.findById(id);
@@ -164,6 +177,7 @@ public class MesProjetsController {
         return false;
     }
 
+    //creer projet u user li creea projet c;est lui responsable
     @PostMapping("projet/creer/{userId}")
     public ProjetDTO createProjet(@PathVariable int userId, @RequestBody ProjetDTO dto) {
         Projet p = new Projet();
@@ -195,9 +209,12 @@ public class MesProjetsController {
         return convertToProjetDTO(p);
     }
 
+    //rejoindre user au projet by un code
     @GetMapping("projet/join/{code}/{userId}")
     public Map<String, Object> joinProjectByCode(@PathVariable String code, @PathVariable int userId) {
         Map<String, Object> response = new HashMap<>();
+
+        //verifier si lcode se trouve
         Projet projet = projetRepository.findByCode(code);
         if (projet == null) {
             response.put("success", false);
@@ -205,6 +222,7 @@ public class MesProjetsController {
             return response;
         }
 
+        //verifier si user se trouve
         User user = userRepository.findById(userId).orElse(null);
         if (user == null) {
             response.put("success", false);
@@ -212,6 +230,7 @@ public class MesProjetsController {
             return response;
         }
 
+        //verifier si membre est deja dans ce projet
         boolean alreadyMember = projet.getMembres().stream()
                 .anyMatch(membre -> membre.getUser().getId() == userId);
         if (alreadyMember) {

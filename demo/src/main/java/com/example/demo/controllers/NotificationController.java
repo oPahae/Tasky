@@ -1,16 +1,20 @@
 package com.example.demo.controllers;
 
-import com.example.demo.hooks.NotificationDTO;
-import com.example.demo.models.Notification;
-import com.example.demo.repositories.NotificationRepository;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.*;
-
-import java.util.Date;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
+
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PutMapping;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RestController;
+
+import com.example.demo.hooks.NotificationDTO;
+import com.example.demo.models.Notification;
+import com.example.demo.repositories.NotificationRepository;
 
 @RestController
 @RequestMapping("/api/notif")
@@ -19,7 +23,7 @@ public class NotificationController {
     @Autowired
     private NotificationRepository notificationRepository;
 
-    // Récupérer toutes les notifications pour un membre et un projet donné
+    // Recuperer toutes les notifications qui sont liees un membre et un projet donnex
     @GetMapping("/membre/{membreID}/projet/{projetID}")
     public ResponseEntity<Map<String, Object>> getNotificationsByMembreAndProjet(
             @PathVariable int membreID,
@@ -34,7 +38,7 @@ public class NotificationController {
                             notif.isEstLue()
                     ))
                     .collect(Collectors.toList());
-            // Renvoie une Map avec une clé "notifications" pour correspondre au parsing du frontend
+            // Renvoie une Map avec une cle notifications pour correspondre au parsing du frontend
             return ResponseEntity.ok(Map.of("notifications", notificationDTOs));
         } catch (Exception e) {
             return ResponseEntity.badRequest().body(Map.of("error", e.getMessage()));
@@ -49,6 +53,7 @@ public class NotificationController {
                     .orElseThrow(() -> new RuntimeException("Notification non trouvée"));
             notification.setEstLue(true);
             notificationRepository.save(notification);
+            
             return ResponseEntity.ok(Map.of("success", true));
         } catch (Exception e) {
             return ResponseEntity.badRequest().body(Map.of("error", e.getMessage()));

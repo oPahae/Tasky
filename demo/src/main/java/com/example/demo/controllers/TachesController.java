@@ -1,16 +1,30 @@
 package com.example.demo.controllers;
 
-import org.springframework.web.bind.annotation.*;
 import java.time.LocalDate;
 import java.util.List;
 import java.util.stream.Collectors;
 
-import com.example.demo.models.*;
-import com.example.demo.repositories.TacheRepository;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.PutMapping;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.RestController;
+
+import com.example.demo.hooks.TacheDTO;
+import com.example.demo.models.Blocage;
+import com.example.demo.models.Membre;
+import com.example.demo.models.Notification;
+import com.example.demo.models.Projet;
+import com.example.demo.models.SousTache;
+import com.example.demo.models.Tache;
 import com.example.demo.repositories.MembreRepository;
 import com.example.demo.repositories.ProjetRepository;
-import com.example.demo.hooks.TacheDTO;
+import com.example.demo.repositories.TacheRepository;
 
+      //la gestion dyal taches membre,projets et a manipulation dyal lestaches m3a les membre.
 @RestController
 @RequestMapping("/api")
 public class TachesController {
@@ -25,6 +39,7 @@ public class TachesController {
         this.projetRepository = projetRepository;
     }
 
+    //convert tache l dto pour securite
     private TacheDTO convertToTacheDTO( Tache t) {
         if (t == null)
             return null;
@@ -41,6 +56,7 @@ public class TachesController {
         return dto;
     }
 
+    //affectation tache lun membre et envoie notif 
     @GetMapping("/taches/{idTache}/add/membre/{idMembre}")
     public boolean addtachetoMember(@PathVariable("idTache")int idTache,@PathVariable("idMembre") int id1) {
         Tache t = tacheRepository.findById(idTache).orElse(null);
@@ -56,6 +72,7 @@ public class TachesController {
         return false;
     }
 
+    //recupere tt les taches
     @GetMapping("/taches/all")
     public List<TacheDTO> getTaches() {
         return tacheRepository.findAll()
@@ -64,12 +81,14 @@ public class TachesController {
                 .collect(Collectors.toList());
     }
 
+    //ajout du nvl tache
     @PostMapping("/taches/add")
     public void addTache(@RequestBody Tache tache) {
         tache.setEtat("en cours");
         tacheRepository.save(tache);
     }
 
+    //recupere une tache specifique
     @GetMapping("/taches/{id}")
     public TacheDTO getTacheById(@PathVariable int id) {
         return tacheRepository.findById(id)
@@ -77,6 +96,7 @@ public class TachesController {
                 .orElse(null);
     }
 
+    //recupere tt les tahches dyal chi membre
     @GetMapping("/taches/Membre/{id}")
     public List<TacheDTO> getTachesByIdMembre(@PathVariable int id) {
         Membre m = membreRepository.findById(id).orElse(null);
@@ -84,6 +104,8 @@ public class TachesController {
                 .collect(Collectors.toList());
 
     }
+
+    //met a jour etat dyal tache
 
     @PutMapping("/taches/{id}/etat")
     public void updateEtat(@PathVariable int id, @RequestParam String etat) {
@@ -94,6 +116,7 @@ public class TachesController {
         }
     }
 
+    //mettre a jour une tache termine ila ga3 les ss tache dyalha termine
     @PutMapping("/taches/{id}/finir")
     public boolean finirTache(@PathVariable int id) {
         Tache t = tacheRepository.findById(id).orElse(null);
@@ -114,6 +137,7 @@ public class TachesController {
         return false;
     }
 
+    //modification dyal tache specifique
     @PutMapping("/taches/{id}")
     public void updateTache(@PathVariable int id, @RequestBody Tache nouv) {
         Tache t = tacheRepository.findById(id).orElse(null);
@@ -129,6 +153,7 @@ public class TachesController {
         }
     }
 
+    //si une tache bloquer kadar la modification dyal etat dyalha bloque u kat ajota f table dyal bloquage 
     @PutMapping("/taches/{id}/bloquer")
     public void bloquerTache(@PathVariable int id, @RequestBody Blocage blocage) {
         Tache t = tacheRepository.findById(id).orElse(null);
@@ -139,6 +164,7 @@ public class TachesController {
         }
     }
 
+    //verification dyal wahed tache wech depassat date limite dyalha si oui eta dyalha katweli depassee
     @GetMapping("/taches/{id}/cloturer")
     public boolean tacheCloturer(@PathVariable int id) {
         Tache t = tacheRepository.findById(id).orElse(null);
@@ -154,6 +180,7 @@ public class TachesController {
         return false;
     }
 
+    //calcul dyal % de progress dyal tache en fct dyal ss taches temine dyalha
     @GetMapping("/taches/{idTache}/progress")
     public double getProgress(@PathVariable("idTache") int id) {
         Tache t = tacheRepository.findById(id).orElse(null);

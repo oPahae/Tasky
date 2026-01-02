@@ -1,18 +1,36 @@
 package com.example.demo.controllers;
 
-import com.example.demo.hooks.*;
-import com.example.demo.models.*;
-import com.example.demo.repositories.*;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.stream.Collectors;
+
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
-import java.util.ArrayList;
-import java.util.Base64;
-import java.util.List;
-import java.util.stream.Collectors;
+import com.example.demo.hooks.BlocageDTO;
+import com.example.demo.hooks.DocumentDTO;
+import com.example.demo.hooks.MainDTO;
+import com.example.demo.hooks.MembreDTO;
+import com.example.demo.hooks.MessageDTO;
+import com.example.demo.hooks.NotificationDTO;
+import com.example.demo.hooks.ProjetDTO;
+import com.example.demo.hooks.SousTacheDTO;
+import com.example.demo.hooks.TacheDTO;
+import com.example.demo.models.Blocage;
+import com.example.demo.models.Projet;
+import com.example.demo.models.SousTache;
+import com.example.demo.models.Tache;
+import com.example.demo.repositories.BlocageRepository;
+import com.example.demo.repositories.DocumentRepository;
+import com.example.demo.repositories.MembreRepository;
+import com.example.demo.repositories.MessageRepository;
+import com.example.demo.repositories.NotificationRepository;
+import com.example.demo.repositories.ProjetRepository;
+import com.example.demo.repositories.SousTacheRepository;
+import com.example.demo.repositories.TacheRepository;
 
 @RestController
 @RequestMapping("/api")
@@ -49,7 +67,7 @@ public class MainController {
             return null;
         }
 
-        // Convertir Projet en ProjetDTO
+        // convertir Projet en ProjetDTO
         ProjetDTO projetDTO = new ProjetDTO(
             projet.getId(),
             projet.getNom(),
@@ -62,7 +80,7 @@ public class MainController {
             projet.getStatut()
         );
 
-        // Récupérer et convertir les membres
+        // recuperer et convertir les membres
         List<MembreDTO> membresDTO = projet.getMembres().stream()
             .map(m -> new MembreDTO(
                 m.getNom(),
@@ -75,7 +93,7 @@ public class MainController {
             ))
             .collect(Collectors.toList());
 
-        // Récupérer et convertir les tâches + sous-tâches
+        // recuperer et convertir taches+ sstaches
         List<TacheDTO> tachesDTO = projet.getTaches().stream()
             .map(t -> {
                 List<SousTache> sousTaches = sousTacheRepository.findByTacheId(t.getId());
@@ -90,13 +108,13 @@ public class MainController {
                     t.getEtat(),
                     t.getDateCreation(),
                     t.getDateFin(),
-                    0, // progres (à calculer si nécessaire)
+                    0, 
                     sousTachesDTO
                 );
             })
             .collect(Collectors.toList());
 
-        // Récupérer et convertir les documents
+        // recuperer et convertir les docs
         List<DocumentDTO> documentsDTO = documentRepository.findAllByProjetId(projetID).stream()
             .map(d -> new DocumentDTO(
                 d.getId(),
@@ -109,7 +127,7 @@ public class MainController {
             ))
             .collect(Collectors.toList());
 
-        // Récupérer et convertir les blocages
+        // recuperer et convertir les blocages
         List<BlocageDTO> blocagesDTO = new ArrayList<>();
         for (Tache tache : projet.getTaches()) {
             List<Blocage> blocages = blocageRepository.findByTacheId(tache.getId());
@@ -126,7 +144,7 @@ public class MainController {
             );
         }
 
-        // Récupérer et convertir les messages
+        // recuperer et convertir les messages
         List<MessageDTO> messagesDTO = messageRepository.findByProjetId(projetID).stream()
             .map(m -> new MessageDTO(
                 m.getId(),
@@ -138,7 +156,7 @@ public class MainController {
             ))
             .collect(Collectors.toList());
 
-        // Récupérer et convertir les notifications
+        // recuperer et convertir les notifications
         List<NotificationDTO> notificationsDTO = notificationRepository.findByProjetId(projetID).stream()
             .map(n -> new NotificationDTO(
                 n.getId(),

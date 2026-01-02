@@ -1,21 +1,24 @@
 package com.example.demo.controllers;
 
-import com.example.demo.hooks.MessageDTO;
-import com.example.demo.models.Message;
-import com.example.demo.models.Membre;
-import com.example.demo.models.Projet;
-import com.example.demo.repositories.MessageRepository;
-import com.example.demo.repositories.MembreRepository;
-import com.example.demo.repositories.ProjetRepository;
+import java.util.Date;
+import java.util.List;
+import java.util.Optional;
+
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.messaging.handler.annotation.MessageMapping;
 import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.stereotype.Controller;
-import org.springframework.web.bind.annotation.*;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.ResponseBody;
 
-import java.util.Date;
-import java.util.List;
-import java.util.Optional;
+import com.example.demo.hooks.MessageDTO;
+import com.example.demo.models.Membre;
+import com.example.demo.models.Message;
+import com.example.demo.models.Projet;
+import com.example.demo.repositories.MembreRepository;
+import com.example.demo.repositories.MessageRepository;
+import com.example.demo.repositories.ProjetRepository;
 
 @Controller
 public class MessageController {
@@ -30,9 +33,9 @@ public class MessageController {
     private ProjetRepository projetRepository;
 
     @Autowired
-    private SimpMessagingTemplate messagingTemplate;
+    private SimpMessagingTemplate messagingTemplate;//envoyer message via WebSocket
 
-    // REST : historique avec informations complètes du membre
+    //recuperer tous les messages dun projet
     @GetMapping("/api/messages/projet/{projetId}")
     @ResponseBody
     public List<MessageDTO> getMessagesByProjet(@PathVariable int projetId) {
@@ -47,7 +50,7 @@ public class MessageController {
                     dto.projetId = m.getProjet().getId();
                     dto.membreId = m.getMembre().getId();
                     
-                    // 🔹 Récupérer les informations du membre depuis la table user/membre
+                    // recuperer les infos du membre
                     Membre membre = m.getMembre();
                     dto.prenomMembre = membre.getPrenom() != null ? membre.getPrenom() : "Inconnu";
                     dto.nomMembre = membre.getNom() != null ? membre.getNom() : "";
@@ -58,19 +61,19 @@ public class MessageController {
                 .toList();
     }
 
-    // WEBSOCKET : envoyer message avec informations du membre
+    // websocket envoyer message avec infos du membre
     @MessageMapping("/chat.sendMessage")
-public void sendMessage(MessageDTO dto) {
-    System.out.println("📩 Message reçu via WebSocket:");
-    System.out.println("   - Contenu: " + dto.contenu);
-    System.out.println("   - MembreID: " + dto.membreId);
-    System.out.println("   - ProjetID: " + dto.projetId);
+    public void sendMessage(MessageDTO dto) {
+    System.out.println("Message recu via WebSocket:");
+    System.out.println("Contenu: " + dto.contenu);
+    System.out.println("MembreID: " + dto.membreId);
+    System.out.println("ProjetID: " + dto.projetId);
     
     Projet projet = projetRepository.findById(dto.projetId);
     Optional<Membre> membreOpt = membreRepository.findById(dto.membreId);
 
     if (projet == null || membreOpt.isEmpty()) {
-        System.err.println("❌ Projet ou Membre introuvable");
+        System.err.println("Projet ou Membre introuvable");
         return;
     }
 
@@ -85,9 +88,9 @@ public void sendMessage(MessageDTO dto) {
     message.setMembre(membre);
 
     Message saved = messageRepository.save(message);
-    System.out.println("✅ Message sauvegardé avec ID: " + saved.getId());
+    System.out.println("Message sauvegardé avec ID: " + saved.getId());
 
-    // 🔹 IMPORTANT : Créer la réponse avec TOUTES les infos du membre
+    //Creer la reponse avec toutes les infos du membre
     MessageDTO response = new MessageDTO();
     response.id = saved.getId();
     response.contenu = saved.getContenu();
@@ -99,15 +102,15 @@ public void sendMessage(MessageDTO dto) {
     response.nomMembre = membre.getNom() != null ? membre.getNom() : "";
     response.typeMembre = membre.getType() != null ? membre.getType() : "NORMAL";
 
-    System.out.println("📤 Broadcast message vers /topic/projet/" + projet.getId());
-    System.out.println("   - Membre: " + response.prenomMembre + " " + response.nomMembre);
+    System.out.println("Broadcast message vers /topic/projet/" + projet.getId());
+    System.out.println("Membre: " + response.prenomMembre + " " + response.nomMembre);
 
-    // Diffuser à tous les clients connectés
+    // Diffuser a tous les clients connectes
     messagingTemplate.convertAndSend(
             "/topic/projet/" + projet.getId(),
             response
     );
     
-    System.out.println("✅ Message broadcasté avec succès");
+    System.out.println("Message broadcast avec succes");
     }
 }
