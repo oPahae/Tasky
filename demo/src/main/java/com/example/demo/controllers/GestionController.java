@@ -1,7 +1,6 @@
 package com.example.demo.controllers;
 
 import java.text.SimpleDateFormat;
-import java.time.Instant;
 import java.time.ZoneId;
 import java.util.Base64;
 import java.util.Date;
@@ -12,14 +11,18 @@ import java.util.Optional;
 import java.util.stream.Collectors;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpEntity;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.HttpMethod;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.CrossOrigin;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.client.RestTemplate;
-import org.springframework.http.*;
-import com.fasterxml.jackson.databind.ObjectMapper;
 
 import com.example.demo.models.Document;
 import com.example.demo.models.Notification;
@@ -29,6 +32,7 @@ import com.example.demo.repositories.DocumentRepository;
 import com.example.demo.repositories.NotificationRepository;
 import com.example.demo.repositories.ProjetRepository;
 import com.example.demo.repositories.TacheRepository;
+import com.fasterxml.jackson.databind.ObjectMapper;
 
 @RestController
 @RequestMapping("/api/gestion")
@@ -48,14 +52,15 @@ public class GestionController {
     private ProjetRepository projetRepository;
 
     @GetMapping("/{projetId}")
+    
     public ResponseEntity<Map<String, Object>> getGestionData(@PathVariable int projetId) {
         try {
-            System.out.println("=== GET GESTION DATA ===");
+            System.out.println("get gestion data");
             System.out.println("Projet ID: " + projetId);
 
             Map<String, Object> response = new HashMap<>();
 
-            // Récupérer les informations du projet
+            // recuperer les infos dprojet
             Optional<Projet> projetOpt = projetRepository.findById((Integer) projetId);
             if (projetOpt.isPresent()) {
                 Projet projet = projetOpt.get();
@@ -66,14 +71,14 @@ public class GestionController {
                 projetInfo.put("dateFin", projet.getDateFin() != null ? projet.getDateFin().getTime() : null);
                 projetInfo.put("budget", projet.getBudget());
                 response.put("projet", projetInfo);
-                System.out.println("Projet trouvé: " + projet.getNom());
+                System.out.println("Projet trouve: " + projet.getNom());
             } else {
-                System.out.println("Projet non trouvé!");
+                System.out.println("Projet non trouve");
             }
 
-            // Historique (notifications)
+            // historique hia somme dyal notification dyal dak projet
             List<Notification> notifications = notificationRepository.findByProjetId(projetId);
-            System.out.println("Notifications trouvées: " + notifications.size());
+            System.out.println("Notifications trouve: " + notifications.size());
 
             List<Map<String, Object>> historiqueDTO = notifications.stream()
                     .map(n -> {
@@ -85,19 +90,20 @@ public class GestionController {
                         if (n.getMembre() != null) {
                             notifMap.put("membreNom", n.getMembre().getNom());
                             System.out
-                                    .println("  - Notification: " + n.getContenu() + " par " + n.getMembre().getNom());
+                                    .println("Notification: " + n.getContenu() + " par " + n.getMembre().getNom());
                         } else {
                             notifMap.put("membreNom", "Système");
-                            System.out.println("  - Notification: " + n.getContenu() + " par Système");
+                            System.out.println("Notification: " + n.getContenu() + " par Systeme");
                         }
                         return notifMap;
                     })
+                    //ordre desc
                     .sorted((n1, n2) -> ((Long) n2.get("dateEnvoie")).compareTo((Long) n1.get("dateEnvoie")))
                     .collect(Collectors.toList());
 
-            // Facturation (tâches avec dépenses)
+            // facturation hiya somme dyal depense kol tache f dak projet
             List<Tache> taches = tacheRepository.findByProjetId(projetId);
-            System.out.println("Tâches trouvées: " + taches.size());
+            System.out.println("Taches trouvee: " + taches.size());
 
             List<Map<String, Object>> facturation = taches.stream()
                     .filter(t -> t.getDepense() > 0)
@@ -106,7 +112,7 @@ public class GestionController {
                         expense.put("id", t.getId());
                         expense.put("titre", t.getTitre());
                         expense.put("depense", t.getDepense());
-                        System.out.println("  - Tâche: " + t.getTitre() + " - " + t.getDepense() + " DHS");
+                        System.out.println("Tache: " + t.getTitre() + " " + t.getDepense() + " DHS");
                         return expense;
                     })
                     .collect(Collectors.toList());
@@ -114,12 +120,12 @@ public class GestionController {
             double totalDepenses = taches.stream()
                     .mapToDouble(Tache::getDepense)
                     .sum();
-            System.out.println("Total dépenses: " + totalDepenses);
+            System.out.println("Total depenses: " + totalDepenses);
 
-            // Documents
+            // liste dyal doc li kaynin fwahed projet
             List<Document> documents = documentRepository.findAllByProjetId(projetId);
-            System.out.println("Documents trouvés: " + documents.size());
-
+            System.out.println("Documents trouves: " + documents.size());
+          
             List<Map<String, Object>> documentsDTO = documents.stream()
                     .map(d -> {
                         Map<String, Object> docMap = new HashMap<>();
@@ -127,8 +133,10 @@ public class GestionController {
                         docMap.put("nom", d.getNom());
                         docMap.put("description", d.getDescription());
                         docMap.put("contenuBase64",
+                        //transformer contenu binaire lString 
                                 d.getContenu() != null ? Base64.getEncoder().encodeToString(d.getContenu()) : "");
-                        if (d.getDateCreation() != null) {
+                        
+                            if (d.getDateCreation() != null) {
                             docMap.put("dateCreation",
                                     d.getDateCreation().atStartOfDay()
                                             .atZone(java.time.ZoneId.systemDefault())
@@ -136,7 +144,7 @@ public class GestionController {
                                             .toEpochMilli());
                         }
                         docMap.put("size", d.getContenu() != null ? d.getContenu().length : 0);
-                        System.out.println("  - Document: " + d.getNom());
+                        System.out.println("Document: " + d.getNom());
                         return docMap;
                     })
                     .sorted((d1, d2) -> ((Long) d2.get("dateCreation")).compareTo((Long) d1.get("dateCreation")))
@@ -148,11 +156,10 @@ public class GestionController {
             response.put("documents", documentsDTO);
             response.put("success", true);
 
-            System.out.println("========================");
             return ResponseEntity.ok(response);
 
         } catch (Exception e) {
-            System.err.println("ERREUR dans getGestionData: " + e.getMessage());
+            System.err.println("erreur dans getGestionData: " + e.getMessage());
             e.printStackTrace();
             Map<String, Object> errorResponse = new HashMap<>();
             errorResponse.put("success", false);
@@ -162,12 +169,13 @@ public class GestionController {
     }
 
     @GetMapping("/{projetId}/rapport/pdf")
+    //renvoie PDF
     public ResponseEntity<byte[]> downloadRapportPDF(@PathVariable int projetId) {
 
         try {
             Projet projet = projetRepository.findById(projetId);
 
-            // ===== Historique =====
+            // infos dyal historique
             List<Map<String, Object>> historiqueDTO = notificationRepository.findByProjetId(projetId)
                     .stream()
                     .map(n -> {
@@ -179,7 +187,7 @@ public class GestionController {
                     })
                     .toList();
 
-            // ===== Facturation =====
+            // infos dyal facturation
             List<Tache> taches = tacheRepository.findByProjetId(projetId);
 
             List<Map<String, Object>> facturation = taches.stream()
@@ -203,7 +211,7 @@ public class GestionController {
 
             double totalDepenses = taches.stream().mapToDouble(Tache::getDepense).sum();
 
-            // ===== Documents =====
+            // infos dyal docs
             List<Map<String, Object>> documentsDTO = documentRepository.findAllByProjetId(projetId)
                     .stream()
                     .map(d -> {
@@ -221,7 +229,7 @@ public class GestionController {
                     })
                     .toList();
 
-            // ===== Génération =====
+            // appel method li katgenerer PDF 
             byte[] pdfBytes = generatePDF(
                     Map.of(
                             "projet", Map.of(
@@ -248,11 +256,9 @@ public class GestionController {
     }
 
     public byte[] generatePDF(Map<String, Object> data) throws Exception {
-        StringBuilder html = buildHTML(data);
+        StringBuilder html = buildHTML(data);//appel lmethod li katcreer code html
 
-        // =========================
-        // CALL API PDF
-        // =========================
+        //appel dyal api pdf bach transformi html l pdf 
         RestTemplate restTemplate = new RestTemplate();
         ObjectMapper mapper = new ObjectMapper();
 
@@ -272,6 +278,7 @@ public class GestionController {
         return response.getBody();
     }
 
+    //code html li ghan siftuh l api bach iweli PDF
     public StringBuilder buildHTML(Map<String, Object> data) {
         SimpleDateFormat sdf = new SimpleDateFormat("dd/MM/yyyy");
 
@@ -318,7 +325,7 @@ public class GestionController {
         html.append("<body>");
         html.append("<div class='container'>");
 
-        /* ================= HEADER ================= */
+        /* HEADER*/
         html.append("<div class='header'>");
         html.append("<img class='logo' src='https://taskyx.vercel.app/logo.png' />");
         html.append("<div>");
@@ -329,7 +336,7 @@ public class GestionController {
         html.append("</div>");
         html.append("</div>");
 
-        /* ================= INFOS PROJET ================= */
+        /* INFOS PROJET */
         html.append("<div class='section'>");
         html.append("<h2>1. Informations générales</h2>");
         html.append("<p><b>Nom du projet :</b> ").append(projet.get("nom")).append("</p>");
@@ -338,7 +345,7 @@ public class GestionController {
         html.append("<p><b>Budget consommé :</b> ").append(projet.get("budgetConsomme")).append(" MAD</p>");
         html.append("</div>");
 
-        /* ================= HISTORIQUE ================= */
+        /*HISTORIQUE */
         html.append("<div class='section'>");
         html.append("<h2>2. Historique</h2>");
         html.append("<table><tr><th>Date</th><th>Membre</th><th>Contenu</th></tr>");
@@ -353,7 +360,7 @@ public class GestionController {
         html.append("</table>");
         html.append("</div>");
 
-        /* ================= FACTURATION ================= */
+        /*  FACTURATION  */
         html.append("<div class='section'>");
         html.append("<h2>3. Facturation</h2>");
         html.append("<table><tr><th>Tâche</th><th>Description</th><th>État</th><th>Dépense (MAD)</th></tr>");
@@ -375,7 +382,7 @@ public class GestionController {
         html.append("</table>");
         html.append("</div>");
 
-        /* ================= DOCUMENTS ================= */
+        /*  DOCUMENTS */
         html.append("<div class='section'>");
         html.append("<h2>4. Documents</h2>");
         html.append("<table><tr><th>Nom</th><th>Taille</th><th>Date</th></tr>");
@@ -396,7 +403,7 @@ public class GestionController {
         html.append("</table>");
         html.append("</div>");
 
-        /* ================= FOOTER ================= */
+        /*  FOOTER  */
         html.append("<div class='footer'>");
         html.append("© ").append(new Date().getYear() + 1900)
                 .append(" Tasky • Rapport généré automatiquement");

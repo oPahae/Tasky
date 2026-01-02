@@ -1,23 +1,48 @@
 package com.example.demo.controllers;
 
-import com.example.demo.models.*;
-import com.example.demo.hooks.*;
-import com.example.demo.repositories.*;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.http.HttpStatus;
-import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.*;
-import org.springframework.web.multipart.MultipartFile;
-
-import java.lang.annotation.Documented;
 import java.time.LocalDate;
+import java.util.Base64;
+import java.util.Date;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
-import java.util.HashMap;
-import java.util.Base64;
-import java.util.Date;
 
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.DeleteMapping;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.PutMapping;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RestController;
+
+import com.example.demo.hooks.BlocageDTO;
+import com.example.demo.hooks.CommentaireDTO;
+import com.example.demo.hooks.DocumentDTO;
+import com.example.demo.hooks.SousTacheDTO;
+import com.example.demo.hooks.TacheDTO;
+import com.example.demo.models.Blocage;
+import com.example.demo.models.Commentaire;
+import com.example.demo.models.Document;
+import com.example.demo.models.Membre;
+import com.example.demo.models.Notification;
+import com.example.demo.models.Projet;
+import com.example.demo.models.SousTache;
+import com.example.demo.models.Tache;
+import com.example.demo.repositories.BlocageRepository;
+import com.example.demo.repositories.CommentaireRepository;
+import com.example.demo.repositories.DocumentRepository;
+import com.example.demo.repositories.MembreRepository;
+import com.example.demo.repositories.NotificationRepository;
+import com.example.demo.repositories.ProjetRepository;
+import com.example.demo.repositories.SousTacheRepository;
+import com.example.demo.repositories.TacheRepository;
+
+       //La gestion dyal les taches,ss taches,docs,commentaires,blocages,depenses 
 @RestController
 @RequestMapping("/api/tache")
 public class TacheController {
@@ -46,10 +71,11 @@ public class TacheController {
         @Autowired
         private NotificationRepository notificationRepository;
 
+        //recupere les info dyal tache avc les commantaire ,les sstaches,les docs dyal had tache
         @GetMapping("/{id}")
         public ResponseEntity<Map<String, Object>> getTacheData(@PathVariable int id) {
                 Tache tache = tacheRepository.findById(id)
-                                .orElseThrow(() -> new RuntimeException("Tâche non trouvée"));
+                                .orElseThrow(() -> new RuntimeException("Tache non trouvee"));
                 List<SousTache> sousTaches = sousTacheRepository.findByTacheId(id);
                 List<Document> documents = documentRepository.findByTacheId(id);
                 List<Commentaire> commentaires = commentaireRepository.findByTacheId(id);
@@ -103,9 +129,10 @@ public class TacheController {
                 return ResponseEntity.ok(response);
         }
 
+        //ajout ss tache a une tache specifique
         @PostMapping("/{id}/sous-tache")
         public ResponseEntity<SousTache> addSousTache(@PathVariable int id, @RequestBody Map<String, String> payload) {
-                Tache tache = tacheRepository.findById(id).orElseThrow(() -> new RuntimeException("Tâche non trouvée"));
+                Tache tache = tacheRepository.findById(id).orElseThrow(() -> new RuntimeException("Tache non trouve"));
                 SousTache sousTache = new SousTache();
                 sousTache.setTitre(payload.get("titre"));
                 sousTache.setTermine(false);
@@ -115,22 +142,24 @@ public class TacheController {
                 return ResponseEntity.ok(saved);
         }
 
+        //modifier etat de ss tache si tache termine katweli non termine et contrairement
         @PutMapping("/sous-tache/{sousTacheId}")
         public ResponseEntity<SousTache> toggleSousTache(@PathVariable int sousTacheId) {
                 SousTache sousTache = sousTacheRepository.findById(sousTacheId)
-                                .orElseThrow(() -> new RuntimeException("Sous-tâche non trouvée"));
+                                .orElseThrow(() -> new RuntimeException("Sous-tache non trouvee"));
                 sousTache.setTermine(!sousTache.isTermine());
                 SousTache updated = sousTacheRepository.save(sousTache);
                 return ResponseEntity.ok(updated);
         }
 
+        //ajout doc a une tache
         @PostMapping("/{id}/document")
         public ResponseEntity<Map<String, Object>> addDocument(
                         @PathVariable int id,
                         @RequestBody Map<String, String> payload) throws Exception {
 
                 Tache tache = tacheRepository.findById(id)
-                                .orElseThrow(() -> new RuntimeException("Tâche non trouvée"));
+                                .orElseThrow(() -> new RuntimeException("tache non trouvee"));
 
                 // Récupérer le contenu en base64 depuis le payload
                 String base64Content = payload.get("contenu");
@@ -151,24 +180,25 @@ public class TacheController {
                                 saved.getId(),
                                 saved.getNom(),
                                 saved.getDescription(),
-                                base64Content, // On renvoie le même contenu en base64
+                                base64Content, // On renvoie le meme contenu en base64
                                 saved.getDateCreation(),
                                 base64Content.length() / 1024,
                                 DocumentDTO.getFileType(saved.getNom()));
 
                 Map<String, Object> response = new HashMap<>();
                 response.put("document", documentDTO);
-                response.put("message", "Document ajouté avec succès !");
+                response.put("message", "Document ajoute avec succes !");
 
                 return ResponseEntity.ok(response);
         }
 
+        //ajout commentaire l tache
         @PostMapping("/{id}/commentaire")
         public ResponseEntity<Commentaire> addCommentaire(@PathVariable int id,
                         @RequestBody Map<String, String> payload) {
-                Tache tache = tacheRepository.findById(id).orElseThrow(() -> new RuntimeException("Tâche non trouvée"));
+                Tache tache = tacheRepository.findById(id).orElseThrow(() -> new RuntimeException("tache non trouvee"));
                 Membre membre = membreRepository.findById(Integer.parseInt(payload.get("membreID")))
-                                .orElseThrow(() -> new RuntimeException("Membre non trouvée"));
+                                .orElseThrow(() -> new RuntimeException("Membre non trouvee"));
                 Commentaire commentaire = new Commentaire();
                 commentaire.setMembre(membre);
                 commentaire.setContenu(payload.get("contenu"));
@@ -178,11 +208,12 @@ public class TacheController {
                 return ResponseEntity.ok(saved);
         }
 
+        //ila tra chi bloquage  fchi tache ajout dyalo et envoie notif l responsable du projet
         @PostMapping("/{id}/blocage")
         public ResponseEntity<Map<String, Object>> addBlocage(@PathVariable int id,
                         @RequestBody Map<String, String> payload) {
                 Tache tache = tacheRepository.findById(id)
-                                .orElseThrow(() -> new RuntimeException("Tâche non trouvée"));
+                                .orElseThrow(() -> new RuntimeException("tache non trouvee"));
 
                 Blocage blocage = new Blocage();
                 blocage.setDescription(payload.get("description"));
@@ -193,16 +224,16 @@ public class TacheController {
 
                 Projet projet = tache.getProjet();
                 if (projet == null) {
-                        throw new RuntimeException("Projet non trouvé pour cette tâche");
+                        throw new RuntimeException("Projet non trouve pour cette tache");
                 }
 
                 Membre responsable = membreRepository.findByProjetIdAndRole(projet.getId(), "Responsable");
                 if (responsable == null) {
-                        throw new RuntimeException("Responsable du projet non trouvé");
+                        throw new RuntimeException("Responsable du projet non trouve");
                 }
 
                 Notification notification = new Notification();
-                notification.setContenu("Nouveau blocage pour la tâche : " + tache.getTitre() + " ("
+                notification.setContenu("Nouveau blocage pour la tache : " + tache.getTitre() + " ("
                                 + payload.get("description") + ")");
                 notification.setDateEnvoie(new Date());
                 notification.setEstLue(false);
@@ -219,17 +250,18 @@ public class TacheController {
 
                 Map<String, Object> response = new HashMap<>();
                 response.put("blocage", blocageDTO);
-                response.put("message", "Blocage ajouté avec succès et notification envoyée au responsable !");
+                response.put("message", "Blocage ajoute avec succès et notification envoyee au responsable !");
 
                 return ResponseEntity.ok(response);
         }
 
+        //ajout du depense l tache et mise a jour l budget consomme
         @PostMapping("/{id}/depense")
         public ResponseEntity<Map<String, Object>> addDepense(@PathVariable int id,
                         @RequestBody Map<String, Integer> payload) {
 
                 Tache tache = tacheRepository.findById(id)
-                                .orElseThrow(() -> new RuntimeException("Tâche non trouvée"));
+                                .orElseThrow(() -> new RuntimeException("tache non trouvee"));
 
                 int montant = payload.get("montant");
                 tache.setDepense(tache.getDepense() + montant);
@@ -237,18 +269,18 @@ public class TacheController {
 
                 Projet projet = tache.getProjet();
                 if (projet == null) {
-                        throw new RuntimeException("Projet non trouvé pour cette tâche");
+                        throw new RuntimeException("Projet non trouve pour cette tache");
                 }
                 projet.setBudgetConsomme(projet.getBudgetConsomme() + montant);
                 projetRepository.save(projet);
 
                 Membre responsable = membreRepository.findByProjetIdAndRole(projet.getId(), "Responsable");
                 if (responsable == null) {
-                        throw new RuntimeException("Responsable du projet non trouvé");
+                        throw new RuntimeException("Responsable du projet non trouve");
                 }
 
                 Notification notification = new Notification();
-                notification.setContenu("Nouvelle dépense pour la tâche : " + tache.getTitre() + " ("
+                notification.setContenu("Nouvelle depense pour la tache : " + tache.getTitre() + " ("
                                 + payload.get("montant") + ")");
                 notification.setDateEnvoie(new Date());
                 notification.setEstLue(false);
@@ -259,11 +291,12 @@ public class TacheController {
                 Map<String, Object> response = new HashMap<>();
                 response.put("tache", updatedTache);
                 response.put("projet", projet);
-                response.put("message", "Dépense ajoutée avec succès et budget du projet mis à jour !");
+                response.put("message", "Depense ajoute avec succes et budget du projet mis à jour !");
 
                 return ResponseEntity.ok(response);
         }
 
+        //supprime dune tache
         @DeleteMapping("/delete/{id}")
         public ResponseEntity<?> deleteTache(@PathVariable Integer id) {
 
@@ -272,11 +305,11 @@ public class TacheController {
                 if (tache.isEmpty()) {
                         return ResponseEntity
                                         .status(HttpStatus.NOT_FOUND)
-                                        .body("Tâche introuvable");
+                                        .body("tache introuvable");
                 }
 
                 tacheRepository.delete(tache.get());
 
-                return ResponseEntity.ok("Tâche supprimée avec succès");
+                return ResponseEntity.ok("tache supprimee avec succes");
         }
 }

@@ -6,24 +6,31 @@ import java.util.Map;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.*;
+import org.springframework.web.bind.annotation.CrossOrigin;
+import org.springframework.web.bind.annotation.DeleteMapping;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PutMapping;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RestController;
 
 import com.example.demo.models.User;
 import com.example.demo.repositories.UserRepository;
 
 @RestController
 @RequestMapping("/api/profile")
-@CrossOrigin(origins = "*")
+@CrossOrigin(origins = "*") 
 public class ProfileController {
 
     @Autowired
     private UserRepository userRepository;
 
-    //Récupération du profil
+    //Recuperation des infos dun user
     @GetMapping("/{userId}")
     public ResponseEntity<String> getUserProfile(@PathVariable Integer userId) {
         try {
-            System.out.println("=== GET USER PROFILE ===");
+            System.out.println("GET USER PROFILE ");
             System.out.println("User ID: " + userId);
             
             if (userId == null || userId <= 0) {
@@ -35,10 +42,10 @@ public class ProfileController {
             
             if (user == null) {
                 return ResponseEntity.status(HttpStatus.NOT_FOUND)
-                    .body("{\"error\": \"Utilisateur non trouvé\"}");
+                    .body("{\"error\": \"Utilisateur non trouve\"}");
             }
             
-            System.out.println("✓ Utilisateur trouvé: " + user.getEmail());
+            System.out.println("Utilisateur trouve: " + user.getEmail());
             
             String response = "{"
                     + "\"success\": true, "
@@ -67,7 +74,7 @@ public class ProfileController {
             @PathVariable Integer userId,
             @RequestBody Map<String, Object> body) {
         try {
-            System.out.println("=== UPDATE USER PROFILE ===");
+            System.out.println("UPDATE USER PROFILE");
             System.out.println("User ID: " + userId);
             
             if (userId == null || userId <= 0) {
@@ -79,10 +86,10 @@ public class ProfileController {
             
             if (user == null) {
                 return ResponseEntity.status(HttpStatus.NOT_FOUND)
-                    .body("{\"error\": \"Utilisateur non trouvé\"}");
+                    .body("{\"error\": \"Utilisateur non trouve\"}");
             }
             
-            // Mise à jour des champs si présents
+            // Mise a jour des champs
             if (body.containsKey("nom") && body.get("nom") != null) {
                 user.setNom((String) body.get("nom"));
             }
@@ -92,11 +99,11 @@ public class ProfileController {
             if (body.containsKey("email") && body.get("email") != null) {
                 String newEmail = (String) body.get("email");
                 
-                // Vérifier si l'email est déjà utilisé par un autre utilisateur
+                // Verifier si l'email est deja utilise par un autre utilisateur
                 User existingUser = userRepository.findByEmail(newEmail);
                 if (existingUser != null && existingUser.getId() != user.getId()) {
                     return ResponseEntity.status(HttpStatus.CONFLICT)
-                        .body("{\"error\": \"Cet email est déjà utilisé\"}");
+                        .body("{\"error\": \"Cet email est deja utilise\"}");
                 }
                 user.setEmail(newEmail);
             }
@@ -112,10 +119,10 @@ public class ProfileController {
             
             userRepository.save(user);
             
-            System.out.println("✓ Profil mis à jour: " + user.getEmail());
+            System.out.println("Profil mis a jour: " + user.getEmail());
             
             return ResponseEntity.ok(
-                "{\"success\": true, \"message\": \"Profil mis à jour avec succès\"}");
+                "{\"success\": true, \"message\": \"Profil mis a jour avec succes\"}");
             
         } catch (Exception e) {
             e.printStackTrace();
@@ -130,7 +137,7 @@ public class ProfileController {
             @PathVariable Integer userId,
             @RequestBody Map<String, String> body) {
         try {
-            System.out.println("=== CHANGE PASSWORD ===");
+            System.out.println("CHANGE PASSWORD");
             System.out.println("User ID: " + userId);
             
             if (userId == null || userId <= 0) {
@@ -160,7 +167,7 @@ public class ProfileController {
             
             if (user == null) {
                 return ResponseEntity.status(HttpStatus.NOT_FOUND)
-                    .body("{\"error\": \"Utilisateur non trouvé\"}");
+                    .body("{\"error\": \"Utilisateur non trouve\"}");
             }
             
             // Vérifier le mot de passe actuel
@@ -173,10 +180,10 @@ public class ProfileController {
             user.setPassword(newPassword);
             userRepository.save(user);
             
-            System.out.println("✓ Mot de passe changé pour: " + user.getEmail());
+            System.out.println("Mot de passe change pour: " + user.getEmail());
             
             return ResponseEntity.ok(
-                "{\"success\": true, \"message\": \"Mot de passe modifié avec succès\"}");
+                "{\"success\": true, \"message\": \"Mot de passe modifie avec succes\"}");
             
         } catch (Exception e) {
             e.printStackTrace();
@@ -192,7 +199,7 @@ public class ProfileController {
     @DeleteMapping("/delete/{userId}")
     public ResponseEntity<String> deleteUserAccount(@PathVariable Integer userId) {
         try {
-            System.out.println("=== DELETE USER ACCOUNT ===");
+            System.out.println("DELETE USER ACCOUNT");
             System.out.println("User ID: " + userId);
             
             if (userId == null || userId <= 0) {
@@ -212,10 +219,10 @@ public class ProfileController {
             // Supprimer l'utilisateur
             userRepository.delete(user);
             
-            System.out.println("✓ Compte supprimé: " + userEmail);
+            System.out.println("Compte supprime: " + userEmail);
             
             return ResponseEntity.ok(
-                "{\"success\": true, \"message\": \"Compte supprimé avec succès\"}");
+                "{\"success\": true, \"message\": \"Compte supprime avec succes\"}");
             
         } catch (Exception e) {
             e.printStackTrace();
@@ -225,7 +232,7 @@ public class ProfileController {
     }
 
     
-      //Méthode utilitaire pour échapper les caractères spéciaux JSON
+      //Mthode pour echapper les caracteres speciaux JSON
      
     private String escapeJson(String value) {
         if (value == null) return "";
