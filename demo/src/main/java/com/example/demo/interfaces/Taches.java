@@ -235,7 +235,7 @@ public class Taches extends JPanel {
 
         header.add(titleSection, BorderLayout.WEST);
 
-        if (Params.estResponsable) {
+        if (Params.role.equals("R")) {
             JButton addBtn = new JButton("+ Nouvelle tâche") {
                 @Override
                 protected void paintComponent(Graphics g) {
@@ -383,7 +383,7 @@ public class Taches extends JPanel {
         percent.setForeground(textPrimary);
         topRow.add(percent);
 
-        if (Params.estResponsable) {
+        if (Params.role.equals("R")) {
             ImageIcon icon = new ImageIcon(getClass().getResource("/assets/bin.png"));
             Image scaled = icon.getImage().getScaledInstance(22, 22, Image.SCALE_SMOOTH);
 

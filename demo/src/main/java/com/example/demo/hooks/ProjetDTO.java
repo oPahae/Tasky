@@ -14,7 +14,7 @@ public class ProjetDTO {
     public String statut;
     public String code;
     public int membreID;
-    public boolean estResponsable;
+    public String role;
 
     public ProjetDTO() {}
 

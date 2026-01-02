@@ -11,7 +11,6 @@ public interface MembreRepository extends JpaRepository<Membre, Integer> {
     Membre findByProjetIdAndRole(int projetId, String role);
     List<Membre> findByProjetId(int projetId);
     
-    // ✅ NOUVELLE MÉTHODE
     @Query("SELECT m FROM Membre m WHERE m.user.id = :userId AND m.projet.id = :projetId")
     Membre findByUserIdAndProjetId(@Param("userId") int userId, @Param("projetId") int projetId);
 }

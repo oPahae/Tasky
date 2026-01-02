@@ -12,7 +12,8 @@ public class Params {
     public static int membreID = -1;
     public static int tacheID = -1;
     public static int verifCode = 0;
-    public static boolean estResponsable = false;
+    public static String role = "R";
+    public static String projetCode = "";
 
     public static String headerSelectedElement = "Dashboard";
     public static String sidebarSelectedElement = "Principale";

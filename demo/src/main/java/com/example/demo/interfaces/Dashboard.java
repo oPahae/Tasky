@@ -11,6 +11,9 @@ import javax.swing.*;
 import org.springframework.scheduling.config.Task;
 
 import java.awt.*;
+import java.awt.datatransfer.StringSelection;
+import java.awt.event.MouseAdapter;
+import java.awt.event.MouseEvent;
 import java.net.URI;
 import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
@@ -199,7 +202,26 @@ public class Dashboard extends JPanel {
         titleLabel.setForeground(textPrimary);
         titleLabel.setAlignmentX(Component.LEFT_ALIGNMENT);
         contentWrapper.add(titleLabel);
+
+        JLabel subTitleLabel = new JLabel(Params.projetID + " / " + Params.projetCode);
+        subTitleLabel.setFont(new Font("Segoe UI", Font.ITALIC, 12));
+        subTitleLabel.setForeground(textPrimary);
+        subTitleLabel.setAlignmentX(Component.LEFT_ALIGNMENT);
+        contentWrapper.add(subTitleLabel);
         contentWrapper.add(Box.createRigidArea(new Dimension(0, 25)));
+        subTitleLabel.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
+        subTitleLabel.setToolTipText("Cliquer pour copier le projet code");
+
+        subTitleLabel.addMouseListener(new MouseAdapter() {
+            @Override
+            public void mouseClicked(MouseEvent e) {
+                StringSelection selection = new StringSelection(Params.projetCode);
+                Toolkit.getDefaultToolkit()
+                        .getSystemClipboard()
+                        .setContents(selection, null);
+                JOptionPane.showMessageDialog(null, "Projet code copié !");
+            }
+        });
 
         JPanel statsPanel = createStatsPanel();
         statsPanel.setAlignmentX(Component.LEFT_ALIGNMENT);
@@ -526,7 +548,7 @@ public class Dashboard extends JPanel {
 
         card.addMouseListener(new java.awt.event.MouseAdapter() {
             public void mouseClicked(java.awt.event.MouseEvent evt) {
-                if (Params.estResponsable) {
+                if (Params.role.equals("R")) {
                     System.out.println(member.id);
                     Params.membreID = member.id;
                     onClick.accept("Membre");

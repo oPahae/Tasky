@@ -78,7 +78,7 @@ public class MesProjetsController {
                 .map(membre -> {
                     ProjetDTO projetDTO = convertToProjetDTO(membre.getProjet());
                     projetDTO.membreID = membre.getId();
-                    projetDTO.estResponsable = membre.getRole().equals("Responsable");
+                    projetDTO.role = membre.getRole().substring(0, 1);
                     return projetDTO;
                 })
                 .collect(Collectors.toList());

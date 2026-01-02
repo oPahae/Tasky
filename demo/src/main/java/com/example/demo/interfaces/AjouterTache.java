@@ -5,6 +5,11 @@ import com.example.demo.components.Scrollbar;
 
 import javax.swing.*;
 import java.awt.*;
+import java.io.BufferedReader;
+import java.io.InputStreamReader;
+import java.io.OutputStream;
+import java.net.HttpURLConnection;
+import java.net.URL;
 import java.util.*;
 import java.util.List;
 import java.util.function.Consumer;
@@ -23,17 +28,17 @@ public class AjouterTache extends JPanel {
         this.theme = Params.theme;
         this.onClick = onClick;
         initializeColors();
-        initializeDemoMembers();
+        fetchMembersFromBackend();
         memberCheckboxes = new HashMap<>();
-        
+
         setLayout(new BorderLayout());
         setBackground(bgColor);
-        
+
         JPanel contentWrapper = new JPanel();
         contentWrapper.setLayout(new BoxLayout(contentWrapper, BoxLayout.Y_AXIS));
         contentWrapper.setBackground(bgColor);
         contentWrapper.setBorder(BorderFactory.createEmptyBorder(25, 25, 25, 25));
-        
+
         // Title
         JLabel titleLabel = new JLabel("Ajouter une nouvelle tâche");
         titleLabel.setFont(new Font("Segoe UI", Font.BOLD, 28));
@@ -41,19 +46,19 @@ public class AjouterTache extends JPanel {
         titleLabel.setAlignmentX(Component.LEFT_ALIGNMENT);
         contentWrapper.add(titleLabel);
         contentWrapper.add(Box.createRigidArea(new Dimension(0, 25)));
-        
+
         // Main card
         JPanel mainCard = createMainCard();
         mainCard.setAlignmentX(Component.LEFT_ALIGNMENT);
         contentWrapper.add(mainCard);
-        
+
         Scrollbar scroll = new Scrollbar(theme);
         JScrollPane scrollPane = scroll.create(contentWrapper);
         scrollPane.setBorder(null);
         scrollPane.getVerticalScrollBar().setUnitIncrement(16);
         scrollPane.setBackground(bgColor);
         scrollPane.getViewport().setBackground(bgColor);
-        
+
         add(scrollPane, BorderLayout.CENTER);
     }
 
@@ -77,12 +82,45 @@ public class AjouterTache extends JPanel {
         }
     }
 
-    private void initializeDemoMembers() {
+    private void fetchMembersFromBackend() {
         members = new ArrayList<>();
-        members.add(new ProjectMember(1, "Alice", "Martin", "Chef de projet"));
-        members.add(new ProjectMember(2, "Bob", "Durant", "Développeur Backend"));
-        members.add(new ProjectMember(3, "Charlie", "Dubois", "Développeur Frontend"));
-        members.add(new ProjectMember(4, "Diana", "Rousseau", "QA Engineer"));
+
+        try {
+            URL url = new URL(
+                    "http://localhost:8080/api/projets/" + Params.projetID + "/membres");
+
+            HttpURLConnection con = (HttpURLConnection) url.openConnection();
+            con.setRequestMethod("GET");
+            con.setRequestProperty("Accept", "application/json");
+
+            BufferedReader reader = new BufferedReader(
+                    new InputStreamReader(con.getInputStream()));
+
+            StringBuilder json = new StringBuilder();
+            String line;
+            while ((line = reader.readLine()) != null) {
+                json.append(line);
+            }
+            reader.close();
+
+            // Parsing JSON (simple et robuste sans lib externe)
+            org.json.JSONArray array = new org.json.JSONArray(json.toString());
+
+            for (int i = 0; i < array.length(); i++) {
+                org.json.JSONObject obj = array.getJSONObject(i);
+
+                ProjectMember member = new ProjectMember(
+                        obj.getInt("id"),
+                        obj.getString("prenom"),
+                        obj.getString("nom"),
+                        obj.getString("role"));
+
+                members.add(member);
+            }
+
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
     }
 
     private JPanel createMainCard() {
@@ -183,7 +221,7 @@ public class AjouterTache extends JPanel {
         field.setBorder(BorderFactory.createEmptyBorder(12, 16, 12, 16));
         field.setMaximumSize(new Dimension(Integer.MAX_VALUE, 48));
         field.setPreferredSize(new Dimension(0, 48));
-        
+
         // Placeholder effect
         field.setText(placeholder);
         field.setForeground(textSecondary);
@@ -194,6 +232,7 @@ public class AjouterTache extends JPanel {
                     field.setForeground(textPrimary);
                 }
             }
+
             public void focusLost(java.awt.event.FocusEvent evt) {
                 if (field.getText().isEmpty()) {
                     field.setText(placeholder);
@@ -201,7 +240,7 @@ public class AjouterTache extends JPanel {
                 }
             }
         });
-        
+
         return field;
     }
 
@@ -232,7 +271,7 @@ public class AjouterTache extends JPanel {
         descriptionArea.setWrapStyleWord(true);
         descriptionArea.setOpaque(false);
         descriptionArea.setBorder(BorderFactory.createEmptyBorder(10, 14, 10, 14));
-        
+
         String placeholder = "Décrivez la tâche en détail...";
         descriptionArea.setText(placeholder);
         descriptionArea.setForeground(textSecondary);
@@ -243,6 +282,7 @@ public class AjouterTache extends JPanel {
                     descriptionArea.setForeground(textPrimary);
                 }
             }
+
             public void focusLost(java.awt.event.FocusEvent evt) {
                 if (descriptionArea.getText().isEmpty()) {
                     descriptionArea.setText(placeholder);
@@ -352,25 +392,24 @@ public class AjouterTache extends JPanel {
             protected void paintComponent(Graphics g) {
                 Graphics2D g2 = (Graphics2D) g.create();
                 g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
-                
+
                 if (getModel().isPressed()) {
                     g2.setColor(accentColor.darker());
                 } else if (getModel().isRollover()) {
                     g2.setColor(new Color(
-                        Math.min(255, accentColor.getRed() + 20),
-                        Math.min(255, accentColor.getGreen() + 20),
-                        Math.min(255, accentColor.getBlue() + 20)
-                    ));
+                            Math.min(255, accentColor.getRed() + 20),
+                            Math.min(255, accentColor.getGreen() + 20),
+                            Math.min(255, accentColor.getBlue() + 20)));
                 } else {
                     g2.setColor(accentColor);
                 }
-                
+
                 g2.fillRoundRect(0, 0, getWidth(), getHeight(), 12, 12);
                 g2.dispose();
                 super.paintComponent(g);
             }
         };
-        
+
         button.setForeground(Color.WHITE);
         button.setFont(new Font("Segoe UI", Font.BOLD, 15));
         button.setOpaque(false);
@@ -381,9 +420,9 @@ public class AjouterTache extends JPanel {
         button.setBorder(BorderFactory.createEmptyBorder(14, 30, 14, 30));
         button.setMaximumSize(new Dimension(Integer.MAX_VALUE, 50));
         button.setPreferredSize(new Dimension(0, 50));
-        
+
         button.addActionListener(e -> addTask());
-        
+
         return button;
     }
 
@@ -391,24 +430,96 @@ public class AjouterTache extends JPanel {
         String title = titleField.getText();
         String description = descriptionArea.getText();
         String dateLimit = dateLimitField.getText();
-        
-        List<String> selectedMembers = new ArrayList<>();
+
+        // Validation
+        if (title.equals("Entrez le titre de la tâche") || title.trim().isEmpty()) {
+            JOptionPane.showMessageDialog(this,
+                    "Veuillez entrer un titre pour la tâche",
+                    "Validation",
+                    JOptionPane.WARNING_MESSAGE);
+            return;
+        }
+
+        if (description.equals("Décrivez la tâche en détail...") || description.trim().isEmpty()) {
+            JOptionPane.showMessageDialog(this,
+                    "Veuillez entrer une description pour la tâche",
+                    "Validation",
+                    JOptionPane.WARNING_MESSAGE);
+            return;
+        }
+
+        if (dateLimit.equals("JJ/MM/AAAA") || dateLimit.trim().isEmpty()) {
+            JOptionPane.showMessageDialog(this,
+                    "Veuillez entrer une date limite",
+                    "Validation",
+                    JOptionPane.WARNING_MESSAGE);
+            return;
+        }
+
+        List<Integer> selectedMemberIds = new ArrayList<>();
         for (ProjectMember member : members) {
             JCheckBox checkbox = memberCheckboxes.get(member.id);
-            if (checkbox.isSelected()) {
-                selectedMembers.add(member.firstName + " " + member.lastName);
+            if (checkbox != null && checkbox.isSelected()) {
+                selectedMemberIds.add(member.id);
             }
         }
-        
-        System.out.println("=== Nouvelle Tâche ===");
-        System.out.println("Titre: " + title);
-        System.out.println("Description: " + description);
-        System.out.println("Date Limite: " + dateLimit);
-        System.out.println("Membres affectés: " + selectedMembers);
-        System.out.println("Nombre de membres: " + selectedMembers.size());
-        System.out.println("====================");
 
-        onClick.accept("Tâches");
+        sendTaskToBackend(title, description, dateLimit, selectedMemberIds);
+    }
+
+    private void sendTaskToBackend(
+            String titre,
+            String description,
+            String dateLimite,
+            List<Integer> membreIds) {
+        try {
+            URL url = new URL("http://localhost:8080/api/ajouterTache");
+            HttpURLConnection con = (HttpURLConnection) url.openConnection();
+
+            con.setRequestMethod("POST");
+            con.setRequestProperty("Content-Type", "application/json; charset=UTF-8");
+            con.setDoOutput(true);
+
+            // Utiliser org.json pour construire le JSON correctement
+            org.json.JSONObject jsonObject = new org.json.JSONObject();
+            jsonObject.put("titre", titre);
+            jsonObject.put("description", description);
+            jsonObject.put("dateLimite", dateLimite);
+            jsonObject.put("projetId", Params.projetID);
+            jsonObject.put("membreIds", new org.json.JSONArray(membreIds));
+
+            String json = jsonObject.toString();
+
+            try (OutputStream os = con.getOutputStream()) {
+                byte[] input = json.getBytes("UTF-8");
+                os.write(input, 0, input.length);
+            }
+
+            int responseCode = con.getResponseCode();
+            System.out.println("HTTP Response Code: " + responseCode);
+
+            if (responseCode == 200) {
+                System.out.println("Tâche ajoutée avec succès!");
+                onClick.accept("Tâches");
+            } else {
+                // Lire le message d'erreur
+                BufferedReader br = new BufferedReader(
+                        new InputStreamReader(con.getErrorStream(), "UTF-8"));
+                StringBuilder response = new StringBuilder();
+                String responseLine;
+                while ((responseLine = br.readLine()) != null) {
+                    response.append(responseLine.trim());
+                }
+                System.err.println("Erreur: " + response.toString());
+            }
+
+        } catch (Exception e) {
+            e.printStackTrace();
+            JOptionPane.showMessageDialog(this,
+                    "Erreur lors de l'ajout de la tâche: " + e.getMessage(),
+                    "Erreur",
+                    JOptionPane.ERROR_MESSAGE);
+        }
     }
 
     // Classe interne pour les membres
