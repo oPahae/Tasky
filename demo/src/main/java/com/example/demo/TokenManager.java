@@ -1,7 +1,8 @@
 package com.example.demo;
 
-import java.io.*;
-import java.nio.file.*;
+import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Paths;
 
 public class TokenManager {
     
@@ -11,9 +12,9 @@ public class TokenManager {
     public static void saveToken(String token) {
         try {
             Files.write(Paths.get(TOKEN_FILE), token.getBytes());
-            System.out.println("✓ Token sauvegardé dans: " + TOKEN_FILE);
+            System.out.println("Token sauvegarde dans: " + TOKEN_FILE);
         } catch (IOException e) {
-            System.err.println("✗ Erreur sauvegarde token: " + e.getMessage());
+            System.err.println("Erreur sauvegarde token: " + e.getMessage());
         }
     }
     
@@ -22,11 +23,11 @@ public class TokenManager {
         try {
             if (Files.exists(Paths.get(TOKEN_FILE))) {
                 String token = new String(Files.readAllBytes(Paths.get(TOKEN_FILE)));
-                System.out.println("✓ Token chargé: " + token);
+                System.out.println("Token charge: " + token);
                 return token;
             }
         } catch (IOException e) {
-            System.err.println("✗ Erreur chargement token: " + e.getMessage());
+            System.err.println("Erreur chargement token: " + e.getMessage());
         }
         return null;
     }
@@ -35,13 +36,13 @@ public class TokenManager {
     public static void deleteToken() {
         try {
             Files.deleteIfExists(Paths.get(TOKEN_FILE));
-            System.out.println("✓ Token supprimé");
+            System.out.println("Token supprimes");
         } catch (IOException e) {
-            System.err.println("✗ Erreur suppression token: " + e.getMessage());
+            System.err.println("Erreur suppression token: " + e.getMessage());
         }
     }
     
-    // Vérifier si un token existe
+    // Verifier si un token existe
     public static boolean hasToken() {
         return Files.exists(Paths.get(TOKEN_FILE));
     }

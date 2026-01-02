@@ -32,17 +32,16 @@ public class Header extends JPanel {
     private List<Notification> notifications;
 
     public Header(List<String> elements, Consumer<String> onClick) {
-        if(!Params.estResponsable) {
+        if (Params.role.equals("M")) {
             elements.remove("Gestion");
             elements.remove("Graphes");
-        } 
+        }
         this.theme = Params.theme;
         initializeColors();
         notifications = new ArrayList<>();
         setLayout(new BorderLayout());
         setBackground(bgColor);
         setBorder(new EmptyBorder(16, 24, 16, 24));
-        fetchNotifs();
         JPanel leftSection = new JPanel(new FlowLayout(FlowLayout.LEFT, 6, 0));
         leftSection.setBackground(bgColor);
         for (String element : elements) {
@@ -54,8 +53,11 @@ public class Header extends JPanel {
         rightSection.setBackground(bgColor);
         JButton aiBtn = createAIButton();
         rightSection.add(aiBtn);
-        JButton notifBtn = createNotificationButton();
-        rightSection.add(notifBtn);
+        if (Params.role.equals("R")) {
+            fetchNotifs();
+            JButton notifBtn = createNotificationButton();
+            rightSection.add(notifBtn);
+        }
         themeToggleBtn = createThemeToggleButton(onClick);
         rightSection.add(themeToggleBtn);
         JButton exitBtn = createExitBtn(onClick);
@@ -754,7 +756,8 @@ public class Header extends JPanel {
             }
         }
 
-        JScrollPane scrollPane = new JScrollPane(mainPanel, JScrollPane.VERTICAL_SCROLLBAR_AS_NEEDED, JScrollPane.HORIZONTAL_SCROLLBAR_NEVER);
+        JScrollPane scrollPane = new JScrollPane(mainPanel, JScrollPane.VERTICAL_SCROLLBAR_AS_NEEDED,
+                JScrollPane.HORIZONTAL_SCROLLBAR_NEVER);
         scrollPane.setBorder(null);
         scrollPane.setOpaque(false);
         scrollPane.getViewport().setOpaque(false);

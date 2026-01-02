@@ -12,13 +12,13 @@ public class SessionManager {
     private String competance;
     private String telephone;
 
-    // Informations Projet sélectionné
+    // Informations projet selectionne
     private int currentProjetId;
     private String currentProjetNom;
     private String currentProjetDescription;
 
     private SessionManager() {
-        // Valeurs par défaut
+        // Valeurs par defaut
         this.currentProjetId = -1;
     }
 
@@ -29,7 +29,7 @@ public class SessionManager {
         return instance;
     }
 
-    // ========== GESTION USER ==========
+    //  GESTION USER 
     public void setUserSession(String token, String prenom, String nom, String email,
                                String competance, String telephone, int userId) {
         this.token = token;
@@ -41,19 +41,19 @@ public class SessionManager {
         this.userId = userId;
     }
 
-    // ========== GESTION PROJET SÉLECTIONNÉ ==========
+    // GESTION PROJET SELECTIONNE
     public void setCurrentProjet(int projetId, String projetNom, String projetDescription) {
         this.currentProjetId = projetId;
         this.currentProjetNom = projetNom;
         this.currentProjetDescription = projetDescription;
-        System.out.println("✅ Projet actuel défini : ID=" + projetId + ", Nom=" + projetNom);
+        System.out.println("Projet actuel defini : ID=" + projetId + ", Nom=" + projetNom);
     }
 
     public void setCurrentProjet(int projetId, String projetNom) {
         setCurrentProjet(projetId, projetNom, "");
     }
 
-    // ========== GETTERS USER ==========
+    // GETTERS USER 
     public String getToken() {
         return token;
     }
@@ -86,7 +86,7 @@ public class SessionManager {
         return telephone != null ? telephone : "";
     }
 
-    // ========== GETTERS PROJET ACTUEL ==========
+    // GETTERS PROJET ACTUEL 
     public int getCurrentProjetId() {
         return currentProjetId;
     }
@@ -99,7 +99,7 @@ public class SessionManager {
         return currentProjetDescription != null ? currentProjetDescription : "";
     }
 
-    // ========== VÉRIFICATIONS ==========
+    // VERIFICATIONS
     public boolean isLoggedIn() {
         return token != null && !token.isEmpty() && userId > 0;
     }
@@ -112,7 +112,7 @@ public class SessionManager {
         return isLoggedIn() && hasProjetSelected();
     }
 
-    // ========== LOGOUT ==========
+    // LOGOUT 
     public void logout() {
         this.token = null;
         this.prenom = null;
@@ -126,25 +126,24 @@ public class SessionManager {
         this.currentProjetDescription = null;
     }
 
-    // ========== DEBUG ==========
+    // DEBUG
     public void printSessionInfo() {
-        System.out.println("==================== SESSION INFO ====================");
+        
         System.out.println("USER:");
-        System.out.println("  - Token: " + (token != null ? "***" + token.substring(Math.max(0, token.length() - 4)) : "null"));
-        System.out.println("  - User ID: " + userId);
-        System.out.println("  - Nom complet: " + getFullName());
-        System.out.println("  - Email: " + getEmail());
+        System.out.println("Token: " + (token != null ? "***" + token.substring(Math.max(0, token.length() - 4)) : "null"));
+        System.out.println("User ID: " + userId);
+        System.out.println("Nom complet: " + getFullName());
+        System.out.println("Email: " + getEmail());
         System.out.println();
         System.out.println("PROJET ACTUEL:");
-        System.out.println("  - Projet ID: " + currentProjetId);
-        System.out.println("  - Nom: " + getCurrentProjetNom());
-        System.out.println("  - Description: " + getCurrentProjetDescription());
+        System.out.println("Projet ID: " + currentProjetId);
+        System.out.println("Nom: " + getCurrentProjetNom());
+        System.out.println("Description: " + getCurrentProjetDescription());
         System.out.println();
         System.out.println("STATUS:");
-        System.out.println("  - Logged in: " + isLoggedIn());
-        System.out.println("  - Projet selected: " + hasProjetSelected());
-        System.out.println("  - Ready for chat: " + isReadyForChat());
-        System.out.println("======================================================");
+        System.out.println("Logged in: " + isLoggedIn());
+        System.out.println("Projet selected: " + hasProjetSelected());
+        System.out.println("Ready for chat: " + isReadyForChat());
     }
 
    public static void init() {
