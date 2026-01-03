@@ -41,11 +41,6 @@ import javax.swing.SwingUtilities;
 
 import org.springframework.messaging.converter.MappingJackson2MessageConverter;
 import org.springframework.messaging.simp.stomp.StompFrameHandler;
-import org.springframework.messaging.simp.stomp.StompSessionHandler;
-import org.springframework.messaging.simp.stomp.StompSessionHandlerAdapter;
-
-import org.springframework.messaging.converter.MappingJackson2MessageConverter;
-import org.springframework.messaging.simp.stomp.StompFrameHandler;
 import org.springframework.messaging.simp.stomp.StompHeaders;
 import org.springframework.messaging.simp.stomp.StompSession;
 import org.springframework.messaging.simp.stomp.StompSessionHandler;
@@ -77,20 +72,20 @@ public class Chat extends JPanel {
 
     // WebSocket
     private WebSocketStompClient stompClient;
-    private StompSession stompSession;
+    private StompSession stompSession;//protocole de messagerie
     private Gson gson = new GsonBuilder().setLenient().setDateFormat("yyyy-MM-dd'T'HH:mm:ss").create();
     private Set<Integer> loadedMessageIds = new HashSet<>();
 
     public Chat() {
         this.theme = Params.theme;
-        initializeColors();
+        initialiseColors();
 
-        // Utiliser l'ID du user connecté comme membre actuel
+        // Utiliser l'ID du user connecte comme membre actuel
         this.myId = SessionManager.getInstance().getUserId();
         this.projectId = SessionManager.getInstance().getCurrentProjetId();
         this.projectName = SessionManager.getInstance().getCurrentProjetNom();
 
-        // Vérifier que le projet est sélectionné
+        // Verifier que le projet est selectionne
         if (projectId <= 0) {
             JOptionPane.showMessageDialog(this,
                 "Veuillez sélectionner un projet avant d'ouvrir le chat.",
@@ -106,12 +101,12 @@ public class Chat extends JPanel {
         add(createMessagesArea(), BorderLayout.CENTER);
         add(createInputArea(), BorderLayout.SOUTH);
 
-        // Charger l'historique et connecter WebSocket
+        // Charger lhistorique et connecter WebSocket
         loadMessageHistory();
         connectWebSocket();
     }
 
-    private void initializeColors() {
+    private void initialiseColors() {
         if (theme == 0) {
             bgColor = new Color(245, 247, 250);
             cardBgColor = Color.WHITE;
@@ -133,22 +128,28 @@ public class Chat extends JPanel {
         }
     }
 
+    //methode pouretablir une connection en temps reel
     private void connectWebSocket() {
         new Thread(() -> {
             try {
                 List<Transport> transports = new ArrayList<>();
+                //webSocketTranport pour etablir connexion 
+                //StandardWebSocketClient cest n client webSocket fourni par springboot pour etablir connexion
                 transports.add(new WebSocketTransport(new StandardWebSocketClient()));
 
+                //pour se connecter au serveur webSocket
                 SockJsClient sockJsClient = new SockJsClient(transports);
                 stompClient = new WebSocketStompClient(sockJsClient);
-                stompClient.setMessageConverter(new MappingJackson2MessageConverter());
+                stompClient.setMessageConverter(new MappingJackson2MessageConverter());//convertir les messages recu en dto
 
+                //gestion des sessions
                 StompSessionHandler sessionHandler = new StompSessionHandlerAdapter() {
                     @Override
                     public void afterConnected(StompSession session, StompHeaders connectedHeaders) {
                         stompSession = session;
                         System.out.println("WebSocket connecté pour projet " + projectId);
 
+                        //entrer dans le canal pour recevoir les messages en temps reel
                         session.subscribe("/topic/projet/" + projectId, new StompFrameHandler() {
                             @Override
                             public Type getPayloadType(StompHeaders headers) {
@@ -169,7 +170,7 @@ public class Chat extends JPanel {
                                                 dto.dateEnvoi
                                         );
                                         msg.id = dto.id;
-                                        addMessage(msg);
+                                        addMessage(msg);//ajouter le message
                                     }
                                 });
                             }
@@ -240,9 +241,9 @@ public class Chat extends JPanel {
                     messages.clear();
 
                     if (dtos == null || dtos.length == 0) {
-                        // Ajouter un message par défaut si la liste est vide
+                        // Ajouter un message par defaut si la liste est vide
                         ChatMessage defaultMessage = new ChatMessage(
-                            -1, // ID spécial pour indiquer que c'est un message système
+                            -1, // ID special pour indiquer que c'est un message systeme
                             "Système",
                             "",
                             "SYSTÈME",

@@ -32,7 +32,7 @@ public class Gestion extends JPanel {
 
     public Gestion() {
         this.theme = Params.theme;
-        initializeColors();
+        inialiseColors();
 
         historyEvents = new ArrayList<>();
         expenses = new ArrayList<>();
@@ -50,7 +50,7 @@ public class Gestion extends JPanel {
         contentLayout.show(mainContentPanel, "main");
     }
 
-    private void initializeColors() {
+    private void inialiseColors() {
         if (theme == 0) {
             bgColor = new Color(245, 247, 250);
             cardBgColor = Color.WHITE;
@@ -300,7 +300,7 @@ public class Gestion extends JPanel {
 
             @Override
             protected byte[] doInBackground() throws Exception {
-                // ✅ APPEL CORRECT (PDF = binaire)
+                // APPEL CORRECT(PDF = binaire)
                 return Queries.getBinary(
                         "/api/gestion/" + Params.projetID + "/rapport/pdf").get();
             }

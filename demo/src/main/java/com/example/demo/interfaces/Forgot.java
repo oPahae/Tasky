@@ -342,11 +342,11 @@ public class Forgot extends JPanel {
     private void handleSendCode(JTextField emailField, JLabel message, JButton btnSendCode) {
         String email = emailField.getText().trim();
         if (email.isEmpty()) {
-            showMessage(message, "⚠ Veuillez entrer votre adresse email", errorColor);
+            showMessage(message, "Veuillez entrer votre adresse email", errorColor);
             return;
         }
         if (!email.contains("@") || !email.contains(".")) {
-            showMessage(message, "✗ Adresse email invalide", errorColor);
+            showMessage(message, "Adresse email invalide", errorColor);
             return;
         }
         btnSendCode.setEnabled(false);
@@ -389,20 +389,20 @@ public class Forgot extends JPanel {
                     String response = get();
                     if (response.contains("Email code sent!")) {
                         userEmail = emailField.getText().trim();
-                        showMessage(message, "✓ Code envoyé avec succès !", successColor);
+                        showMessage(message, " Code envoyé avec succès !", successColor);
                         Timer timer = new Timer(1500, evt -> {
                             cardLayout.show(dynamicPanel, "code");
                         });
                         timer.setRepeats(false);
                         timer.start();
                     } else {
-                        showMessage(message, "✗ Erreur lors de l'envoi du code", errorColor);
+                        showMessage(message, " Erreur lors de l'envoi du code", errorColor);
                         btnSendCode.setEnabled(true);
                         btnSendCode.setText("Envoyer le code");
                     }
                 } catch (Exception ex) {
                     ex.printStackTrace();
-                    showMessage(message, "✗ Erreur de connexion au serveur", errorColor);
+                    showMessage(message, " Erreur de connexion au serveur", errorColor);
                     btnSendCode.setEnabled(true);
                     btnSendCode.setText("Envoyer le code");
                 }
@@ -414,30 +414,30 @@ public class Forgot extends JPanel {
     private void handleVerifyCode(JTextField codeField, JLabel message, JButton btnVerifyCode) {
         String codeStr = codeField.getText().trim();
         if (codeStr.isEmpty()) {
-            showMessage(message, "⚠ Veuillez entrer le code", errorColor);
+            showMessage(message, " Veuillez entrer le code", errorColor);
             return;
         }
         try {
             int code = Integer.parseInt(codeStr);
             if (code == Params.verifCode) {
-                showMessage(message, "✓ Code correct !", successColor);
+                showMessage(message, " Code correct !", successColor);
                 Timer timer = new Timer(1500, evt -> {
                     cardLayout.show(dynamicPanel, "password");
                 });
                 timer.setRepeats(false);
                 timer.start();
             } else {
-                showMessage(message, "✗ Code incorrect", errorColor);
+                showMessage(message, " Code incorrect", errorColor);
             }
         } catch (NumberFormatException e) {
-            showMessage(message, "✗ Code invalide", errorColor);
+            showMessage(message, " Code invalide", errorColor);
         }
     }
 
     private void handleResetPassword(JPasswordField passwordField, JLabel message, JButton btnResetPassword) {
         String newPassword = new String(passwordField.getPassword()).trim();
         if (newPassword.isEmpty()) {
-            showMessage(message, "⚠ Veuillez entrer un nouveau mot de passe", errorColor);
+            showMessage(message, " Veuillez entrer un nouveau mot de passe", errorColor);
             return;
         }
 
@@ -452,14 +452,14 @@ public class Forgot extends JPanel {
         future.whenComplete((response, throwable) -> {
             SwingUtilities.invokeLater(() -> {
                 if (throwable != null) {
-                    showMessage(message, "✗ Erreur de connexion au serveur", errorColor);
+                    showMessage(message, " Erreur de connexion au serveur", errorColor);
                     btnResetPassword.setEnabled(true);
                     btnResetPassword.setText("Réinitialiser");
                     return;
                 }
 
                 if (response.containsKey("success")) {
-                    showMessage(message, "✓ Mot de passe mis à jour avec succès !", successColor);
+                    showMessage(message, " Mot de passe mis à jour avec succès !", successColor);
                     Timer timer = new Timer(2000, evt -> {
                         parent.switchCard("login");
                     });
@@ -469,7 +469,7 @@ public class Forgot extends JPanel {
                     String errorMsg = response.containsKey("error") ? response.get("error").toString()
                             : "Erreur inconnue";
                     System.out.println(response);
-                    showMessage(message, "✗ " + errorMsg, errorColor);
+                    showMessage(message, " " + errorMsg, errorColor);
                     btnResetPassword.setEnabled(true);
                     btnResetPassword.setText("Réinitialiser");
                 }

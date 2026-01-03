@@ -40,14 +40,14 @@ public class CreerProjet extends JPanel {
     public CreerProjet() {
         this.theme = Params.theme;
         this.userID = SessionManager.getInstance().getUserId();
-        initializeColors();
+        initialiseColors();
         setLayout(new BorderLayout());
         setBackground(bgColor);
         formPanel = createFormPanel();
         add(formPanel, BorderLayout.CENTER);
     }
 
-    private void initializeColors() {
+    private void initialiseColors() {
         if (theme == 0) {
             bgColor = new Color(248, 250, 252);
             cardBgColor = Color.WHITE;
@@ -133,18 +133,18 @@ public class CreerProjet extends JPanel {
         cardWrapper.setBorder(BorderFactory.createEmptyBorder(40, 45, 40, 45));
         cardWrapper.setAlignmentX(Component.LEFT_ALIGNMENT);
 
-        cardWrapper.add(createPremiumField("Nom du projet", "Ex: Application mobile innovante", "🎯",
-                nomField = createPremiumTextField()));
+        cardWrapper.add(createField("Nom du projet", "Ex: Application mobile innovante", "🎯",
+                nomField = createTextField()));
         cardWrapper.add(Box.createRigidArea(new Dimension(0, 25)));
 
-        cardWrapper.add(createPremiumDescriptionField());
+        cardWrapper.add(createDescriptionField());
         cardWrapper.add(Box.createRigidArea(new Dimension(0, 25)));
 
-        cardWrapper.add(createPremiumDateField());
+        cardWrapper.add(createDateField());
         cardWrapper.add(Box.createRigidArea(new Dimension(0, 25)));
 
-        cardWrapper.add(createPremiumField("Budget estimé", "Ex: 50000", "💎",
-                budgetField = createPremiumTextField()));
+        cardWrapper.add(createField("Budget estimé", "Ex: 50000", "💎",
+                budgetField = createTextField()));
         cardWrapper.add(Box.createRigidArea(new Dimension(0, 35)));
 
         cardWrapper.add(createSubmitButton());
@@ -152,7 +152,7 @@ public class CreerProjet extends JPanel {
         return cardWrapper;
     }
 
-    private JPanel createPremiumField(String label, String placeholder, String emoji, JTextField field) {
+    private JPanel createField(String label, String placeholder, String emoji, JTextField field) {
         JPanel fieldPanel = new JPanel();
         fieldPanel.setLayout(new BoxLayout(fieldPanel, BoxLayout.Y_AXIS));
         fieldPanel.setOpaque(false);
@@ -185,7 +185,7 @@ public class CreerProjet extends JPanel {
         return fieldPanel;
     }
 
-    private JTextField createPremiumTextField() {
+    private JTextField createTextField() {
         JTextField field = new JTextField() {
             private boolean isFocused = false;
 
@@ -215,7 +215,7 @@ public class CreerProjet extends JPanel {
         return field;
     }
 
-    private JPanel createPremiumDescriptionField() {
+    private JPanel createDescriptionField() {
         JPanel fieldPanel = new JPanel();
         fieldPanel.setLayout(new BoxLayout(fieldPanel, BoxLayout.Y_AXIS));
         fieldPanel.setOpaque(false);
@@ -298,7 +298,7 @@ public class CreerProjet extends JPanel {
         return fieldPanel;
     }
 
-    private JPanel createPremiumDateField() {
+    private JPanel createDateField() {
         JPanel fieldPanel = new JPanel();
         fieldPanel.setLayout(new BoxLayout(fieldPanel, BoxLayout.Y_AXIS));
         fieldPanel.setOpaque(false);
@@ -582,11 +582,11 @@ public class CreerProjet extends JPanel {
         contentWrapper.add(Box.createRigidArea(new Dimension(0, 20)));
         contentWrapper.add(createSuccessHeader(projectName));
         contentWrapper.add(Box.createRigidArea(new Dimension(0, 45)));
-        contentWrapper.add(createPremiumCodeCard(projectCode));
+        contentWrapper.add(createCodeCard(projectCode));
         contentWrapper.add(Box.createRigidArea(new Dimension(0, 40)));
-        contentWrapper.add(createPremiumQRSection(projectCode));
+        contentWrapper.add(createQRSection(projectCode));
         contentWrapper.add(Box.createRigidArea(new Dimension(0, 45)));
-        contentWrapper.add(createPremiumActionButtons(projectCode));
+        contentWrapper.add(createActionButtons(projectCode));
         contentWrapper.add(Box.createRigidArea(new Dimension(0, 30)));
 
         Scrollbar scroll = new Scrollbar(theme);
@@ -627,7 +627,7 @@ public class CreerProjet extends JPanel {
         return header;
     }
 
-    private JPanel createPremiumCodeCard(String projectCode) {
+    private JPanel createCodeCard(String projectCode) {
         JPanel cardWrapper = new JPanel();
         cardWrapper.setLayout(new BoxLayout(cardWrapper, BoxLayout.Y_AXIS));
         cardWrapper.setOpaque(false);
@@ -695,7 +695,7 @@ public class CreerProjet extends JPanel {
         return cardWrapper;
     }
 
-    private JPanel createPremiumQRSection(String projectCode) {
+    private JPanel createQRSection(String projectCode) {
         JPanel qrSection = new JPanel();
         qrSection.setLayout(new BoxLayout(qrSection, BoxLayout.Y_AXIS));
         qrSection.setOpaque(false);
@@ -759,7 +759,7 @@ public class CreerProjet extends JPanel {
         }).start();
     }
 
-    private JPanel createPremiumActionButtons(String projectCode) {
+    private JPanel createActionButtons(String projectCode) {
         JPanel buttonsPanel = new JPanel();
         buttonsPanel.setLayout(new BoxLayout(buttonsPanel, BoxLayout.X_AXIS));
         buttonsPanel.setOpaque(false);

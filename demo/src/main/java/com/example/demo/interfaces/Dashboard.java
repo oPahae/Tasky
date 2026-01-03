@@ -38,7 +38,7 @@ public class Dashboard extends JPanel {
         this.onClick = onClick;
         this.projectId = Params.projetID; // Assurez-vous que projectId est défini dans Params
 
-        initializeColors();
+        inialiseColors();
         members = new ArrayList<>();
         tasks = new ArrayList<>();
 
@@ -49,7 +49,7 @@ public class Dashboard extends JPanel {
         mainContentPanel.setBackground(bgColor);
 
         JPanel overviewPanel = createOverviewPanel();
-        JPanel memberDetailPanel = createMemberDetailPanel(null, getRandomColor());
+        JPanel memberDetailPanel = createMemberDetail(null, getRandomColor());
 
         mainContentPanel.add(overviewPanel, "overview");
         mainContentPanel.add(memberDetailPanel, "detail");
@@ -131,7 +131,7 @@ public class Dashboard extends JPanel {
                             String firstName = nomSplit[0];
                             String lastName = nomSplit.length > 1 ? nomSplit[1] : "";
 
-                            List<String> assignedTasks = getAssignedTasksForMember(email);
+                            List<String> assignedTasks = getTaskMembre(email);
 
                             ProjectMember member = new ProjectMember(
                                     id, firstName, lastName, role, assignedTasks);
@@ -143,7 +143,7 @@ public class Dashboard extends JPanel {
                         SwingUtilities.invokeLater(() -> {
                             mainContentPanel.removeAll();
                             mainContentPanel.add(createOverviewPanel(), "overview");
-                            mainContentPanel.add(createMemberDetailPanel(null, getRandomColor()), "detail");
+                            mainContentPanel.add(createMemberDetail(null, getRandomColor()), "detail");
                             contentLayout.show(mainContentPanel, "overview");
                             mainContentPanel.revalidate();
                             mainContentPanel.repaint();
@@ -160,7 +160,7 @@ public class Dashboard extends JPanel {
                 });
     }
 
-    private List<String> getAssignedTasksForMember(String email) {
+    private List<String> getTaskMembre(String email) {
         List<String> assigned = new ArrayList<>();
         for (Task task : tasks) {
             assigned.add(task.name);
@@ -168,7 +168,7 @@ public class Dashboard extends JPanel {
         return assigned;
     }
 
-    private void initializeColors() {
+    private void inialiseColors() {
         if (theme == 0) { // Light mode
             bgColor = new Color(245, 247, 250);
             cardBgColor = Color.WHITE;
@@ -596,7 +596,7 @@ public class Dashboard extends JPanel {
         return avatar;
     }
 
-    private JPanel createMemberDetailPanel(ProjectMember member, Color color) {
+    private JPanel createMemberDetail(ProjectMember member, Color color) {
         JPanel panel = new JPanel(new BorderLayout(20, 20));
         panel.setBackground(bgColor);
         panel.setBorder(BorderFactory.createEmptyBorder(25, 25, 25, 25));
