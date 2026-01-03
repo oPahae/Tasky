@@ -104,6 +104,7 @@ public class AjouterTache extends JPanel {
         }
     }
 
+    //recuperer les memebres li mparticipin fhad projet
     private void initialiseMembre() {
         members = new ArrayList<>();
 
@@ -448,6 +449,7 @@ public class AjouterTache extends JPanel {
         return button;
     }
 
+    //ajouter task avec la selectin dyal membre li yakhud had task
     private void addTask() {
         String title = titleField.getText();
         String description = descriptionArea.getText();
@@ -489,6 +491,7 @@ public class AjouterTache extends JPanel {
         sendTaskToBackend(title, description, dateLimit, selectedMemberIds);
     }
 
+    //ajout du task dans bdd
     private void sendTaskToBackend(
             String titre,
             String description,

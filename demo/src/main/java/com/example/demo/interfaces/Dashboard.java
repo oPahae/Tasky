@@ -36,7 +36,7 @@ public class Dashboard extends JPanel {
     public Dashboard(Consumer<String> onClick) {
         this.theme = Params.theme;
         this.onClick = onClick;
-        this.projectId = Params.projetID; // Assurez-vous que projectId est défini dans Params
+        this.projectId = Params.projetID; 
 
         inialiseColors();
         members = new ArrayList<>();
@@ -59,9 +59,9 @@ public class Dashboard extends JPanel {
 
         loadDataFromBackend();
     }
-
+ //methode pour recuperer les donnee fom backend
     private void loadDataFromBackend() {
-        System.out.println("Chargement des données du backend pour projectId: " + projectId);
+        System.out.println("Chargement des donnees du backend pour projectId: " + projectId);
 
         HttpClient client = HttpClient.newHttpClient();
         HttpRequest request = HttpRequest.newBuilder()
@@ -101,6 +101,7 @@ public class Dashboard extends JPanel {
                 });
     }
 
+    //methode pour recuperer les membes 
     private void loadMembersFromBackend() {
         System.out.println("Chargement des membres du backend");
 
@@ -160,6 +161,7 @@ public class Dashboard extends JPanel {
                 });
     }
 
+    //methode pour recuperer les tasks avec les memebres de cette task
     private List<String> getTaskMembre(String email) {
         List<String> assigned = new ArrayList<>();
         for (Task task : tasks) {

@@ -468,6 +468,7 @@ public class CreerProjet extends JPanel {
         return buttonPanel;
     }
 
+    //methode our creer projet avec insert des donnees du projet et generation du code
     private void createProject() {
         String nom = nomField.getText().trim();
         String description = descriptionField.getText().trim();
@@ -554,6 +555,7 @@ public class CreerProjet extends JPanel {
         JOptionPane.showMessageDialog(this, errorPanel, "Erreur", JOptionPane.PLAIN_MESSAGE);
     }
 
+    //generation du code pour projet
     private String generateProjectCode(String projectName) {
         String nameHash = Integer.toHexString(projectName.hashCode()).toUpperCase();
         long timestamp = System.currentTimeMillis();
@@ -735,6 +737,7 @@ public class CreerProjet extends JPanel {
         return qrSection;
     }
 
+   //creation du qrCode dapres un api pou chaque code du projet
     private void loadQRCode(String code, JLabel qrLabel) {
         new Thread(() -> {
             try {
