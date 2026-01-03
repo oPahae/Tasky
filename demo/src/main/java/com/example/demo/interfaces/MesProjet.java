@@ -117,7 +117,7 @@ public class MesProjet extends JPanel {
     }
 
     private void initializeColors() {
-        if (theme == 0) { // Light mode
+        if (theme == 0) {
             bgColor = new Color(245, 247, 250);
             cardBgColor = Color.WHITE;
             textPrimary = new Color(30, 30, 30);
@@ -125,7 +125,7 @@ public class MesProjet extends JPanel {
             accentColor = new Color(59, 130, 246);
             progressBg = new Color(229, 231, 235);
             progressFill = new Color(34, 197, 94);
-        } else { // Dark mode
+        } else {
             bgColor = new Color(0, 0, 0);
             cardBgColor = new Color(20, 20, 20);
             textPrimary = new Color(230, 230, 230);

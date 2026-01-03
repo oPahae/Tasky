@@ -61,7 +61,7 @@ public class Dashboard extends JPanel {
     }
  //methode pour recuperer les donnee fom backend
     private void loadDataFromBackend() {
-        System.out.println("Chargement des donnees du backend pour projectId: " + projectId);
+        System.out.println("Chargement : " + projectId);
 
         HttpClient client = HttpClient.newHttpClient();
         HttpRequest request = HttpRequest.newBuilder()

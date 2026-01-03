@@ -17,7 +17,6 @@ public class Register extends JPanel {
     private Color bgColor, cardBgColor, textPrimary, textSecondary, accentColor, inputBorder, successColor, errorColor,
             inputBg, hoverColor;
 
-    // Palette de couleurs premium (identique à Login.java)
     private final Color GRADIENT_START = new Color(20, 30, 48);
     private final Color GRADIENT_END = new Color(36, 59, 85);
     private final Color CARD_BG = new Color(255, 255, 255);
@@ -56,7 +55,6 @@ public class Register extends JPanel {
         formCard.setBorder(new EmptyBorder(60, 60, 60, 60));
         formCard.setPreferredSize(new Dimension(520, 900));
 
-        // Titre principal - centré
         JPanel titlePanel = new JPanel();
         titlePanel.setLayout(new BoxLayout(titlePanel, BoxLayout.Y_AXIS));
         titlePanel.setOpaque(false);
@@ -78,13 +76,11 @@ public class Register extends JPanel {
         formCard.add(titlePanel);
         formCard.add(Box.createVerticalStrut(48));
 
-        // Champs Nom et Prénom (côte à côte)
         JPanel nameRow = new JPanel(new GridLayout(1, 2, 16, 0));
         nameRow.setOpaque(false);
         nameRow.setMaximumSize(new Dimension(Integer.MAX_VALUE, 85));
         nameRow.setAlignmentX(Component.CENTER_ALIGNMENT);
 
-        // Nom
         JPanel nomContainer = new JPanel();
         nomContainer.setLayout(new BoxLayout(nomContainer, BoxLayout.Y_AXIS));
         nomContainer.setOpaque(false);
@@ -94,7 +90,6 @@ public class Register extends JPanel {
         nomContainer.add(Box.createVerticalStrut(12));
         nomContainer.add(nomField);
 
-        // Prénom
         JPanel prenomContainer = new JPanel();
         prenomContainer.setLayout(new BoxLayout(prenomContainer, BoxLayout.Y_AXIS));
         prenomContainer.setOpaque(false);
@@ -109,7 +104,6 @@ public class Register extends JPanel {
         formCard.add(nameRow);
         formCard.add(Box.createVerticalStrut(28));
 
-        // Champ Email
         JPanel emailContainer = new JPanel();
         emailContainer.setLayout(new BoxLayout(emailContainer, BoxLayout.Y_AXIS));
         emailContainer.setOpaque(false);
@@ -127,13 +121,11 @@ public class Register extends JPanel {
         formCard.add(emailContainer);
         formCard.add(Box.createVerticalStrut(28));
 
-        // Pass + Confirm
         JPanel psswdRow = new JPanel(new GridLayout(1, 2, 16, 0));
         psswdRow.setOpaque(false);
         psswdRow.setMaximumSize(new Dimension(Integer.MAX_VALUE, 85));
         psswdRow.setAlignmentX(Component.CENTER_ALIGNMENT);
 
-        // Champ Mot de passe
         JPanel passwordContainer = new JPanel();
         passwordContainer.setLayout(new BoxLayout(passwordContainer, BoxLayout.Y_AXIS));
         passwordContainer.setOpaque(false);
@@ -148,7 +140,6 @@ public class Register extends JPanel {
         passwordField.setAlignmentX(Component.LEFT_ALIGNMENT);
         passwordContainer.add(passwordField);
 
-        // Confirm
         JPanel confirmContainer = new JPanel();
         confirmContainer.setLayout(new BoxLayout(confirmContainer, BoxLayout.Y_AXIS));
         confirmContainer.setOpaque(false);
@@ -168,13 +159,11 @@ public class Register extends JPanel {
         formCard.add(psswdRow);
         formCard.add(Box.createVerticalStrut(32));
 
-        // Champs Compétence et Téléphone (côte à côte)
         JPanel contactRow = new JPanel(new GridLayout(1, 2, 16, 0));
         contactRow.setOpaque(false);
         contactRow.setMaximumSize(new Dimension(Integer.MAX_VALUE, 85));
         contactRow.setAlignmentX(Component.CENTER_ALIGNMENT);
 
-        // Compétence
         JPanel compContainer = new JPanel();
         compContainer.setLayout(new BoxLayout(compContainer, BoxLayout.Y_AXIS));
         compContainer.setOpaque(false);
@@ -184,7 +173,6 @@ public class Register extends JPanel {
         compContainer.add(Box.createVerticalStrut(12));
         compContainer.add(competanceField);
 
-        // Téléphone
         JPanel telContainer = new JPanel();
         telContainer.setLayout(new BoxLayout(telContainer, BoxLayout.Y_AXIS));
         telContainer.setOpaque(false);
@@ -199,20 +187,17 @@ public class Register extends JPanel {
         formCard.add(contactRow);
         formCard.add(Box.createVerticalStrut(32));
 
-        // Bouton d'inscription
         JButton btnRegister = createButtonNadya("Créer mon compte", PRIMARY_BLUE);
         btnRegister.setAlignmentX(Component.CENTER_ALIGNMENT);
         formCard.add(btnRegister);
         formCard.add(Box.createVerticalStrut(24));
 
-        // Message de statut
         JLabel message = new JLabel("", SwingConstants.CENTER);
         message.setFont(new Font("Segoe UI", Font.BOLD, 15));
         message.setAlignmentX(Component.CENTER_ALIGNMENT);
         formCard.add(message);
         formCard.add(Box.createVerticalStrut(30));
 
-        // Séparateur
         JPanel separatorContainer = new JPanel();
         separatorContainer.setLayout(new BoxLayout(separatorContainer, BoxLayout.X_AXIS));
         separatorContainer.setOpaque(false);
@@ -224,7 +209,6 @@ public class Register extends JPanel {
         formCard.add(separatorContainer);
         formCard.add(Box.createVerticalStrut(30));
 
-        // Panel de switch
         JPanel switchPanel = createSwitchPanel(
                 "Déjà un compte ?",
                 "Se connecter",
@@ -267,21 +251,17 @@ public class Register extends JPanel {
                 Graphics2D g2 = (Graphics2D) g.create();
                 g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
 
-                // Fond avec dégradé subtil
                 GradientPaint bgGradient = new GradientPaint(
                         0, 0, INPUT_BG,
                         0, getHeight(), new Color(246, 247, 249));
                 g2.setPaint(bgGradient);
                 g2.fillRoundRect(0, 0, getWidth(), getHeight(), 16, 16);
 
-                // Bordure avec effet glow au focus
                 if (focused) {
-                    // Effet glow externe
                     g2.setColor(new Color(accentColor.getRed(), accentColor.getGreen(), accentColor.getBlue(), 30));
                     g2.setStroke(new BasicStroke(6f));
                     g2.drawRoundRect(2, 2, getWidth() - 5, getHeight() - 5, 16, 16);
 
-                    // Bordure principale
                     g2.setColor(accentColor);
                     g2.setStroke(new BasicStroke(2.5f));
                     g2.drawRoundRect(1, 1, getWidth() - 3, getHeight() - 3, 16, 16);
@@ -322,21 +302,17 @@ public class Register extends JPanel {
                 Graphics2D g2 = (Graphics2D) g.create();
                 g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
 
-                // Fond avec dégradé subtil
                 GradientPaint bgGradient = new GradientPaint(
                         0, 0, INPUT_BG,
                         0, getHeight(), new Color(246, 247, 249));
                 g2.setPaint(bgGradient);
                 g2.fillRoundRect(0, 0, getWidth(), getHeight(), 16, 16);
 
-                // Bordure avec effet glow au focus
                 if (focused) {
-                    // Effet glow externe
                     g2.setColor(new Color(accentColor.getRed(), accentColor.getGreen(), accentColor.getBlue(), 30));
                     g2.setStroke(new BasicStroke(6f));
                     g2.drawRoundRect(2, 2, getWidth() - 5, getHeight() - 5, 16, 16);
 
-                    // Bordure principale
                     g2.setColor(accentColor);
                     g2.setStroke(new BasicStroke(2.5f));
                     g2.drawRoundRect(1, 1, getWidth() - 3, getHeight() - 3, 16, 16);
@@ -420,7 +396,6 @@ public class Register extends JPanel {
                     baseColor = new Color(Math.max(0, r), Math.max(0, g_), Math.max(0, b));
                 }
 
-                // Ombre du bouton progressive
                 if (isEnabled()) {
                     g2.setColor(new Color(0, 0, 0, 35));
                     g2.fillRoundRect(0, 7, getWidth(), getHeight() - 7, 16, 16);
@@ -428,7 +403,6 @@ public class Register extends JPanel {
                     g2.fillRoundRect(0, 5, getWidth(), getHeight() - 5, 16, 16);
                 }
 
-                // Gradient sur le bouton
                 GradientPaint gradient = new GradientPaint(
                         0, 0, baseColor,
                         0, getHeight(), new Color(
@@ -438,7 +412,6 @@ public class Register extends JPanel {
                 g2.setPaint(gradient);
                 g2.fillRoundRect(0, 0, getWidth(), getHeight() - 6, 16, 16);
 
-                // Highlight subtil en haut
                 if (isEnabled() && !getModel().isPressed()) {
                     g2.setColor(new Color(255, 255, 255, 25));
                     g2.fillRoundRect(0, 0, getWidth(), getHeight() / 2 - 3, 16, 16);

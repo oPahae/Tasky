@@ -79,13 +79,9 @@ public class Chat extends JPanel {
     public Chat() {
         this.theme = Params.theme;
         initialiseColors();
-
-        // Utiliser l'ID du user connecte comme membre actuel
         this.myId = SessionManager.getInstance().getUserId();
         this.projectId = SessionManager.getInstance().getCurrentProjetId();
         this.projectName = SessionManager.getInstance().getCurrentProjetNom();
-
-        // Verifier que le projet est selectionne
         if (projectId <= 0) {
             JOptionPane.showMessageDialog(this,
                 "Veuillez sélectionner un projet avant d'ouvrir le chat.",
@@ -93,15 +89,12 @@ public class Chat extends JPanel {
                 JOptionPane.ERROR_MESSAGE);
             return;
         }
-
         messages = new ArrayList<>();
         setLayout(new BorderLayout());
         setBackground(bgColor);
         add(createTopBar(), BorderLayout.NORTH);
         add(createMessagesArea(), BorderLayout.CENTER);
         add(createInputArea(), BorderLayout.SOUTH);
-
-        // Charger lhistorique et connecter WebSocket
         loadMessageHistory();
         connectWebSocket();
     }
@@ -133,23 +126,22 @@ public class Chat extends JPanel {
         new Thread(() -> {
             try {
                 List<Transport> transports = new ArrayList<>();
-                //webSocketTranport pour etablir connexion 
+                //webSocketTranport pash ndiro connexion 
                 //StandardWebSocketClient cest n client webSocket fourni par springboot pour etablir connexion
                 transports.add(new WebSocketTransport(new StandardWebSocketClient()));
 
                 //pour se connecter au serveur webSocket
                 SockJsClient sockJsClient = new SockJsClient(transports);
                 stompClient = new WebSocketStompClient(sockJsClient);
-                stompClient.setMessageConverter(new MappingJackson2MessageConverter());//convertir les messages recu en dto
+                stompClient.setMessageConverter(new MappingJackson2MessageConverter());// messages recus -> dto
 
-                //gestion des sessions
                 StompSessionHandler sessionHandler = new StompSessionHandlerAdapter() {
                     @Override
                     public void afterConnected(StompSession session, StompHeaders connectedHeaders) {
                         stompSession = session;
                         System.out.println("WebSocket connecté pour projet " + projectId);
 
-                        //entrer dans le canal pour recevoir les messages en temps reel
+                        //canal
                         session.subscribe("/topic/projet/" + projectId, new StompFrameHandler() {
                             @Override
                             public Type getPayloadType(StompHeaders headers) {
@@ -170,7 +162,7 @@ public class Chat extends JPanel {
                                                 dto.dateEnvoi
                                         );
                                         msg.id = dto.id;
-                                        addMessage(msg);//ajouter le message
+                                        addMessage(msg);//ajouter msg
                                     }
                                 });
                             }
@@ -241,9 +233,8 @@ public class Chat extends JPanel {
                     messages.clear();
 
                     if (dtos == null || dtos.length == 0) {
-                        // Ajouter un message par defaut si la liste est vide
                         ChatMessage defaultMessage = new ChatMessage(
-                            -1, // ID special pour indiquer que c'est un message systeme
+                            -1,
                             "Système",
                             "",
                             "SYSTÈME",

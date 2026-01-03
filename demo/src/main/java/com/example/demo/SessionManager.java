@@ -3,7 +3,6 @@ package com.example.demo;
 public class SessionManager {
     private static SessionManager instance;
 
-    // Informations User
     private String token;
     private int userId;
     private String prenom;
@@ -12,13 +11,11 @@ public class SessionManager {
     private String competance;
     private String telephone;
 
-    // Informations projet selectionne
     private int currentProjetId;
     private String currentProjetNom;
     private String currentProjetDescription;
 
     private SessionManager() {
-        // Valeurs par defaut
         this.currentProjetId = -1;
     }
 
@@ -29,7 +26,6 @@ public class SessionManager {
         return instance;
     }
 
-    //  GESTION USER 
     public void setUserSession(String token, String prenom, String nom, String email,
                                String competance, String telephone, int userId) {
         this.token = token;
@@ -41,7 +37,6 @@ public class SessionManager {
         this.userId = userId;
     }
 
-    // GESTION PROJET SELECTIONNE
     public void setCurrentProjet(int projetId, String projetNom, String projetDescription) {
         this.currentProjetId = projetId;
         this.currentProjetNom = projetNom;
@@ -53,7 +48,6 @@ public class SessionManager {
         setCurrentProjet(projetId, projetNom, "");
     }
 
-    // GETTERS USER 
     public String getToken() {
         return token;
     }
@@ -99,7 +93,6 @@ public class SessionManager {
         return currentProjetDescription != null ? currentProjetDescription : "";
     }
 
-    // VERIFICATIONS
     public boolean isLoggedIn() {
         return token != null && !token.isEmpty() && userId > 0;
     }
@@ -112,7 +105,6 @@ public class SessionManager {
         return isLoggedIn() && hasProjetSelected();
     }
 
-    // LOGOUT 
     public void logout() {
         this.token = null;
         this.prenom = null;

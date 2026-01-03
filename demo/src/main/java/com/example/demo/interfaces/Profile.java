@@ -13,13 +13,11 @@ public class Profile extends JPanel {
     private int userID;
     private Color bgColor, cardBgColor, textPrimary, textSecondary, inputBg, borderColor;
 
-    // Palette de couleurs premium
     private final Color primary = new Color(59, 130, 246);
     private final Color sucess = new Color(16, 185, 129);
     private final Color alert = new Color(251, 146, 60);
     private final Color danger = new Color(239, 68, 68);
 
-    // Champs du formulaire
     private JTextField nomField, prenomField, emailField, competanceField, telephoneField;
     private JPasswordField currentPasswordField, newPasswordField, confirmPasswordField;
     private JLabel profileMessage, passwordMessage, deleteMessage;
@@ -69,7 +67,6 @@ public class Profile extends JPanel {
         formCard.setBorder(new EmptyBorder(40, 60, 60, 60));
         formCard.setPreferredSize(new Dimension(650, 1400));
 
-        // Titre principal
         JPanel titlePanel = new JPanel();
         titlePanel.setLayout(new BoxLayout(titlePanel, BoxLayout.Y_AXIS));
         titlePanel.setOpaque(false);
@@ -91,11 +88,9 @@ public class Profile extends JPanel {
         formCard.add(titlePanel);
         formCard.add(Box.createVerticalStrut(48));
 
-        // === SECTION 1: Informations Personnelles ===
         formCard.add(createSectionTitle("Informations Personnelles", primary));
         formCard.add(Box.createVerticalStrut(24));
 
-        // Nom et Prénom
         JPanel nameRow = new JPanel(new GridLayout(1, 2, 16, 0));
         nameRow.setOpaque(false);
         nameRow.setMaximumSize(new Dimension(Integer.MAX_VALUE, 85));
@@ -113,14 +108,12 @@ public class Profile extends JPanel {
         formCard.add(nameRow);
         formCard.add(Box.createVerticalStrut(24));
 
-        // Email
         JPanel emailContainer = createFieldContainer("Adresse Email", sucess);
         emailField = createModernTextField("votre@email.com", sucess);
         emailContainer.add(emailField);
         formCard.add(emailContainer);
         formCard.add(Box.createVerticalStrut(24));
 
-        // Compétence et Téléphone
         JPanel contactRow = new JPanel(new GridLayout(1, 2, 16, 0));
         contactRow.setOpaque(false);
         contactRow.setMaximumSize(new Dimension(Integer.MAX_VALUE, 85));
@@ -138,36 +131,30 @@ public class Profile extends JPanel {
         formCard.add(contactRow);
         formCard.add(Box.createVerticalStrut(28));
 
-        // Bouton de mise à jour du profil
         btnUpdateProfile = createButtonNadya("Mettre à jour le profil", primary);
         btnUpdateProfile.setAlignmentX(Component.CENTER_ALIGNMENT);
         btnUpdateProfile.addActionListener(e -> handleUpdateProfile());
         formCard.add(btnUpdateProfile);
         formCard.add(Box.createVerticalStrut(16));
 
-        // Message de statut profil
         profileMessage = new JLabel("", SwingConstants.CENTER);
         profileMessage.setFont(new Font("Segoe UI", Font.BOLD, 15));
         profileMessage.setAlignmentX(Component.CENTER_ALIGNMENT);
         formCard.add(profileMessage);
         formCard.add(Box.createVerticalStrut(48));
 
-        // Séparateur
         formCard.add(createSeparator());
         formCard.add(Box.createVerticalStrut(48));
 
-        // === SECTION 2: Modification du Mot de Passe ===
         formCard.add(createSectionTitle("Modifier le Mot de Passe", alert));
         formCard.add(Box.createVerticalStrut(24));
 
-        // Mot de passe actuel
         JPanel currentPasswordContainer = createFieldContainer("Mot de passe actuel", alert);
         currentPasswordField = createModernPasswordField("", alert);
         currentPasswordContainer.add(currentPasswordField);
         formCard.add(currentPasswordContainer);
         formCard.add(Box.createVerticalStrut(24));
 
-        // Nouveau mot de passe et confirmation
         JPanel passwordRow = new JPanel(new GridLayout(1, 2, 16, 0));
         passwordRow.setOpaque(false);
         passwordRow.setMaximumSize(new Dimension(Integer.MAX_VALUE, 85));
@@ -185,25 +172,21 @@ public class Profile extends JPanel {
         formCard.add(passwordRow);
         formCard.add(Box.createVerticalStrut(28));
 
-        // Bouton de mise à jour du mot de passe
         btnUpdatePassword = createButtonNadya("Modifier le mot de passe", alert);
         btnUpdatePassword.setAlignmentX(Component.CENTER_ALIGNMENT);
         btnUpdatePassword.addActionListener(e -> handleUpdatePassword());
         formCard.add(btnUpdatePassword);
         formCard.add(Box.createVerticalStrut(16));
 
-        // Message de statut mot de passe
         passwordMessage = new JLabel("", SwingConstants.CENTER);
         passwordMessage.setFont(new Font("Segoe UI", Font.BOLD, 15));
         passwordMessage.setAlignmentX(Component.CENTER_ALIGNMENT);
         formCard.add(passwordMessage);
         formCard.add(Box.createVerticalStrut(48));
 
-        // Séparateur
         formCard.add(createSeparator());
         formCard.add(Box.createVerticalStrut(48));
 
-        // === SECTION 3: Suppression du Compte ===
         formCard.add(createSectionTitle("Zone Dangereuse", danger));
         formCard.add(Box.createVerticalStrut(16));
 
@@ -214,20 +197,17 @@ public class Profile extends JPanel {
         formCard.add(dangerWarning);
         formCard.add(Box.createVerticalStrut(24));
 
-        // Bouton de suppression du compte
         btnDeleteAccount = createButtonNadya("Supprimer mon compte", danger);
         btnDeleteAccount.setAlignmentX(Component.CENTER_ALIGNMENT);
         btnDeleteAccount.addActionListener(e -> handleDeleteAccount());
         formCard.add(btnDeleteAccount);
         formCard.add(Box.createVerticalStrut(16));
 
-        // Message de statut suppression
         deleteMessage = new JLabel("", SwingConstants.CENTER);
         deleteMessage.setFont(new Font("Segoe UI", Font.BOLD, 15));
         deleteMessage.setAlignmentX(Component.CENTER_ALIGNMENT);
         formCard.add(deleteMessage);
 
-        // Scrollbar
         Scrollbar scroll = new Scrollbar(0);
         JScrollPane scrollPane = scroll.create(mainContainer);
         scrollPane.setBorder(null);
@@ -501,26 +481,25 @@ public class Profile extends JPanel {
                 System.out.println("Response received: " + response);
                 
                 if (response.containsKey("success") && Boolean.TRUE.equals(response.get("success"))) {
-                    // Conversion sécurisée des valeurs
                     nomField.setText(String.valueOf(response.getOrDefault("nom", "")));
                     prenomField.setText(String.valueOf(response.getOrDefault("prenom", "")));
                     emailField.setText(String.valueOf(response.getOrDefault("email", "")));
                     competanceField.setText(String.valueOf(response.getOrDefault("competance", "")));
                     telephoneField.setText(String.valueOf(response.getOrDefault("telephone", "")));
                     
-                    System.out.println("✓ Données chargées avec succès");
+                    System.out.println("Données chargées avec succès");
                 } else if (response.containsKey("error")) {
                     String errorMsg = String.valueOf(response.get("error"));
-                    System.err.println("✗ Erreur: " + errorMsg);
+                    System.err.println("Erreur: " + errorMsg);
                     showMessage(profileMessage, "Erreur: " + errorMsg, danger);
                 } else {
-                    System.err.println("✗ Réponse invalide du serveur");
+                    System.err.println("Réponse invalide du serveur");
                     showMessage(profileMessage, "Erreur de chargement du profil", danger);
                 }
             });
         }).exceptionally(ex -> {
             SwingUtilities.invokeLater(() -> {
-                System.err.println("✗ Exception: " + ex.getMessage());
+                System.err.println("Exception: " + ex.getMessage());
                 ex.printStackTrace();
                 showMessage(profileMessage, "Erreur de connexion au serveur", danger);
             });
@@ -531,13 +510,11 @@ public class Profile extends JPanel {
     private void handleUpdateProfile() {
         System.out.println("=== UPDATE PROFILE ===");
         
-        // Validation email
         if (!emailField.getText().matches("^[A-Za-z0-9+_.-]+@[A-Za-z0-9.-]+\\.[A-Za-z]{2,6}$")) {
             showMessage(profileMessage, "Email incorrect", danger);
             return;
         }
         
-        // Validation champs obligatoires
         if (nomField.getText().trim().isEmpty() || prenomField.getText().trim().isEmpty()) {
             showMessage(profileMessage, "Veuillez remplir tous les champs obligatoires", danger);
             return;
@@ -566,25 +543,24 @@ public class Profile extends JPanel {
                 if (response.containsKey("success") && Boolean.TRUE.equals(response.get("success"))) {
                     showMessage(profileMessage, "Profil mis à jour avec succès !", sucess);
                     
-                    // Mettre à jour le SessionManager
                     SessionManager.getInstance().setUserSession(
-                    SessionManager.getInstance().getToken(), // Conserver le token actuel
+                    SessionManager.getInstance().getToken(),
                     prenomField.getText().trim(),
                     nomField.getText().trim(),
                     emailField.getText().trim(),
-                    SessionManager.getInstance().getCompetance(), // Conserver la compétence actuelle
-                    SessionManager.getInstance().getTelephone(), // Conserver le téléphone actuel
-                    SessionManager.getInstance().getUserId() // Conserver l'ID utilisateur actuel
+                    SessionManager.getInstance().getCompetance(),
+                    SessionManager.getInstance().getTelephone(),
+                    SessionManager.getInstance().getUserId() 
                 );
 
 
-                    System.out.println("✓ Profil mis à jour");
+                    System.out.println("Profil mis à jour");
                 } else if (response.containsKey("error")) {
                     String errorMsg = String.valueOf(response.get("error"));
-                    System.err.println("✗ Erreur: " + errorMsg);
+                    System.err.println("Erreur: " + errorMsg);
                     showMessage(profileMessage, "Erreur: " + errorMsg, danger);
                 } else {
-                    System.err.println("✗ Réponse invalide");
+                    System.err.println("Réponse invalide");
                     showMessage(profileMessage, "Erreur lors de la mise à jour", danger);
                 }
             });
@@ -592,15 +568,13 @@ public class Profile extends JPanel {
             SwingUtilities.invokeLater(() -> {
                 btnUpdateProfile.setEnabled(true);
                 btnUpdateProfile.setText("Mettre à jour le profil");
-                System.err.println("✗ Exception: " + ex.getMessage());
+                System.err.println("Exception: " + ex.getMessage());
                 ex.printStackTrace();
                 showMessage(profileMessage, "Erreur de connexion", danger);
             });
             return null;
         });
     }
-
-    // Continuation de la méthode handleUpdatePassword() et handleDeleteAccount()
 
     private void handleUpdatePassword() {
         System.out.println("=== UPDATE PASSWORD ===");
@@ -609,7 +583,6 @@ public class Profile extends JPanel {
         String newPwd = new String(newPasswordField.getPassword());
         String confirmPwd = new String(confirmPasswordField.getPassword());
 
-        // Validations
         if (currentPwd.isEmpty() || newPwd.isEmpty() || confirmPwd.isEmpty()) {
             showMessage(passwordMessage, "Veuillez remplir tous les champs", danger);
             return;
@@ -660,7 +633,7 @@ public class Profile extends JPanel {
             SwingUtilities.invokeLater(() -> {
                 btnUpdatePassword.setEnabled(true);
                 btnUpdatePassword.setText("Modifier le mot de passe");
-                System.err.println("✗ Exception: " + ex.getMessage());
+                System.err.println("Exception: " + ex.getMessage());
                 ex.printStackTrace();
                 showMessage(passwordMessage, "Erreur de connexion", danger);
             });
@@ -694,17 +667,11 @@ public class Profile extends JPanel {
                 
                 if (response.containsKey("success") && Boolean.TRUE.equals(response.get("success"))) {
                     showMessage(deleteMessage, "Compte supprimé avec succès", sucess);
-                    System.out.println("✓ Compte supprimé");
+                    System.out.println("Compte supprimé");
                     
-                    // Déconnexion et redirection après 2 secondes
                     Timer timer = new Timer(2000, evt -> {
                         SessionManager.getInstance().logout();
                         System.out.println("Session fermée, redirection vers login...");
-                        
-                        // Rediriger vers la page de connexion
-                        // Si vous avez une méthode pour changer de page, utilisez-la ici
-                        // Exemple: parent.switchCard("login");
-                        // Ou fermer la fenêtre actuelle
                         Window window = SwingUtilities.getWindowAncestor(Profile.this);
                         if (window != null) {
                             window.dispose();
@@ -716,12 +683,12 @@ public class Profile extends JPanel {
                     btnDeleteAccount.setEnabled(true);
                     btnDeleteAccount.setText("Supprimer mon compte");
                     String errorMsg = String.valueOf(response.get("error"));
-                    System.err.println("✗ Erreur: " + errorMsg);
+                    System.err.println("Erreur: " + errorMsg);
                     showMessage(deleteMessage, "Erreur: " + errorMsg, danger);
                 } else {
                     btnDeleteAccount.setEnabled(true);
                     btnDeleteAccount.setText("Supprimer mon compte");
-                    System.err.println("✗ Réponse invalide");
+                    System.err.println("Réponse invalide");
                     showMessage(deleteMessage, "Erreur lors de la suppression", danger);
                 }
             });
@@ -729,7 +696,7 @@ public class Profile extends JPanel {
             SwingUtilities.invokeLater(() -> {
                 btnDeleteAccount.setEnabled(true);
                 btnDeleteAccount.setText("Supprimer mon compte");
-                System.err.println("✗ Exception: " + ex.getMessage());
+                System.err.println("Exception: " + ex.getMessage());
                 ex.printStackTrace();
                 showMessage(deleteMessage, "Erreur de connexion", danger);
             });

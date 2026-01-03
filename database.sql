@@ -40,8 +40,8 @@ CREATE TABLE Membre (
     type VARCHAR(100),
     userID INT,
     projetID INT,
-    FOREIGN KEY (userID) REFERENCES User(id),
-    FOREIGN KEY (projetID) REFERENCES Projet(id)
+    FOREIGN KEY (userID) REFERENCES User(id) ON DELETE CASCADE,
+    FOREIGN KEY (projetID) REFERENCES Projet(id) ON DELETE CASCADE
 );
 -- TABLE RAPPORT
 CREATE TABLE Rapport (
@@ -49,7 +49,7 @@ CREATE TABLE Rapport (
     dateGeneration DATE,
     nom VARCHAR(150),
     projetID INT,
-    FOREIGN KEY (projetID) REFERENCES Projet(id)
+    FOREIGN KEY (projetID) REFERENCES Projet(id) ON DELETE CASCADE
 );
 -- TABLE TACHE
 CREATE TABLE Tache (
@@ -62,7 +62,7 @@ CREATE TABLE Tache (
     dateFin DATE,
     projetID INT,
     depense INT DEFAULT 0,
-    FOREIGN KEY (projetID) REFERENCES Projet(id)
+    FOREIGN KEY (projetID) REFERENCES Projet(id) ON DELETE CASCADE
 );
 -- TABLE SOUS-TACHE
 CREATE TABLE SousTache (
@@ -72,7 +72,7 @@ CREATE TABLE SousTache (
     dateFin DATE,
     termine BOOLEAN,
     tacheID INT,
-    FOREIGN KEY (tacheID) REFERENCES Tache(id)
+    FOREIGN KEY (tacheID) REFERENCES Tache(id) ON DELETE CASCADE
 );
 -- TABLE COMMENTAIRE
 CREATE TABLE Commentaire (
@@ -81,8 +81,8 @@ CREATE TABLE Commentaire (
     dateCreation DATE,
     tacheID INT,
     membreID INT,
-    FOREIGN KEY (tacheID) REFERENCES Tache(id),
-    FOREIGN KEY (membreID) REFERENCES Membre(id)
+    FOREIGN KEY (tacheID) REFERENCES Tache(id) ON DELETE CASCADE,
+    FOREIGN KEY (membreID) REFERENCES Membre(id) ON DELETE CASCADE
 );
 -- TABLE DOCUMENT
 CREATE TABLE Document (
@@ -94,9 +94,9 @@ CREATE TABLE Document (
     size INT,
     type VARCHAR(50),
     tacheID INT,
-    FOREIGN KEY (tacheID) REFERENCES Tache(id)
+    FOREIGN KEY (tacheID) REFERENCES Tache(id) ON DELETE CASCADE
 );
--- TABLE BLOCAGE (CORRIGÉE)
+-- TABLE BLOCAGE
 CREATE TABLE Blocage (
     id INT PRIMARY KEY AUTO_INCREMENT,
     description VARCHAR(255),
@@ -104,7 +104,7 @@ CREATE TABLE Blocage (
     statut VARCHAR(50),
     dateResolution DATE,
     tacheID INT,
-    FOREIGN KEY (tacheID) REFERENCES Tache(id)
+    FOREIGN KEY (tacheID) REFERENCES Tache(id) ON DELETE CASCADE
 );
 -- TABLE MESSAGE
 CREATE TABLE Message (
@@ -114,8 +114,8 @@ CREATE TABLE Message (
     estLu BOOLEAN,
     membreID INT,
     projetID INT,
-    FOREIGN KEY (membreID) REFERENCES Membre(id),
-    FOREIGN KEY (projetID) REFERENCES Projet(id)
+    FOREIGN KEY (membreID) REFERENCES Membre(id) ON DELETE CASCADE,
+    FOREIGN KEY (projetID) REFERENCES Projet(id) ON DELETE CASCADE
 );
 -- TABLE APPEL
 CREATE TABLE Appel (
@@ -126,8 +126,8 @@ CREATE TABLE Appel (
     duree INT,
     projetID INT,
     initiateurID INT,
-    FOREIGN KEY (projetID) REFERENCES Projet(id),
-    FOREIGN KEY (initiateurID) REFERENCES Membre(id)
+    FOREIGN KEY (projetID) REFERENCES Projet(id) ON DELETE CASCADE,
+    FOREIGN KEY (initiateurID) REFERENCES Membre(id) ON DELETE CASCADE
 );
 -- TABLE NOTIFICATION
 CREATE TABLE Notification (
@@ -137,14 +137,14 @@ CREATE TABLE Notification (
     estLue BOOLEAN,
     membreID INT,
     projetID INT,
-    FOREIGN KEY (membreID) REFERENCES Membre(id),
-    FOREIGN KEY (projetID) REFERENCES Projet(id)
+    FOREIGN KEY (membreID) REFERENCES Membre(id) ON DELETE CASCADE,
+    FOREIGN KEY (projetID) REFERENCES Projet(id) ON DELETE CASCADE
 );
 -- TABLE DE LIAISON TACHE-MEMBRE
 CREATE TABLE TacheMembre (
     tacheID INT,
     membreID INT,
     PRIMARY KEY AUTO_INCREMENT (tacheID, membreID),
-    FOREIGN KEY (tacheID) REFERENCES Tache(id),
-    FOREIGN KEY (membreID) REFERENCES Membre(id)
+    FOREIGN KEY (tacheID) REFERENCES Tache(id) ON DELETE CASCADE,
+    FOREIGN KEY (membreID) REFERENCES Membre(id) ON DELETE CASCADE
 );

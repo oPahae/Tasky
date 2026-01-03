@@ -208,7 +208,6 @@ public class Graphes extends JPanel {
                     connection.disconnect();
 
                     if (image != null) {
-                        // Redimensionner l'image pour qu'elle rentre dans la carte
                         int maxWidth = 750;
                         int maxHeight = 350;
                         

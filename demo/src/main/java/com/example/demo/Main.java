@@ -41,10 +41,12 @@ public class Main extends JFrame {
         // components
         headerFactory = () -> new Header(
                 new ArrayList<>(Arrays.asList("Dashboard", "Tâches", "Chat", "Gestion", "Graphes")),
-                this::navigateTo);
+                this::navigateTo
+        );
         sidebarFactory = () -> new Sidebar(
                 Arrays.asList("Principale", "Mes projets", "Créer un projet", "Rejoindre un projet"),
-                this::navigateTo);
+                this::navigateTo
+        );
 
         // pages
         pageFactories = new LinkedHashMap<>();
@@ -61,13 +63,10 @@ public class Main extends JFrame {
         pageFactories.put("Graphes", Graphes::new);
         pageFactories.put("Mes projets", () -> new MesProjet(this::navigateTo));
 
-        // Initialiser centerPanel AVANT d'appeler refreshSidebarAndHeader()
         centerPanel = new JPanel(new BorderLayout());
         centerPanel.setBackground(Color.WHITE);
         add(centerPanel, BorderLayout.CENTER);
         refreshSidebarAndHeader();
-
-        // Page par défaut
         navigateTo("Dashboard");
     }
 

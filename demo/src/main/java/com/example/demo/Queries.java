@@ -18,10 +18,6 @@ public class Queries {
     private static final ObjectMapper objectMapper = new ObjectMapper();
     private static final String BASE_URL = "http://localhost:8080";
 
-    /* =========================
-       ======= JSON API ========
-       ========================= */
-
     public static CompletableFuture<Map<String, Object>> get(String endpoint) {
         HttpRequest request = HttpRequest.newBuilder()
                 .uri(URI.create(BASE_URL + endpoint))
@@ -74,9 +70,7 @@ public class Queries {
                 });
     }
 
-    /* =========================
-       ======= PDF / BINARY ====
-       ========================= */
+    /* utils */
 
     public static CompletableFuture<byte[]> getBinary(String endpoint) {
         HttpRequest request = HttpRequest.newBuilder()
@@ -92,10 +86,6 @@ public class Queries {
                     return response.body();
                 });
     }
-
-    /* =========================
-       ======= UTILITAIRES =====
-       ========================= */
 
     private static String mapToJson(Map<String, ?> map) {
         try {
