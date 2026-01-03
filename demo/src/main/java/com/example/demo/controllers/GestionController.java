@@ -331,7 +331,7 @@ public class GestionController {
                 .append(sdf.format(new Date()))
                 .append("</div>");
         html.append("</div>");
-        html.append("</div>");
+        html.append("</div>");   
 
         /* INFOS PROJET */
         html.append("<div class='section'>");
