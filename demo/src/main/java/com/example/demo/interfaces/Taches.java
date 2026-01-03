@@ -170,7 +170,7 @@ public class Taches extends JPanel {
     }
 
     private void initializeColors() {
-        if (theme == 0) { // Light mode
+        if (theme == 0) {
             bgColor = new Color(248, 250, 252);
             cardBgColor = Color.WHITE;
             textPrimary = new Color(15, 23, 42);
@@ -180,7 +180,7 @@ public class Taches extends JPanel {
             progressFill = new Color(34, 197, 94);
             dangerColor = new Color(239, 68, 68);
             borderColor = new Color(226, 232, 240);
-        } else { // Dark mode
+        } else {
             bgColor = new Color(0, 0, 0);
             cardBgColor = new Color(15, 15, 15);
             textPrimary = new Color(241, 245, 249);
@@ -202,7 +202,6 @@ public class Taches extends JPanel {
         contentWrapper.setLayout(new BoxLayout(contentWrapper, BoxLayout.Y_AXIS));
         contentWrapper.setBackground(bgColor);
 
-        // Header avec ombre subtile
         JPanel headerWrapper = new JPanel(new BorderLayout());
         headerWrapper.setMaximumSize(new Dimension(Integer.MAX_VALUE, 100));
         headerWrapper.setBackground(bgColor);
@@ -214,7 +213,6 @@ public class Taches extends JPanel {
                 BorderFactory.createLineBorder(borderColor, 1),
                 BorderFactory.createEmptyBorder(20, 25, 20, 25)));
 
-        // Title section
         JPanel titleSection = new JPanel();
         titleSection.setLayout(new BoxLayout(titleSection, BoxLayout.Y_AXIS));
         titleSection.setBackground(cardBgColor);
@@ -266,7 +264,6 @@ public class Taches extends JPanel {
         contentWrapper.add(headerWrapper);
         contentWrapper.add(Box.createRigidArea(new Dimension(0, 25)));
 
-        // Tasks list
         if (tasks.isEmpty()) {
             JLabel emptyLabel = new JLabel("Aucune tâche disponible");
             emptyLabel.setForeground(textSecondary);
@@ -440,6 +437,7 @@ public class Taches extends JPanel {
                 JOptionPane.WARNING_MESSAGE);
 
         if (result == JOptionPane.YES_OPTION) {
+            System.out.println("suppression...");
             Queries.delete("/api/tache/delete/" + task.id)
                     .thenAccept(response -> {
                         System.out.println("Tâche supprimée: " + response);

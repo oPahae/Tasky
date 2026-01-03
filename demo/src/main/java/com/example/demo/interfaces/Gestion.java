@@ -77,13 +77,11 @@ public class Gestion extends JPanel {
             SwingUtilities.invokeLater(() -> {
                 try {
                     if (response.containsKey("success") && (Boolean) response.get("success")) {
-                        // Charger l'historique
                         List<Map<String, Object>> historiqueData = (List<Map<String, Object>>) response
                                 .get("historique");
                         if (historiqueData != null) {
                             historyEvents.clear();
                             for (Map<String, Object> notif : historiqueData) {
-                                // Gérer la date correctement
                                 Long dateMillis = null;
                                 Object dateObj = notif.get("dateEnvoie");
                                 if (dateObj instanceof Long) {
@@ -98,8 +96,8 @@ public class Gestion extends JPanel {
                                 String contenu = (String) notif.get("contenu");
                                 String membreNom = notif.containsKey("membreNom") ? (String) notif.get("membreNom")
                                         : "Système";
+                                System.out.println(membreNom);
 
-                                // Séparer prénom et nom (simple split par espace)
                                 String[] names = membreNom.split(" ", 2);
                                 String firstName = names.length > 0 ? names[0] : "";
                                 String lastName = names.length > 1 ? names[1] : "";
@@ -108,7 +106,6 @@ public class Gestion extends JPanel {
                             }
                         }
 
-                        // Charger la facturation
                         List<Map<String, Object>> facturationData = (List<Map<String, Object>>) response
                                 .get("facturation");
                         if (facturationData != null) {
@@ -121,7 +118,6 @@ public class Gestion extends JPanel {
                             }
                         }
 
-                        // Charger les documents
                         List<Map<String, Object>> documentsData = (List<Map<String, Object>>) response.get("documents");
                         if (documentsData != null) {
                             documents.clear();
@@ -131,7 +127,6 @@ public class Gestion extends JPanel {
                                 Number sizeNum = (Number) doc.get("size");
                                 long size = sizeNum != null ? sizeNum.longValue() : 0;
 
-                                // Gérer la date
                                 Long dateMillis = null;
                                 Object dateObj = doc.get("dateCreation");
                                 if (dateObj instanceof Long) {
@@ -147,34 +142,28 @@ public class Gestion extends JPanel {
                                 documents.add(new Document(nom, dateCreation, size, contenuBase64));
                             }
                         }
-
-                        // Rafraîchir l'interface
                         refreshUI();
 
                     } else {
                         String error = response.containsKey("error") ? (String) response.get("error")
                                 : "Erreur inconnue";
                         System.err.println("Erreur lors du chargement: " + error);
-                        // Garder les données de démo si échec
                     }
                 } catch (Exception e) {
                     System.err.println("Erreur lors du traitement des données: " + e.getMessage());
                     e.printStackTrace();
-                    // Garder les données de démo si échec
                 }
             });
         }).exceptionally(ex -> {
             SwingUtilities.invokeLater(() -> {
                 System.err.println("Erreur de connexion: " + ex.getMessage());
                 ex.printStackTrace();
-                // Garder les données de démo si échec
             });
             return null;
         });
     }
 
     private void refreshUI() {
-        // Recréer le panel principal avec les nouvelles données
         mainContentPanel.removeAll();
         JPanel mainPanel = createMainPanel();
         mainContentPanel.add(mainPanel, "main");
@@ -297,12 +286,9 @@ public class Gestion extends JPanel {
         progressDialog.add(panel);
 
         SwingWorker<byte[], Void> worker = new SwingWorker<>() {
-
             @Override
             protected byte[] doInBackground() throws Exception {
-                // APPEL CORRECT(PDF = binaire)
-                return Queries.getBinary(
-                        "/api/gestion/" + Params.projetID + "/rapport/pdf").get();
+                return Queries.getBinary("/api/gestion/" + Params.projetID + "/rapport/pdf").get();
             }
 
             @Override
@@ -450,7 +436,7 @@ public class Gestion extends JPanel {
         eventLabel1.setForeground(textPrimary);
         eventLabel1.setAlignmentX(Component.LEFT_ALIGNMENT);
 
-        JLabel eventLabel2 = new JLabel((event.description.length() > 1 ? event.description.split(":")[1] : "").trim());
+        JLabel eventLabel2 = new JLabel((event.description.length() > 1 && event.description.contains(":") ? event.description.split(":")[1] : "").trim());
         eventLabel2.setFont(new Font("Segoe UI", Font.BOLD, 14));
         eventLabel2.setForeground(textPrimary);
         eventLabel2.setAlignmentX(Component.LEFT_ALIGNMENT);

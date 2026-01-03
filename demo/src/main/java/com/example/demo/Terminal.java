@@ -225,7 +225,7 @@ public class Terminal extends JPanel {
 
     private void printWelcomeMessage() {
         printSuccess("╔═══════════════════════════════════════════════════════════════╗");
-        printSuccess("║          Terminal de Gestion de Projet - Version 2.0         ║");
+        printSuccess("║          Terminal de Gestion de Projet - Version 2.0          ║");
         printSuccess("╚═══════════════════════════════════════════════════════════════╝\n");
         printInfo("Tapez 'help' pour voir la liste des commandes disponibles.\n");
     }

@@ -44,6 +44,7 @@ public class Sidebar extends JPanel {
         this.currentUserLastName = SessionManager.getInstance().getPrenom();
 
         initializeProjects();
+        registerGlobalShortcuts();
         setLayout(new BorderLayout());
         setBackground(bgColor);
         setPreferredSize(new Dimension(280, 0));
@@ -73,28 +74,32 @@ public class Sidebar extends JPanel {
         container.add(createProfileSection(), BorderLayout.SOUTH);
 
         add(container, BorderLayout.CENTER);
+    }
 
-        addKeyListener(new KeyAdapter() {
+    private void registerGlobalShortcuts() {
+        InputMap inputMap = getInputMap(JComponent.WHEN_IN_FOCUSED_WINDOW);
+        ActionMap actionMap = getActionMap();
+
+        inputMap.put(
+                KeyStroke.getKeyStroke(KeyEvent.VK_T, InputEvent.CTRL_DOWN_MASK),
+                "openTerminal"
+        );
+
+        actionMap.put("openTerminal", new AbstractAction() {
             @Override
-            public void keyPressed(KeyEvent e) {
-                if (e.isControlDown() && e.getKeyCode() == KeyEvent.VK_T) {
-                    SwingUtilities.invokeLater(() -> {
-                        JFrame terminalFrame = new JFrame("Terminal");
-                        terminalFrame.setDefaultCloseOperation(JFrame.DISPOSE_ON_CLOSE);
-                        terminalFrame.setSize(1200, 600);
-                        terminalFrame.setContentPane(new Terminal(onClick));
-                        terminalFrame.setLocationRelativeTo(null);
-                        terminalFrame.setVisible(true);
-                    });
-                }
+            public void actionPerformed(ActionEvent e) {
+                JFrame terminalFrame = new JFrame("Terminal");
+                terminalFrame.setDefaultCloseOperation(JFrame.DISPOSE_ON_CLOSE);
+                terminalFrame.setSize(1200, 600);
+                terminalFrame.setContentPane(new Terminal(onClick));
+                terminalFrame.setLocationRelativeTo(null);
+                terminalFrame.setVisible(true);
             }
         });
-        setFocusable(true);
-        requestFocusInWindow();
     }
 
     private void initializeColors() {
-        if (theme == 0) { // Light mode
+        if (theme == 0) {
             bgColor = new Color(250, 251, 252);
             cardBgColor = Color.WHITE;
             textPrimary = new Color(15, 23, 42);
@@ -103,7 +108,7 @@ public class Sidebar extends JPanel {
             hoverColor = new Color(241, 245, 249);
             borderColor = new Color(226, 232, 240);
             shadowColor = new Color(0, 0, 0, 8);
-        } else { // Dark mode
+        } else {
             bgColor = new Color(0, 0, 0);
             cardBgColor = new Color(20, 20, 20);
             textPrimary = new Color(230, 230, 230);
@@ -150,17 +155,17 @@ public class Sidebar extends JPanel {
                                     new TypeReference<List<Map<String, Object>>>() {
                                     });
 
-                            // Trier la liste pour que le projet sélectionné soit le premier
+                            // Trier
                             if (Params.projetID > 0) {
                                 fetchedProjects.sort((p1, p2) -> {
                                     int id1 = (int) p1.get("id");
                                     int id2 = (int) p2.get("id");
                                     if (id1 == Params.projetID) {
-                                        return -1; // p1 vient en premier
+                                        return -1;
                                     } else if (id2 == Params.projetID) {
-                                        return 1; // p2 vient en premier
+                                        return 1;
                                     } else {
-                                        return 0; // ordre inchangé
+                                        return 0;
                                     }
                                 });
                             }
@@ -279,7 +284,7 @@ public class Sidebar extends JPanel {
         selectorCard.add(label);
         selectorCard.add(Box.createRigidArea(new Dimension(0, 10)));
 
-        projectSelector = createModernComboBox();
+        projectSelector = createComboBox();
 
         projectSelector.addActionListener(e -> {
             int selectedIndex = projectSelector.getSelectedIndex();
@@ -314,7 +319,7 @@ public class Sidebar extends JPanel {
         return selectorCard;
     }
 
-    private JComboBox<String> createModernComboBox() {
+    private JComboBox<String> createComboBox() {
         JComboBox<String> comboBox = new JComboBox<>();
         comboBox.setFont(new Font("Segoe UI", Font.PLAIN, 14));
         comboBox.setForeground(textPrimary);
@@ -349,7 +354,6 @@ public class Sidebar extends JPanel {
         section.setBackground(bgColor);
         section.setAlignmentX(Component.LEFT_ALIGNMENT);
 
-        // Section divider
         section.add(createDivider());
         section.add(Box.createRigidArea(new Dimension(0, 20)));
 
@@ -500,18 +504,12 @@ public class Sidebar extends JPanel {
         section.setLayout(new BoxLayout(section, BoxLayout.Y_AXIS));
         section.setBackground(bgColor);
         section.setAlignmentX(Component.LEFT_ALIGNMENT);
-
         section.add(createDivider());
         section.add(Box.createRigidArea(new Dimension(0, 16)));
-
-        // Profile card
         JPanel profileCard = createProfileCard();
         section.add(profileCard);
         section.add(Box.createRigidArea(new Dimension(0, 10)));
-
-        // Logout button
         section.add(createLogoutButton());
-
         return section;
     }
 
@@ -522,15 +520,10 @@ public class Sidebar extends JPanel {
                 super.paintComponent(g);
                 Graphics2D g2 = (Graphics2D) g.create();
                 g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
-
-                // Background
                 g2.setColor(cardBgColor);
                 g2.fillRoundRect(0, 0, getWidth(), getHeight(), 12, 12);
-
-                // Border
                 g2.setColor(borderColor);
                 g2.drawRoundRect(0, 0, getWidth() - 1, getHeight() - 1, 12, 12);
-
                 g2.dispose();
             }
         };
@@ -541,11 +534,9 @@ public class Sidebar extends JPanel {
         card.setCursor(new Cursor(Cursor.HAND_CURSOR));
         card.setMaximumSize(new Dimension(Integer.MAX_VALUE, 64));
 
-        // Avatar
         JPanel avatar = createAvatar();
         card.add(avatar, BorderLayout.WEST);
 
-        // User info
         JPanel userInfo = new JPanel();
         userInfo.setLayout(new BoxLayout(userInfo, BoxLayout.Y_AXIS));
         userInfo.setOpaque(false);
@@ -593,14 +584,12 @@ public class Sidebar extends JPanel {
                 Graphics2D g2 = (Graphics2D) g.create();
                 g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
 
-                // Gradient
                 GradientPaint gradient = new GradientPaint(
                         0, 0, accentColor,
                         getWidth(), getHeight(), new Color(139, 92, 246));
                 g2.setPaint(gradient);
                 g2.fillOval(0, 0, getWidth(), getHeight());
 
-                // Initials
                 g2.setColor(Color.WHITE);
                 g2.setFont(new Font("Segoe UI", Font.BOLD, 16));
                 String initials = "";

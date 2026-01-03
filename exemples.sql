@@ -1,65 +1,89 @@
 USE taskydb;
 
--- Insertion de 3 utilisateurs
-INSERT INTO User (nom, prenom, email, password, competance, telephone, disponibilite, dateCreation, verifCode)
+-- =========================
+-- 1. UTILISATEURS
+-- =========================
+INSERT INTO User (nom, prenom, email, password, competance, telephone, disponibilite, dateCreation)
 VALUES
-    ('Dupont', 'Jean', 'jean.dupont@example.com', 'password123', 'Développement Web', '+123456789', TRUE, '2025-11-01', 'ABC123'),
-    ('Martin', 'Marie', 'marie.martin@example.com', 'password456', 'Design UI/UX', '+987654321', TRUE, '2025-11-01', 'DEF456'),
-    ('Bernard', 'Pierre', 'pierre.bernard@example.com', 'password789', 'Gestion de projet', '+1122334455', TRUE, '2025-11-01', 'GHI789');
+('Gana', 'Anas', 'anas.gana@gmail.com', '111111', 'Fullstack', '0707070707', TRUE, CURDATE()),
+('Tayef', 'Jihane', 'tayefjihane@gmail.com', '111111', 'Backend', '0707070707', TRUE, CURDATE());
 
--- Insertion d'un projet avec id 1
-INSERT INTO Projet (id, nom, description, dateDebut, dateFin, deadline, budget, budgetConsomme, statut, code)
+SET @anasUserId   = (SELECT id FROM User WHERE email='anas.gana@gmail.com');
+SET @jihaneUserId = (SELECT id FROM User WHERE email='tayefjihane@gmail.com');
+
+-- =========================
+-- 2. PROJET
+-- =========================
+INSERT INTO Projet (nom, description, dateDebut, deadline, budget, budgetConsomme, statut, code)
+VALUES ('Projet Tasky', 'Projet de gestion des tâches Tasky', CURDATE(), DATE_ADD(CURDATE(), INTERVAL 3 MONTH), 5000, 5500, 'En cours', 'TASKY-001');
+
+SET @projetId = LAST_INSERT_ID();
+
+-- =========================
+-- 3. MEMBRES
+-- =========================
+INSERT INTO Membre (nom, prenom, email, telephone, dateRejointe, role, type, userID, projetID)
 VALUES
-    (1, 'Projet Tasky', 'Un projet de gestion de tâches collaboratives.', '2025-11-01', '2025-12-31', '2025-12-15', 5000.00, 0.00, 'En cours', 'TASKY2025');
+('Gana', 'Anas', 'anas.gana@gmail.com', '0707070707', CURDATE(), 'Responsable', 'Interne', @anasUserId, @projetId),
+('Tayef', 'Jihane', 'tayefjihane@gmail.com', '0707070707', CURDATE(), 'Membre', 'Interne', @jihaneUserId, @projetId);
 
--- Insertion de 3 membres pour le projet (référencés aux 3 utilisateurs)
-INSERT INTO Membre (description, nom, prenom, email, telephone, dateRejointe, role, type, userID, projetID)
-VALUES
-    ('Membre actif', 'Dupont', 'Jean', 'jean.dupont@example.com', '+123456789', '2025-11-01', 'Développeur', 'Interne', 1, 1),
-    ('Membre actif', 'Martin', 'Marie', 'marie.martin@example.com', '+987654321', '2025-11-01', 'Designer', 'Interne', 2, 1),
-    ('Membre actif', 'Bernard', 'Pierre', 'pierre.bernard@example.com', '+1122334455', '2025-11-01', 'Chef de projet', 'Interne', 3, 1);
+SET @anasMembreId   = (SELECT id FROM Membre WHERE userID=@anasUserId AND projetID=@projetId);
+SET @jihaneMembreId = (SELECT id FROM Membre WHERE userID=@jihaneUserId AND projetID=@projetId);
 
--- Insertion de 3 tâches pour le projet, chacune affectée à un membre
-INSERT INTO Tache (titre, description, dateLimite, etat, dateCreation, dateFin, projetID, depense)
-VALUES
-    ('Développement Backend', 'Créer l''API pour le projet.', '2025-11-15', 'En cours', '2025-11-01', NULL, 1, 1000),
-    ('Design UI', 'Créer les maquettes pour l''application.', '2025-11-20', 'En cours', '2025-11-01', NULL, 1, 800),
-    ('Planification', 'Planifier les étapes du projet.', '2025-11-10', 'Terminé', '2025-11-01', '2025-11-05', 1, 500);
+-- =========================
+-- 4. TÂCHES (TOTAL DÉPENSES = 5500)
+-- =========================
+INSERT INTO Tache (titre, description, dateLimite, etat, dateCreation, projetID, depense) VALUES
+('Analyse besoins', 'Analyse fonctionnelle', DATE_ADD(CURDATE(), INTERVAL 10 DAY), 'terminée', CURDATE(), @projetId, 800),
+('Conception UI', 'Maquettes UI', DATE_ADD(CURDATE(), INTERVAL 15 DAY), 'terminée', CURDATE(), @projetId, 600),
+('Backend Auth', 'Auth & sécurité', DATE_ADD(CURDATE(), INTERVAL 20 DAY), 'en cours', CURDATE(), @projetId, 900),
+('API Tâches', 'CRUD tâches', DATE_ADD(CURDATE(), INTERVAL 25 DAY), 'en cours', CURDATE(), @projetId, 700),
+('API Projets', 'CRUD projets', DATE_ADD(CURDATE(), INTERVAL 25 DAY), 'en cours', CURDATE(), @projetId, 500),
+('Frontend Dashboard', 'Dashboard UI', DATE_ADD(CURDATE(), INTERVAL 30 DAY), 'en attente', CURDATE(), @projetId, 400),
+('Notifications', 'Système notifications', DATE_ADD(CURDATE(), INTERVAL 30 DAY), 'en attente', CURDATE(), @projetId, 300),
+('Tests', 'Tests unitaires', DATE_ADD(CURDATE(), INTERVAL 35 DAY), 'en attente', CURDATE(), @projetId, 200),
+('Déploiement', 'Mise en production', DATE_ADD(CURDATE(), INTERVAL 40 DAY), 'en attente', CURDATE(), @projetId, 100),
+('Documentation', 'Documentation projet', DATE_ADD(CURDATE(), INTERVAL 45 DAY), 'en attente', CURDATE(), @projetId, 0);
 
--- Insertion de la table de liaison TacheMembre
+-- =========================
+-- 5. RÉPARTITION TÂCHES / MEMBRES
+-- =========================
 INSERT INTO TacheMembre (tacheID, membreID)
-VALUES
-    (1, 1),
-    (2, 2),
-    (3, 3);
+SELECT id, @anasMembreId FROM Tache WHERE id <= (SELECT MIN(id)+4 FROM Tache);
 
--- Insertion de sous-tâches pour chaque tâche
-INSERT INTO SousTache (titre, dateCreation, dateFin, termine, tacheID)
-VALUES
-    ('Créer les endpoints', '2025-11-01', '2025-11-10', TRUE, 1),
-    ('Tester l''API', '2025-11-11', '2025-11-15', FALSE, 1),
-    ('Maquettes Homepage', '2025-11-01', '2025-11-15', TRUE, 2),
-    ('Maquettes Dashboard', '2025-11-16', '2025-11-20', FALSE, 2),
-    ('Définir les étapes', '2025-11-01', '2025-11-03', TRUE, 3),
-    ('Assigner les ressources', '2025-11-04', '2025-11-05', TRUE, 3);
+INSERT INTO TacheMembre (tacheID, membreID)
+SELECT id, @jihaneMembreId FROM Tache WHERE id > (SELECT MIN(id)+4 FROM Tache);
 
--- Insertion de commentaires pour chaque tâche
-INSERT INTO Commentaire (contenu, dateCreation, tacheID, membreID)
-VALUES
-    ('L''API est en cours de développement.', '2025-11-02', 1, 1),
-    ('Les maquettes sont prêtes pour révision.', '2025-11-03', 2, 2),
-    ('Les étapes sont définies.', '2025-11-04', 3, 3);
+-- =========================
+-- 6. SOUS-TÂCHES (7 TÂCHES AVEC 2–5 SOUS-TÂCHES)
+-- =========================
+INSERT INTO SousTache (titre, dateCreation, termine, tacheID) VALUES
+('Préparer specs', CURDATE(), TRUE, 1),
+('Valider specs', CURDATE(), TRUE, 1),
+('Wireframes', CURDATE(), TRUE, 2),
+('Design final', CURDATE(), FALSE, 2),
+('JWT', CURDATE(), FALSE, 3),
+('Roles', CURDATE(), FALSE, 3),
+('Endpoints', CURDATE(), FALSE, 4),
+('Validation', CURDATE(), FALSE, 4),
+('Controllers', CURDATE(), FALSE, 5),
+('Services', CURDATE(), FALSE, 5),
+('Layout', CURDATE(), FALSE, 6),
+('Charts', CURDATE(), FALSE, 6),
+('Email notif', CURDATE(), FALSE, 7),
+('In-app notif', CURDATE(), FALSE, 7);
 
--- Insertion de documents pour chaque tâche
-INSERT INTO Document (nom, description, dateCreation, contenu, size, type, tacheID)
-VALUES
-    ('API_Specs.pdf', 'Spécifications techniques de l''API.', '2025-11-02', NULL, 500, 'PDF', 1),
-    ('UI_Mockups.png', 'Maquettes pour l''interface utilisateur.', '2025-11-03', NULL, 800, 'Image', 2),
-    ('Project_Plan.docx', 'Planification détaillée du projet.', '2025-11-04', NULL, 300, 'Document', 3);
-
--- Insertion de notifications pour chaque membre
-INSERT INTO Notification (contenu, dateEnvoie, estLue, membreID, projetID)
-VALUES
-    ('Nouvelle tâche assignée : Développement Backend.', '2025-11-01', FALSE, 1, 1),
-    ('Nouvelle tâche assignée : Design UI.', '2025-11-01', FALSE, 2, 1),
-    ('Nouvelle tâche assignée : Planification.', '2025-11-01', FALSE, 3, 1);
+-- =========================
+-- 7. NOTIFICATIONS (POUR ANAS)
+-- =========================
+INSERT INTO Notification (contenu, dateEnvoie, estLue, membreID, projetID) VALUES
+('Nouvelle dépense pour la tâche Analyse besoins (800)', CURDATE(), FALSE, @anasMembreId, @projetId),
+('Nouvelle dépense pour la tâche Conception UI (600)', CURDATE(), FALSE, @anasMembreId, @projetId),
+('Nouveau blocage pour la tâche Backend Auth (JWT)', CURDATE(), FALSE, @anasMembreId, @projetId),
+('Nouvelle dépense pour la tâche Backend Auth (900)', CURDATE(), FALSE, @anasMembreId, @projetId),
+('Nouveau blocage pour la tâche API Tâches (Validation)', CURDATE(), FALSE, @anasMembreId, @projetId),
+('Nouvelle dépense pour la tâche API Tâches (700)', CURDATE(), FALSE, @anasMembreId, @projetId),
+('Nouvelle dépense pour la tâche API Projets (500)', CURDATE(), FALSE, @anasMembreId, @projetId),
+('Nouveau blocage pour la tâche Frontend Dashboard (Layout)', CURDATE(), FALSE, @anasMembreId, @projetId),
+('Nouvelle dépense pour la tâche Frontend Dashboard (400)', CURDATE(), FALSE, @anasMembreId, @projetId),
+('Nouvelle dépense pour la tâche Notifications (300)', CURDATE(), FALSE, @anasMembreId, @projetId);

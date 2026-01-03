@@ -88,12 +88,9 @@ public class GestionController {
                         notifMap.put("dateEnvoie", n.getDateEnvoie().getTime());
                         notifMap.put("estLue", n.isEstLue());
                         if (n.getMembre() != null) {
-                            notifMap.put("membreNom", n.getMembre().getNom());
-                            System.out
-                                    .println("Notification: " + n.getContenu() + " par " + n.getMembre().getNom());
+                            notifMap.put("membreNom", n.getMembre().getNom() + " " +  n.getMembre().getPrenom());
                         } else {
                             notifMap.put("membreNom", "Système");
-                            System.out.println("Notification: " + n.getContenu() + " par Systeme");
                         }
                         return notifMap;
                     })

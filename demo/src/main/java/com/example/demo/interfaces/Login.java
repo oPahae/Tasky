@@ -18,8 +18,6 @@ public class Login extends JPanel {
     private int userId = -1;
     private Color bgColor, cardBgColor, textPrimary, textSecondary, accentColor, inputBorder, successColor, errorColor,
             inputBg, hoverColor;
-
-    // Palette de couleurs premium
     private final Color GRADIENT_START = new Color(20, 30, 48);
     private final Color GRADIENT_END = new Color(36, 59, 85);
     private final Color CARD_BG = new Color(255, 255, 255);
@@ -58,7 +56,6 @@ public class Login extends JPanel {
         formCard.setBorder(new EmptyBorder(60, 60, 60, 60));
         formCard.setPreferredSize(new Dimension(520, 700));
 
-        // Titre principal - centré
         JPanel titlePanel = new JPanel();
         titlePanel.setLayout(new BoxLayout(titlePanel, BoxLayout.Y_AXIS));
         titlePanel.setOpaque(false);
@@ -80,45 +77,38 @@ public class Login extends JPanel {
         formCard.add(titlePanel);
         formCard.add(Box.createVerticalStrut(48));
 
-        // Champ Email avec icône
         JPanel emailContainer = new JPanel();
         emailContainer.setLayout(new BoxLayout(emailContainer, BoxLayout.Y_AXIS));
         emailContainer.setOpaque(false);
         emailContainer.setAlignmentX(Component.CENTER_ALIGNMENT);
-
-        JLabel emailLabel = createModernLabel("Adresse Email", PRIMARY_BLUE);
+        JLabel emailLabel = createLabel("Adresse Email", PRIMARY_BLUE);
         emailLabel.setAlignmentX(Component.LEFT_ALIGNMENT);
         emailContainer.add(emailLabel);
         emailContainer.add(Box.createVerticalStrut(12));
-
-        JTextField emailField = createModernTextField("votre@email.com", PRIMARY_BLUE);
-        emailField.setText("lam.bahae7@gmail.com");
+        JTextField emailField = createTextField("votre@email.com", PRIMARY_BLUE);
+        emailField.setText("");
         emailField.setAlignmentX(Component.LEFT_ALIGNMENT);
         emailContainer.add(emailField);
 
         formCard.add(emailContainer);
         formCard.add(Box.createVerticalStrut(28));
 
-        // Champ Mot de passe avec icône
         JPanel passwordContainer = new JPanel();
         passwordContainer.setLayout(new BoxLayout(passwordContainer, BoxLayout.Y_AXIS));
         passwordContainer.setOpaque(false);
         passwordContainer.setAlignmentX(Component.CENTER_ALIGNMENT);
-
-        JLabel passwordLabel = createModernLabel("Mot de passe", SUCCESS_GREEN);
+        JLabel passwordLabel = createLabel("Mot de passe", SUCCESS_GREEN);
         passwordLabel.setAlignmentX(Component.LEFT_ALIGNMENT);
         passwordContainer.add(passwordLabel);
         passwordContainer.add(Box.createVerticalStrut(12));
-
-        JPasswordField passwordField = createModernPasswordField("", SUCCESS_GREEN);
-        passwordField.setText("111111");
+        JPasswordField passwordField = createPasswordField("", SUCCESS_GREEN);
+        passwordField.setText("");
         passwordField.setAlignmentX(Component.LEFT_ALIGNMENT);
         passwordContainer.add(passwordField);
 
         formCard.add(passwordContainer);
         formCard.add(Box.createVerticalStrut(18));
 
-        // Lien mot de passe oublié
         JPanel forgotPasswordPanel = new JPanel(new FlowLayout(FlowLayout.LEFT, 0, 0));
         forgotPasswordPanel.setOpaque(false);
         forgotPasswordPanel.setAlignmentX(Component.CENTER_ALIGNMENT);
@@ -145,20 +135,17 @@ public class Login extends JPanel {
         formCard.add(forgotPasswordPanel);
         formCard.add(Box.createVerticalStrut(32));
 
-        // Bouton de connexion
-        JButton btnLogin = createModernButton("Se connecter", PRIMARY_BLUE);
+        JButton btnLogin = createButton("Se connecter", PRIMARY_BLUE);
         btnLogin.setAlignmentX(Component.CENTER_ALIGNMENT);
         formCard.add(btnLogin);
         formCard.add(Box.createVerticalStrut(24));
 
-        // Message de statut
         JLabel message = new JLabel("", SwingConstants.CENTER);
         message.setFont(new Font("Segoe UI", Font.BOLD, 15));
         message.setAlignmentX(Component.CENTER_ALIGNMENT);
         formCard.add(message);
         formCard.add(Box.createVerticalStrut(30));
 
-        // Séparateur
         JPanel separatorContainer = new JPanel();
         separatorContainer.setLayout(new BoxLayout(separatorContainer, BoxLayout.X_AXIS));
         separatorContainer.setOpaque(false);
@@ -170,7 +157,6 @@ public class Login extends JPanel {
         formCard.add(separatorContainer);
         formCard.add(Box.createVerticalStrut(30));
 
-        // Panel de switch
         JPanel switchPanel = createSwitchPanel(
                 "Pas encore de compte ?",
                 "Créer un compte",
@@ -193,7 +179,7 @@ public class Login extends JPanel {
         add(scrollPane, BorderLayout.CENTER);
     }
 
-    private JLabel createModernLabel(String text, Color accentColor) {
+    private JLabel createLabel(String text, Color accentColor) {
         JLabel label = new JLabel(text);
         label.setFont(new Font("Segoe UI", Font.BOLD, 15));
         label.setForeground(TEXT_DARK);
@@ -201,7 +187,7 @@ public class Login extends JPanel {
         return label;
     }
 
-    private JTextField createModernTextField(String placeholder, Color accentColor) {
+    private JTextField createTextField(String placeholder, Color accentColor) {
         JTextField field = new JTextField() {
             private boolean focused = false;
 
@@ -210,21 +196,16 @@ public class Login extends JPanel {
                 Graphics2D g2 = (Graphics2D) g.create();
                 g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
 
-                // Fond avec dégradé subtil
                 GradientPaint bgGradient = new GradientPaint(
                         0, 0, INPUT_BG,
                         0, getHeight(), new Color(246, 247, 249));
                 g2.setPaint(bgGradient);
                 g2.fillRoundRect(0, 0, getWidth(), getHeight(), 16, 16);
 
-                // Bordure avec effet glow au focus
                 if (focused) {
-                    // Effet glow externe
                     g2.setColor(new Color(accentColor.getRed(), accentColor.getGreen(), accentColor.getBlue(), 30));
                     g2.setStroke(new BasicStroke(6f));
                     g2.drawRoundRect(2, 2, getWidth() - 5, getHeight() - 5, 16, 16);
-
-                    // Bordure principale
                     g2.setColor(accentColor);
                     g2.setStroke(new BasicStroke(2.5f));
                     g2.drawRoundRect(1, 1, getWidth() - 3, getHeight() - 3, 16, 16);
@@ -256,7 +237,7 @@ public class Login extends JPanel {
         return field;
     }
 
-    private JPasswordField createModernPasswordField(String placeholder, Color accentColor) {
+    private JPasswordField createPasswordField(String placeholder, Color accentColor) {
         JPasswordField field = new JPasswordField() {
             private boolean focused = false;
 
@@ -265,21 +246,16 @@ public class Login extends JPanel {
                 Graphics2D g2 = (Graphics2D) g.create();
                 g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
 
-                // Fond avec dégradé subtil
                 GradientPaint bgGradient = new GradientPaint(
                         0, 0, INPUT_BG,
                         0, getHeight(), new Color(246, 247, 249));
                 g2.setPaint(bgGradient);
                 g2.fillRoundRect(0, 0, getWidth(), getHeight(), 16, 16);
 
-                // Bordure avec effet glow au focus
                 if (focused) {
-                    // Effet glow externe
                     g2.setColor(new Color(accentColor.getRed(), accentColor.getGreen(), accentColor.getBlue(), 30));
                     g2.setStroke(new BasicStroke(6f));
                     g2.drawRoundRect(2, 2, getWidth() - 5, getHeight() - 5, 16, 16);
-
-                    // Bordure principale
                     g2.setColor(accentColor);
                     g2.setStroke(new BasicStroke(2.5f));
                     g2.drawRoundRect(1, 1, getWidth() - 3, getHeight() - 3, 16, 16);
@@ -311,7 +287,7 @@ public class Login extends JPanel {
         return field;
     }
 
-    private JButton createModernButton(String text, Color bgColor) {
+    private JButton createButton(String text, Color bgColor) {
         JButton button = new JButton(text) {
             private float hoverAlpha = 0f;
             private Timer hoverTimer;
@@ -362,16 +338,12 @@ public class Login extends JPanel {
                     int b = (int) (baseColor.getBlue() * factor);
                     baseColor = new Color(Math.max(0, r), Math.max(0, g_), Math.max(0, b));
                 }
-
-                // Ombre du bouton progressive
                 if (isEnabled()) {
                     g2.setColor(new Color(0, 0, 0, 35));
                     g2.fillRoundRect(0, 7, getWidth(), getHeight() - 7, 16, 16);
                     g2.setColor(new Color(0, 0, 0, 20));
                     g2.fillRoundRect(0, 5, getWidth(), getHeight() - 5, 16, 16);
                 }
-
-                // Gradient sur le bouton
                 GradientPaint gradient = new GradientPaint(
                         0, 0, baseColor,
                         0, getHeight(), new Color(
@@ -380,13 +352,10 @@ public class Login extends JPanel {
                                 Math.max(0, baseColor.getBlue() - 20)));
                 g2.setPaint(gradient);
                 g2.fillRoundRect(0, 0, getWidth(), getHeight() - 6, 16, 16);
-
-                // Highlight subtil en haut
                 if (isEnabled() && !getModel().isPressed()) {
                     g2.setColor(new Color(255, 255, 255, 25));
                     g2.fillRoundRect(0, 0, getWidth(), getHeight() / 2 - 3, 16, 16);
                 }
-
                 g2.dispose();
                 super.paintComponent(g);
             }
@@ -497,8 +466,7 @@ public class Login extends JPanel {
                         if (token != null && !token.equals("session-active"))
                             TokenManager.saveToken(token);
 
-                        SessionManager.getInstance().setUserSession(token, prenom, nom, email, competance, telephone,
-                                userId);
+                        SessionManager.getInstance().setUserSession(token, prenom, nom, email, competance, telephone, userId);
                         SessionManager.getInstance().printSessionInfo();
 
                         showMessage(message, "Connexion réussie !", successColor);

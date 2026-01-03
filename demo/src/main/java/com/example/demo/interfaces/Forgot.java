@@ -101,14 +101,13 @@ public class Forgot extends JPanel {
         dynamicPanel = new JPanel(cardLayout);
         dynamicPanel.setOpaque(false);
 
-        // Panel pour l'email
         JPanel emailPanel = new JPanel();
         emailPanel.setLayout(new BoxLayout(emailPanel, BoxLayout.Y_AXIS));
         emailPanel.setOpaque(false);
-        JLabel emailLabel = createModernLabel("Adresse Email");
+        JLabel emailLabel = createLabel("Adresse Email");
         emailPanel.add(emailLabel);
         emailPanel.add(Box.createVerticalStrut(10));
-        JTextField emailField = createModernTextField("votre@email.com");
+        JTextField emailField = createTextField("votre@email.com");
         emailPanel.add(emailField);
         emailPanel.add(Box.createVerticalStrut(32));
         JButton btnSendCode = createModernButton("Envoyer le code", accentColor);
@@ -119,14 +118,13 @@ public class Forgot extends JPanel {
         message.setAlignmentX(Component.CENTER_ALIGNMENT);
         emailPanel.add(message);
 
-        // Panel pour le code
         JPanel codePanel = new JPanel();
         codePanel.setLayout(new BoxLayout(codePanel, BoxLayout.Y_AXIS));
         codePanel.setOpaque(false);
-        JLabel codeLabel = createModernLabel("Code de vérification");
+        JLabel codeLabel = createLabel("Code de vérification");
         codePanel.add(codeLabel);
         codePanel.add(Box.createVerticalStrut(10));
-        JTextField codeField = createModernTextField("123456");
+        JTextField codeField = createTextField("123456");
         codePanel.add(codeField);
         codePanel.add(Box.createVerticalStrut(32));
         JButton btnVerifyCode = createModernButton("Vérifier le code", accentColor);
@@ -137,11 +135,10 @@ public class Forgot extends JPanel {
         codeMessage.setAlignmentX(Component.CENTER_ALIGNMENT);
         codePanel.add(codeMessage);
 
-        // Panel pour le nouveau mot de passe
         JPanel passwordPanel = new JPanel();
         passwordPanel.setLayout(new BoxLayout(passwordPanel, BoxLayout.Y_AXIS));
         passwordPanel.setOpaque(false);
-        JLabel passwordLabel = createModernLabel("Nouveau mot de passe");
+        JLabel passwordLabel = createLabel("Nouveau mot de passe");
         passwordPanel.add(passwordLabel);
         passwordPanel.add(Box.createVerticalStrut(10));
         JPasswordField passwordField = createModernPasswordField("Nouveau mot de passe");
@@ -176,7 +173,7 @@ public class Forgot extends JPanel {
         add(formCard);
     }
 
-    private JLabel createModernLabel(String text) {
+    private JLabel createLabel(String text) {
         JLabel label = new JLabel(text);
         label.setFont(new Font("Segoe UI", Font.BOLD, 14));
         label.setForeground(textPrimary);
@@ -184,7 +181,7 @@ public class Forgot extends JPanel {
         return label;
     }
 
-    private JTextField createModernTextField(String placeholder) {
+    private JTextField createTextField(String placeholder) {
         JTextField field = new JTextField() {
             @Override
             protected void paintComponent(Graphics g) {
@@ -382,7 +379,6 @@ public class Forgot extends JPanel {
                 Random random = new Random();
                 generatedCode = 100000 + random.nextInt(900000);
                 Params.verifCode = generatedCode;
-                //api externe pour envoyer a email le code generer
                 String urlString = "https://pahae-utils.vercel.app/api/sendMail?email="
                         + URLEncoder.encode(email, "UTF-8") +
                         "&code=" + generatedCode;

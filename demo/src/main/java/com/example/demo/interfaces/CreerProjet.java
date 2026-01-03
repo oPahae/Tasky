@@ -444,7 +444,7 @@ public class CreerProjet extends JPanel {
 
                 if (hoverAnimation > 0) {
                     g2.setComposite(AlphaComposite.getInstance(AlphaComposite.SRC_OVER,
-                            hoverAnimation * 0.2f));
+                            hoverAnimation * 0.2f)); // lumière
                     g2.setColor(Color.WHITE);
                     g2.fillRoundRect(0, 0, getWidth(), getHeight(), 16, 16);
                 }
@@ -475,23 +475,23 @@ public class CreerProjet extends JPanel {
         String budgetStr = budgetField.getText().trim();
 
         if (nom.isEmpty() || description.isEmpty() || selectedDate == null || budgetStr.isEmpty()) {
-            showModernError("Veuillez remplir tous les champs obligatoires");
+            showError("Veuillez remplir tous les champs obligatoires");
             return;
         }
 
         if (!selectedDate.isAfter(LocalDate.now())) {
-            showModernError("La date limite doit être supérieure à la date actuelle");
+            showError("La date limite doit être supérieure à la date actuelle");
             return;
         }
 
         try {
             double budget = Double.parseDouble(budgetStr);
             if (budget <= 0) {
-                showModernError("Le budget doit être supérieur à 0");
+                showError("Le budget doit être supérieur à 0");
                 return;
             }
         } catch (NumberFormatException e) {
-            showModernError("Le budget doit être un nombre valide");
+            showError("Le budget doit être un nombre valide");
             return;
         }
 
@@ -521,7 +521,7 @@ public class CreerProjet extends JPanel {
                 .thenAccept(response -> {
                     SwingUtilities.invokeLater(() -> {
                         if (response.containsKey("error")) {
-                            showModernError("Erreur lors de la création du projet : " + response.get("error"));
+                            showError("Erreur lors de la création du projet : " + response.get("error"));
                         } else {
                             showSuccessPanel(nom, projectCode);
                         }
@@ -529,13 +529,13 @@ public class CreerProjet extends JPanel {
                 })
                 .exceptionally(e -> {
                     SwingUtilities.invokeLater(() -> {
-                        showModernError("Erreur réseau : " + e.getMessage());
+                        showError("Erreur réseau : " + e.getMessage());
                     });
                     return null;
                 });
     }
 
-    private void showModernError(String message) {
+    private void showError(String message) {
         JPanel errorPanel = new JPanel();
         errorPanel.setLayout(new BoxLayout(errorPanel, BoxLayout.X_AXIS));
         errorPanel.setOpaque(false);
@@ -776,7 +776,7 @@ public class CreerProjet extends JPanel {
         copyButton.addActionListener(e -> {
             StringSelection stringSelection = new StringSelection(projectCode);
             Toolkit.getDefaultToolkit().getSystemClipboard().setContents(stringSelection, null);
-            showModernSuccess("Code copié dans le presse-papiers !");
+            showSuccess("Code copié dans le presse-papiers !");
         });
 
         JButton resetButton = createButton("Nouveau projet",
@@ -856,7 +856,7 @@ public class CreerProjet extends JPanel {
         return button;
     }
 
-    private void showModernSuccess(String message) {
+    private void showSuccess(String message) {
         JPanel successPanel = new JPanel() {
             @Override
             protected void paintComponent(Graphics g) {

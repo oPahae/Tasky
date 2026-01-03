@@ -77,7 +77,6 @@ public class Membre extends JPanel {
                         Map<String, Object> membreMap = (Map<String, Object>) response.get("membre");
                         List<Map<String, Object>> tachesList = (List<Map<String, Object>>) response.get("taches");
 
-                        // Parser la date avec le bon format
                         String dateRejointeStr = (String) membreMap.get("dateRejointe");
                         LocalDate dateRejointe = LocalDate.parse(dateRejointeStr.substring(0, 10),
                                 DateTimeFormatter.ISO_LOCAL_DATE);
@@ -177,7 +176,6 @@ public class Membre extends JPanel {
         headerRow.add(infoPanel);
         headerRow.add(Box.createHorizontalGlue());
 
-        // Boutons Modifier et Supprimer
         JPanel buttonPanel = new JPanel();
         buttonPanel.setLayout(new BoxLayout(buttonPanel, BoxLayout.X_AXIS));
         buttonPanel.setOpaque(false);
