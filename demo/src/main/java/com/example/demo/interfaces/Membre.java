@@ -262,13 +262,9 @@ public class Membre extends JPanel {
                 Queries.delete("/api/membre/delete/" + membreId)
                         .thenAccept(response -> {
                             if (!response.containsKey("error")) {
-                                SwingUtilities.invokeLater(() -> onClick.accept("MembreSupprime"));
+                                SwingUtilities.invokeLater(() -> onClick.accept("Dashboard"));
                             } else {
-                                JOptionPane.showMessageDialog(
-                                        this,
-                                        "Erreur lors de la suppression: " + response.get("error"),
-                                        "Erreur",
-                                        JOptionPane.ERROR_MESSAGE);
+                                System.out.println("Erreur lors de la suppression: " + response.get("error"));
                             }
                         });
             }

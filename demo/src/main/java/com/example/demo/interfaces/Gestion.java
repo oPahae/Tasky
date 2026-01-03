@@ -26,7 +26,7 @@ public class Gestion extends JPanel {
     private List<HistoryEvent> historyEvents;
     private List<Expense> expenses;
     private List<Document> documents;
-    private double budget = 4000.0;
+    private double budget = 5000.0;
     private JPanel mainContentPanel;
     private CardLayout contentLayout;
 

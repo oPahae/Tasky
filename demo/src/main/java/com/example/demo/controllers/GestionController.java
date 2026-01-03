@@ -339,7 +339,6 @@ public class GestionController {
         html.append("<p><b>Nom du projet :</b> ").append(projet.get("nom")).append("</p>");
         html.append("<p><b>Description :</b> ").append(projet.get("description")).append("</p>");
         html.append("<p><b>Budget :</b> ").append(projet.get("budget")).append(" MAD</p>");
-        html.append("<p><b>Budget consommé :</b> ").append(projet.get("budgetConsomme")).append(" MAD</p>");
         html.append("</div>");
 
         /*HISTORIQUE */
