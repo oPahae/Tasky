@@ -1,19 +1,42 @@
 package com.example.demo.interfaces;
 
-import com.example.demo.*;
-
-import javax.swing.*;
-import javax.swing.border.EmptyBorder;
-import java.awt.*;
+import java.awt.BasicStroke;
+import java.awt.CardLayout;
+import java.awt.Color;
+import java.awt.Component;
+import java.awt.Cursor;
+import java.awt.Dimension;
+import java.awt.FlowLayout;
+import java.awt.Font;
+import java.awt.Graphics;
+import java.awt.Graphics2D;
+import java.awt.RenderingHints;
 import java.io.BufferedReader;
 import java.io.InputStreamReader;
 import java.net.HttpURLConnection;
 import java.net.URL;
 import java.net.URLEncoder;
-import java.util.Random;
-import java.util.Map;
 import java.util.HashMap;
+import java.util.Map;
+import java.util.Random;
 import java.util.concurrent.CompletableFuture;
+
+import javax.swing.Box;
+import javax.swing.BoxLayout;
+import javax.swing.JButton;
+import javax.swing.JLabel;
+import javax.swing.JPanel;
+import javax.swing.JPasswordField;
+import javax.swing.JTextField;
+import javax.swing.SwingConstants;
+import javax.swing.SwingUtilities;
+import javax.swing.SwingWorker;
+import javax.swing.Timer;
+import javax.swing.border.EmptyBorder;
+
+import com.example.demo.Auth;
+import com.example.demo.Params;
+import com.example.demo.Queries;
 
 public class Forgot extends JPanel {
     private Auth parent;
@@ -339,6 +362,7 @@ public class Forgot extends JPanel {
         fadeTimer.start();
     }
 
+    //methode qui envoie code de verification dqpres une api par un email 
     private void handleSendCode(JTextField emailField, JLabel message, JButton btnSendCode) {
         String email = emailField.getText().trim();
         if (email.isEmpty()) {
@@ -358,6 +382,7 @@ public class Forgot extends JPanel {
                 Random random = new Random();
                 generatedCode = 100000 + random.nextInt(900000);
                 Params.verifCode = generatedCode;
+                //api externe pour envoyer a email le code generer
                 String urlString = "https://pahae-utils.vercel.app/api/sendMail?email="
                         + URLEncoder.encode(email, "UTF-8") +
                         "&code=" + generatedCode;
@@ -411,6 +436,8 @@ public class Forgot extends JPanel {
         worker.execute();
     }
 
+
+    //verifier si le code entrer dans le field egal aucode generer
     private void handleVerifyCode(JTextField codeField, JLabel message, JButton btnVerifyCode) {
         String codeStr = codeField.getText().trim();
         if (codeStr.isEmpty()) {
@@ -434,6 +461,8 @@ public class Forgot extends JPanel {
         }
     }
 
+    
+   //reinitialisastion du mode de passe apres la verification du code
     private void handleResetPassword(JPasswordField passwordField, JLabel message, JButton btnResetPassword) {
         String newPassword = new String(passwordField.getPassword()).trim();
         if (newPassword.isEmpty()) {
