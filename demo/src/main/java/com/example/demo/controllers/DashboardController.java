@@ -79,6 +79,11 @@ public class DashboardController {
         dto.dateFin = (t.getDateFin());
         dto.dateLimite = (t.getDateLimite());
         dto.progres = (int) getProgress(t.getId());
+        if (t.getMembres() != null)
+            dto.membreIds = t.getMembres()
+                .stream()
+                .map(Membre::getId)
+                .collect(Collectors.toList());
 
         return dto;
     }
