@@ -13,6 +13,7 @@ public class TacheDTO {
     public LocalDate dateFin;
     public int progres;
     public List<SousTacheDTO> sousTaches;
+    public List<Integer> membreIds;
 
     public TacheDTO() {}
 
