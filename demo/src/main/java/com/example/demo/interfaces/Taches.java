@@ -7,6 +7,7 @@ import com.example.demo.Queries;
 import javax.swing.*;
 
 import org.springframework.scheduling.config.Task;
+import org.springframework.web.servlet.tags.Param;
 
 import java.awt.*;
 import java.net.URI;
@@ -69,6 +70,12 @@ public class Taches extends JPanel {
                         tasks.clear();
 
                         for (Map<String, Object> tacheMap : tachesData) {
+                            List<Integer> membreIds = ((List<?>) tacheMap.get("membreIds"))
+                                    .stream()
+                                    .map(id -> ((Number) id).intValue())
+                                    .toList();
+                            if (!membreIds.contains(Params.membreID)) continue;
+                            
                             int id = ((Number) tacheMap.get("id")).intValue();
                             String titre = (String) tacheMap.getOrDefault("titre", "Sans titre");
                             String description = (String) tacheMap.getOrDefault("description", "");
